@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Flat;
+use App\Models\JobPost;
+use App\Models\ResidentAssignment;
+use App\Models\Society;
+use App\Models\UserDetail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'role',
+        'is_active',
+        'verification_status',
+        'aadhaar_number',
+        'avatar',
+        'region',
+        'language',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'is_active' => 'boolean',
+    ];
+
+    /* ---------------------------------------------------------
+        ROLE HELPERS
+    --------------------------------------------------------- */
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isResident()
+    {
+        return $this->role === 'customer';
+    }
+
+    public function isEmployee()
+    {
+        return $this->role === 'employee';
+    }
+
+
+    /* ---------------------------------------------------------
+        DETAILS (OLD SYSTEM) – Keep for backward support
+    --------------------------------------------------------- */
+    public function details()
+    {
+        return $this->hasOne(UserDetail::class, 'user_id');
+    }
+
+
+    /* ---------------------------------------------------------
+        EMPLOYEE RELATION
+    --------------------------------------------------------- */
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'user_id');
+    }
+
+
+    /* ---------------------------------------------------------
+        JOB POSTS BY USER
+    --------------------------------------------------------- */
+    public function jobs()
+    {
+        return $this->hasMany(JobPost::class, 'user_id');
+    }
+
+
+    /* ---------------------------------------------------------
+        NEW SSTRUCTURE: RESIDENT → SOCIETY ASSIGNMENT
+    --------------------------------------------------------- */
+
+    // The assignment row (user → society)
+    public function assignment()
+    {
+        return $this->hasOne(ResidentAssignment::class, 'user_id');
+    }
+
+    public function Society()
+    {
+        return $this->hasOne(Society::class, 'id', 'society_id');
+    }
+
+    // Direct access to assigned society
+    public function assignedSociety()
+    {
+        return $this->hasOneThrough(
+            Society::class,
+            ResidentAssignment::class,   // ResidentAssignment.user_id
+            'id',          // Society.id
+            'user_id',          // Users.id
+            'name',        // ResidentAssignment.user_id
+            'society_id'   // ResidentAssignment.society_id
+        );
+    }
+
+    public function guardShifts()
+    {
+        return $this->hasMany(GuardShift::class, 'guard_id');
+    }
+
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class);
+    }
+
+    public function vehicleLogs()
+    {
+        return $this->hasMany(VehicleLog::class);
+    }
+
+    public function userDetails()
+    {
+        // user_details.user_id → users.id
+        return $this->hasOne(UserDetail::class, 'user_id', 'id');
+    }
+
+}

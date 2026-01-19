@@ -1,0 +1,238 @@
+<?php
+
+use App\Http\Controllers\Admin\AdminChatController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\ExcelController;
+use App\Http\Controllers\Admin\FlatController;
+use App\Http\Controllers\Admin\GuardController;
+use App\Http\Controllers\Admin\GuardShiftController;
+use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\JobPostController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\PaymentsController;
+use App\Http\Controllers\Admin\ResidentAssignController;
+use App\Http\Controllers\Admin\ServiceController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SocietyController;
+use App\Http\Controllers\Admin\SystemController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserDetailController;
+use App\Http\Controllers\Admin\UserPayoutMethodController;
+use Illuminate\Support\Facades\Route;
+
+// Logout route
+Route::get('/admin-logout', function () {
+    Auth::logout();
+    return redirect()->route('login');
+})->name('admin.logout');
+
+
+
+
+// Dashboard (only for super_admin)
+Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [HomeController::class, 'index'])
+     ->name('admin.dashboard');
+
+    // User management routes
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+
+
+    //resident management route
+    Route::get('/residents', [UserController::class, 'Residents'])->name('residents.index');
+    Route::patch('/residents/{id}/toggle-ban', [UserController::class, 'toggleBan'])->name('users.toggle-ban');
+    Route::delete('/residents/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::get('/residents/{id}/edit', [UserController::class, 'editResident'])->name('residents.edit');
+    Route::patch('/residents/{id}', [UserController::class, 'updateResident'])->name('residents.update');
+    Route::get('/residents/{id}/view', [UserController::class, 'viewResident'])->name('residents.view');
+    Route::patch('/residents/documents/{id}/update-status', [UserController::class, 'ResiDocsupdateStatus'])->name('admin.resiDocs.update-status');
+    Route::patch('/residents/vehicles/{id}/update-status', [UserController::class, 'ResiVehicleUpdateStatus'])->name('admin.resiVehicle.update-status');
+
+
+    //employee management route
+    Route::get('/employees', [UserController::class, 'Employees'])->name('employees.index');
+    Route::get('/employees/{id}/edit', [UserController::class, 'editEmployees'])->name('employees.edit');
+    Route::patch('/employees/{id}', [UserController::class, 'updateEmployees'])->name('employees.update');
+    Route::get('/employees/{id}/view', [UserController::class, 'viewEmployees'])->name('employees.view');
+    Route::delete('/employees/{id}', [SocietyController::class, 'destroyEmployees'])->name('employees.destroy');
+    Route::patch('/employees/{id}/update-verification', [UserController::class, 'updateVerification'])->name('employees.update-verification');
+    Route::patch('/employees/documents/{id}/update-status', [UserController::class, 'EmpDocsupdateStatus'])->name('admin.empDocs.update-status');
+
+
+
+    // society management routes
+    Route::get('/societies', [SocietyController::class, 'index'])->name('societies.index');
+    Route::get('/societies/create', [SocietyController::class, 'create'])->name('societies.create');
+    Route::post('/societies', [SocietyController::class, 'store'])->name('societies.store');
+    Route::get('/societies/{society}/edit', [SocietyController::class, 'edit'])->name('societies.edit');
+    Route::put('/societies/{society}', [SocietyController::class, 'update'])->name('societies.update');
+    Route::delete('/societies/{society}', [SocietyController::class, 'destroy'])->name('societies.destroy');
+
+
+    //payment method management routes
+    Route::patch('/payments/status/{id}', [UserPayoutMethodController::class, 'updateStatus'])
+     ->name('payments.updateStatus');
+
+
+
+    // Multiple Entry (Bulk Insert)
+    Route::get('societies/multiple/create', [SocietyController::class, 'createMultiple'])
+        ->name('societies.multiple.create');
+
+    Route::post('societies/multiple/store', [SocietyController::class, 'storeMultiple'])
+        ->name('societies.storeMultiple');
+
+
+    Route::get('/flats/create/{society_id}', [FlatController::class, 'create'])->name('flats.create');
+    Route::post('/flats/store', [FlatController::class, 'store'])->name('flats.store');
+
+
+    Route::get('/user-details', [UserDetailController::class, 'index']);
+    Route::get('/user-details/{id}', [UserDetailController::class, 'show']);
+    Route::post('/user-details', [UserDetailController::class, 'store']);
+    Route::put('/user-details/{id}', [UserDetailController::class, 'update']);
+    Route::delete('/user-details/{id}', [UserDetailController::class, 'destroy']);
+
+
+    Route::get('/countries', [LocationController::class, 'getAll']);
+    Route::get('/countries/{id}/states', [LocationController::class, 'getStates']);
+    Route::get('/states/{id}/cities', [LocationController::class, 'getCities']);
+
+    Route::get('/societies-ajax-list', [SocietyController::class, 'ajaxList'])
+     ->name('societies.ajax');
+
+    // Job Posts (Web Routes)
+    Route::get('/jobs', [JobPostController::class, 'index'])->name('jobs.index');            // List all jobs
+    Route::get('/jobs/create', [JobPostController::class, 'create'])->name('jobs.create');  // Show create form
+    Route::post('/jobs', [JobPostController::class, 'store'])->name('jobs.store');          // Save job
+    Route::get('/job-view/{id}', [JobPostController::class, 'view'])->name('jobs.view'); // Show job details (AJAX)
+
+    Route::get('/jobs/{id}/applications', [JobPostController::class, 'applications'])
+     ->name('jobs.applications');
+
+
+    Route::get('/jobs/{id}', [JobPostController::class, 'show'])->name('jobs.show');        // Show single job
+    Route::get('/jobs/{id}/edit', [JobPostController::class, 'edit'])->name('jobs.edit');   // Show edit form
+    Route::put('/jobs/{id}', [JobPostController::class, 'update'])->name('jobs.update');    // Update job
+
+    Route::delete('/jobs/{id}', [JobPostController::class, 'destroy'])->name('jobs.destroy'); // Delete job
+
+    // Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    // Route::post('/settings/terms', [SettingsController::class, 'updateTerms'])->name('settings.updateTerms');
+    // Route::post('/settings/faq', [SettingsController::class, 'addFaq'])->name('settings.addFaq');
+    // Route::delete('/settings/faq/{id}', [SettingsController::class, 'deleteFaq'])->name('settings.deleteFaq');
+
+    // // settings edit/update routes
+    // Route::get('/settings/{key}', [SettingsController::class, 'edit'])->name('settings.edit');
+    // Route::post('/settings/{key}', [SettingsController::class, 'update'])->name('settings.update');
+
+
+    // RESIDENT ASSIGN CRUD
+    Route::get('/resident-assign', [ResidentAssignController::class, 'index'])->name('resident.assign.index');
+    Route::get('/resident-assign/create', [ResidentAssignController::class, 'create'])->name('resident.assign.create');
+    Route::post('/resident-assign/store', [ResidentAssignController::class, 'store'])->name('resident.assign.store');
+    Route::get('/resident-assign/{id}/edit', [ResidentAssignController::class, 'edit'])->name('resident.assign.edit');
+    Route::put('/resident-assign/{id}', [ResidentAssignController::class, 'update'])->name('resident.assign.update');
+    Route::delete('/resident-assign/{id}', [ResidentAssignController::class, 'destroy'])->name('resident.assign.delete');
+    Route::put('/resident-assign/{id}/ban', [ResidentAssignController::class, 'ban'])->name('resident.assign.ban');
+    Route::put('/resident-assign/{id}/unban', [ResidentAssignController::class, 'unban'])->name('resident.assign.unban');
+
+
+
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/update', [SettingsController::class, 'update'])->name('admin.settings.update');
+    Route::post('/settings/profile', [SettingsController::class, 'updateAdminProfile'])->name('admin.settings.profile');
+    Route::post('/settings/clear-cache', [SettingsController::class, 'clearCache'])->name('admin.settings.clear-cache');
+
+
+    Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('admin.settings.profile');
+    Route::post('/settings/avatar', [SettingsController::class, 'updateAvatar'])->name('admin.settings.update-avatar');
+    Route::delete('/settings/avatar', [SettingsController::class, 'removeAvatar'])->name('admin.settings.remove-avatar');
+
+    Route::post('/system/clear-cache', [SystemController::class, 'clearCache'])->name('admin.system.clear-cache');
+    Route::post('/system/optimize-db', [SystemController::class, 'optimizeDatabase'])->name('admin.system.optimize-db');
+    Route::post('/system/backup-db', [SystemController::class, 'backupDatabase'])->name('admin.system.backup-db');
+    Route::get('/system/log/{file}', [SystemController::class, 'viewLog'])->name('admin.system.view-log');
+    Route::post('/system/clear-logs', [SystemController::class, 'clearLogs'])->name('admin.system.clear-logs');
+    Route::post('/system/toggle-maintenance', [SystemController::class, 'toggleMaintenance'])->name('admin.system.toggle-maintenance');
+
+    // guard management route
+    // Route::get('/guards', [UserController::class, 'Guards'])->name('guards.index');
+    // Route::patch('/guards/{id}/toggle-ban', [UserController::class, 'toggleBanGuard'])->name('guards.toggle-ban');
+    // Route::delete('/guards/{id}', [UserController::class, 'destroyGuard'])->name('guards.destroy');
+    // Route::get('/guards/{id}/edit', [UserController::class, 'editGuard'])->name('guards.edit');
+    // Route::patch('/guards/{id}', [UserController::class, 'updateGuard'])->name('guards.update');
+    // Route::get('/guards/{id}/view', [UserController::class, 'viewGuard'])->name('guards.view');
+    // Route::get('/guards/create', [GuardController::class, 'create'])->name('guards.create');
+    // Route::post('/guards/store', [GuardController::class, 'store'])->name('guards.store');
+
+    Route::get('guards', [GuardController::class, 'index'])->name('guards.index');
+    Route::get('guards/create', [GuardController::class, 'create'])->name('guards.create');
+    Route::post('guards/store', [GuardController::class, 'store'])->name('guards.store');
+    Route::get('guards/{id}/view', [GuardController::class, 'view'])->name('guards.view');
+    Route::get('guards/{id}/edit', [GuardController::class, 'edit'])->name('guards.edit');
+    Route::patch('guards/{id}', [GuardController::class, 'update'])->name('guards.update');
+    Route::delete('guards/{id}', [GuardController::class, 'destroy'])->name('guards.destroy');
+    Route::post('guards/toggle-status', [GuardController::class, 'toggleStatus'])
+        ->name('guards.toggleStatus');
+    //Route::get('guards/{id}', [GuardController::class, 'view'])->name('guards.view');
+    Route::get('/all-guard-history', [GuardController::class, 'allGuardHistory'])
+    ->name('guards.all-pass-history');
+
+    // Guard shift management routes
+    Route::get('/shift/guards/assign', [GuardShiftController::class, 'create'])->name('shift.guards.assign');
+    Route::post('/shift/guards/assign', [GuardShiftController::class, 'store'])->name('shift.guards.store');
+    Route::get('/shift/guards/list', [GuardShiftController::class, 'index'])->name('shift.guards.index');
+    Route::get('/shift/guards/{id}', [GuardShiftController::class, 'show'])->name('shift.guards.show');
+    Route::post('/shift/guards/{id}/request-change', [GuardShiftController::class, 'requestChange'])
+        ->name('shift.guards.request.change');
+    Route::post('/shift-request/guards/{id}/decide', [GuardShiftController::class, 'decide'])
+        ->name('shift.guards.request.decide');
+    Route::get('/ajax-list-guards', [GuardShiftController::class, 'getGuardsBySociety'])->name('admin.guards.bySociety');
+
+
+    // Service management routes
+    Route::get('services', [ServiceController::class, 'index'])->name('services.index');
+    Route::get('services/create', [ServiceController::class, 'create'])->name('services.create');
+    Route::post('services', [ServiceController::class, 'store'])->name('services.store');
+    Route::get('services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+    Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
+    Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+
+
+    // Export routes
+    Route::get('/societies/export', [SocietyController::class, 'export'])->name('societies.export');
+    Route::get('/residents/export', [ExcelController::class, 'exportResidentsFull'])->name('residents.export');
+    Route::get('/guards/export', [ExcelController::class, 'exportGuards'])->name('guards.export');
+    Route::get('/employees/export', [ExcelController::class, 'exportEmployeesFull'])->name('employees.export');
+    Route::get('/job/export', [ExcelController::class, 'exportJobsFull'])
+    ->name('jobs.export');
+    Route::get('/resident-assign/export', [ExcelController::class, 'exportResidentAssign'])
+    ->name('resident.assign.export');
+    Route::get('/admin/jobs/{id}/applications/export', [ExcelController::class, 'exportJobApplications'])
+    ->name('admin.jobs.applications.export');
+
+    // Route::get('/chats', [AdminChatController::class, 'index']);
+    // Route::get('/chats/{chatId}', [AdminChatController::class, 'view']);
+
+
+    Route::get('/payments', [PaymentsController::class, 'adminIndex'])->name('admin.payments.index');
+    Route::get('/payments/export', [PaymentsController::class, 'adminExport'])->name('admin.payments.export');
+    Route::get('/payments/{payment}', [PaymentsController::class, 'adminShow'])->name('admin.payments.show');
+
+
+    Route::get('/chat/sync', [AdminChatController::class, 'syncFirestoreChats']);
+
+    Route::get('/dashboard/chat', [AdminChatController::class, 'completeChat'])->name('dashboard.chat');
+
+    Route::get(
+        '/admin/jobs/{job}/applications/{user}/chat',
+        [AdminChatController::class, 'JobApplicationChat']
+    )->name('admin.job.application.chat');
+
+
+});
