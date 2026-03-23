@@ -1,20 +1,21 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\JobPost;
 use App\Models\JobApplication;
+use App\Models\JobPost;
 use App\Models\Payment;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use App\Models\User;
-use Illuminate\Validation\Rule;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class JobPaymentController extends Controller
 {
-    
     public function pay(Request $request, $job_id, $application_id)
     {
         // -----------------------------
@@ -22,78 +23,126 @@ class JobPaymentController extends Controller
         // -----------------------------
         $job = JobPost::find($job_id);
         if (!$job) {
-            return response()->json(['status' => false, 'message' => 'Job not found'], 404);
+            return response()->json(['status' => false,'message' => 'Job not found'], 404);
         }
-    
+
         $application = JobApplication::find($application_id);
         if (!$application) {
-            return response()->json(['status' => false, 'message' => 'Application not found'], 404);
+            return response()->json(['status' => false,'message' => 'Application not found'], 404);
         }
-    
+
         if ($application->job_id !== $job->id) {
             return response()->json([
                 'status' => false,
-                'message' => 'Application does not belong to this job'
+                'message' => 'Application does not belong to this job',
             ], 400);
         }
-    
+
         if ($application->status !== 'hired') {
             return response()->json([
                 'status' => false,
-                'message' => 'Only hired applications can be paid'
+                'message' => 'Only hired applications can be paid',
             ], 400);
         }
-    
+
         // -----------------------------
         // REQUEST VALIDATION
         // -----------------------------
         $data = $request->validate([
-            'payment_type' => ['required', Rule::in(['advance', 'final'])],
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => ['required', Rule::in(['UPI','card','cash','wallet','netbanking'])],
+            'payment_type' => ['required',Rule::in(['advance','final'])],
+            'amount' => 'required|numeric|min:1',
+            'payment_method' => ['required',Rule::in(['UPI','card','wallet','netbanking'])],
             'notes' => 'nullable|string|max:500',
         ]);
-        
-        $payment = Payment::where('job_application_id', $application->id)->where('job_post_id', $job->id)->where('payment_type', $data['payment_type'])->first();
-        if ($payment && $payment->status === 'success') {
+
+        // -----------------------------
+        // PREVENT DUPLICATE SUCCESS
+        // -----------------------------
+        $alreadyPaid = Payment::where('job_application_id', $application->id)
+            ->where('job_post_id', $job->id)
+            ->where('payment_type', $data['payment_type'])
+            ->where('status', 'success')
+            ->first();
+
+        if ($alreadyPaid) {
             return response()->json([
                 'status' => false,
-                'message' => ucfirst($data['payment_type']) . ' payment already completed.',
-                'payment' => $payment
+                'message' => ucfirst($data['payment_type']).' payment already completed.',
+                'payment' => $alreadyPaid,
             ], 200);
         }
 
-    
-    
         // -----------------------------
-        // FINAL REQUIRES ADVANCE
+        // FINAL NEEDS ADVANCE FIRST
         // -----------------------------
         if ($data['payment_type'] === 'final') {
+
             $advancePaid = Payment::where('job_application_id', $application->id)
                 ->where('payment_type', 'advance')
                 ->where('status', 'success')
                 ->exists();
-    
+
             if (!$advancePaid) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Advance payment must be completed before final payment.'
-                ],200);
+                    'message' => 'Advance payment must be completed before final payment.',
+                ], 200);
             }
         }
-        
-        
-   
+
         // -----------------------------
-        // TRANSACTION START
+        // START TRANSACTION
         // -----------------------------
         DB::beginTransaction();
-    
+
         try {
-    
-            // CREATE PAYMENT
+
+            // UNIQUE ORDER ID
+            $orderId = 'JOB'.$job->id.'APP'.$application->id.Str::upper(Str::random(6));
+
+            // -----------------------------
+            // CREATE CASHFREE ORDER
+            // -----------------------------
+            $response = Http::withHeaders([
+                'x-client-id' => config('services.cashfree.app_id'),
+                'x-client-secret' => config('services.cashfree.secret_key'),
+                'x-api-version' => '2022-09-01',
+                'Content-Type' => 'application/json',
+            ])->post(config('services.cashfree.base_url'), [
+
+                'order_id' => $orderId,
+                'order_amount' => (float)$data['amount'],
+                'order_currency' => 'INR',
+
+                'customer_details' => [
+                    'customer_id' => (string)$application->user_id,
+                    'customer_name' => $application->user->name ?? 'User',
+                    'customer_email' => $application->user->email ?? 'user@email.com',
+                    'customer_phone' => $application->user->phone ?? '9999999999',
+                ],
+
+                'order_meta' => [
+                    'return_url' => url('/cashfree-return?order_id={order_id}'),
+                ],
+
+            ]);
+
+            if (!$response->successful()) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Cashfree order creation failed',
+                    'error' => $response->json(),
+                ], 500);
+            }
+
+            $cf = $response->json();
+
+            // -----------------------------
+            // SAVE PAYMENT (PENDING)
+            // -----------------------------
             $payment = Payment::create([
-                'payment_id' => $this->generatePaymentId(),
+                'payment_id' => $orderId,
                 'job_post_id' => $job->id,
                 'job_application_id' => $application->id,
                 'payer_id' => $job->user_id,
@@ -101,57 +150,58 @@ class JobPaymentController extends Controller
                 'amount' => $data['amount'],
                 'currency' => 'INR',
                 'payment_method' => $data['payment_method'],
-                'payment_reference' => $this->generatePaymentId(),
+                'payment_reference' => $cf['cf_order_id'] ?? null,
                 'payment_type' => $data['payment_type'],
                 'target_account' => $data['payment_type'] === 'advance' ? 'admin' : 'employer',
                 'notes' => $data['notes'] ?? null,
-                'status' => 'success',
-                'paid_at' => now(),
+                'status' => 'pending',
             ]);
-    
-            // FETCH ALL PAYMENTS (ADVANCE + FINAL)
+
+            // FETCH ALL PAYMENTS (ADVANCE + FINAL) $payments = Payment::where('job_application_id', $application->id) ->orderBy('paid_at') ->get(); // SUMMARY $summary = [ 'advance_paid' => $payments->where('payment_type', 'advance')->sum('amount'), 'final_paid' => $payments->where('payment_type', 'final')->sum('amount'), 'total_paid' => $payments->sum('amount'), ];      // FETCH ALL PAYMENTS (ADVANCE + FINAL)
             $payments = Payment::where('job_application_id', $application->id)
-                ->orderBy('paid_at')
-                ->get();
-    
+            ->orderBy('paid_at')
+            ->get();
+
             // SUMMARY
             $summary = [
                 'advance_paid' => $payments->where('payment_type', 'advance')->sum('amount'),
                 'final_paid' => $payments->where('payment_type', 'final')->sum('amount'),
                 'total_paid' => $payments->sum('amount'),
             ];
-    
+
             DB::commit();
-    
+
+            // -----------------------------
+            // SEND DATA TO FLUTTER APP
+            // -----------------------------
             return response()->json([
                 'status' => true,
-                'message' => ucfirst($data['payment_type']) . ' payment recorded successfully.',
+                'message' => 'Cashfree order created successfully',
+                'payment_id' => $payment->id,
                 'latest_payment' => $payment,
                 'payment_summary' => $summary,
-                'payments' => $payments
+                'payments' => $payments,
+                // REQUIRED FOR FLUTTER SDK
+                'cashfree' => [
+                    'order_id' => $cf['order_id'],
+                    'payment_session_id' => $cf['payment_session_id'],
+                ],
             ], 200);
-    
-        } catch (QueryException $e) {
-    
+
+        } catch (\Exception $e) {
+
             DB::rollBack();
-    
-            if ($e->errorInfo[1] == 1062) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'This payment reference has already been used.'
-                ], 422);
-            }
-    
-            \Log::error('Payment error: ' . $e->getMessage());
-    
+
+            \Log::error('Cashfree Payment Error: '.$e->getMessage());
+
             return response()->json([
                 'status' => false,
-                'message' => 'Payment failed. Try again.'
+                'message' => 'Payment initialization failed',
             ], 500);
         }
     }
-    
-    
+
+
 
     private function generatePaymentId(): string
     {
@@ -201,7 +251,7 @@ class JobPaymentController extends Controller
             'status' => true,
             'payments' => $payments,
             'total_payments' => $payments->count(),
-            'total_amount' => $payments->sum('amount')
+            'total_amount' => $payments->sum('amount'),
         ], 200);
     }
 
@@ -219,7 +269,7 @@ class JobPaymentController extends Controller
             'payments' => $payments,
             'total_earnings' => Payment::where('payee_id', $user->id)
                                      ->where('status', 'success')
-                                     ->sum('amount')
+                                     ->sum('amount'),
         ], 200);
     }
 }

@@ -60,6 +60,7 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Contact</th>
+                <th>Resident Type</th>
                 <th>Verification</th>
                 <th>Status</th>
                 <th>Experience</th>
@@ -87,6 +88,8 @@
                     <i class="bi bi-telephone"></i> {{ $emp->phone ?? '-' }} <br>
                     <i class="bi bi-envelope"></i> {{ $emp->email }}
                   </td>
+
+                  <td>{{ $emp->user_residential_status }}</td>
 
                   <td>
                     @if ($emp->verification_status == 'verified')

@@ -23,6 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'user_society_id',
+        'user_residential_status',
         'password',
         'role',
         'is_active',
@@ -30,7 +32,9 @@ class User extends Authenticatable
         'aadhaar_number',
         'avatar',
         'region',
+        'fcm_token',
         'language',
+        'deleted_at',
     ];
 
     protected $hidden = [
@@ -41,6 +45,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_deleted' => 'boolean',
     ];
 
     /* ---------------------------------------------------------

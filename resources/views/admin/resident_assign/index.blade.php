@@ -122,6 +122,9 @@
                           </button>
                         </form>
 
+                        <a href="{{ route('admin.permissions.edit', $user->id) }}" class="btn btn-sm btn-primary">
+                          Manage Permission
+                        </a>
                       </td>
 
                     </tr>

@@ -11,82 +11,207 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class JobPostController extends Controller
 {
     /**
+     * Resident Dashboard Summary
+     * Active jobs, applications, completed jobs, balance
+     */
+
+    private function getGoogleDistance($originLat, $originLng, $destLat, $destLng)
+    {
+        $apiKey = env('GOOGLE_MAPS_API_KEY');
+
+        $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$originLat,$originLng&destinations=$destLat,$destLng&mode=driving&key=$apiKey";
+
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
+
+        if (
+            isset($data['rows'][0]['elements'][0]['distance']['value'])
+        ) {
+            return $data['rows'][0]['elements'][0]['distance']['value'] / 1000; // km
+        }
+
+        return null;
+    }
+
+
+    public function residentDashboard($userId)
+    {
+        // -------------------------------
+        // ACTIVE JOBS (Posted by resident)
+        // -------------------------------
+        $activeJobs = JobPost::where('user_id', $userId)
+            ->where('status', 'active')
+            ->count();
+
+        // -------------------------------
+        // TOTAL JOBS
+        // -------------------------------
+        $totalJobs = JobPost::where('user_id', $userId)->count();
+
+        // -------------------------------
+        // APPLICATIONS ON RESIDENT JOBS
+        // -------------------------------
+        $applications = JobApplication::whereHas('jobPost', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->count();
+
+        // -------------------------------
+        // HIRED WORKERS
+        // -------------------------------
+        $hiredJobs = JobApplication::whereHas('jobPost', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->where('status', 'hired')
+            ->count();
+
+        // -------------------------------
+        // COMPLETED JOBS
+        // -------------------------------
+        $completedJobs = JobApplication::whereHas('jobPost', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+            ->where('status', 'completed')
+            ->count();
+
+        // -------------------------------
+        // BALANCE CALCULATION
+        // -------------------------------
+        $appointments = DB::table('appointments')
+            ->join('job_applications', 'appointments.job_application_id', '=', 'job_applications.id')
+            ->join('job_posts', 'job_applications.job_id', '=', 'job_posts.id')
+            ->where('job_posts.user_id', $userId)
+            ->select(
+                'appointments.advance_amount',
+                'appointments.final_amount',
+                'appointments.advance_paid',
+                'appointments.final_paid'
+            )
+            ->get();
+
+        $totalAmount = 0;
+        $paidAmount = 0;
+        $pendingAmount = 0;
+
+        foreach ($appointments as $appt) {
+            $jobTotal = ($appt->advance_amount ?? 0) + ($appt->final_amount ?? 0);
+            $totalAmount += $jobTotal;
+
+            if ($appt->advance_paid) {
+                $paidAmount += $appt->advance_amount ?? 0;
+            } else {
+                $pendingAmount += $appt->advance_amount ?? 0;
+            }
+
+            if ($appt->final_paid) {
+                $paidAmount += $appt->final_amount ?? 0;
+            } else {
+                $pendingAmount += $appt->final_amount ?? 0;
+            }
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'jobs' => [
+                    'total' => $totalJobs,
+                    'active' => $activeJobs,
+                    'completed' => $completedJobs,
+                ],
+                'applications' => [
+                    'total' => $applications,
+                    'hired' => $hiredJobs,
+                ],
+                'balance' => [
+                    'total_amount' => round($totalAmount, 2),
+                    'paid_amount' => round($paidAmount, 2),
+                    'pending_amount' => round($pendingAmount, 2),
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * ✅ Get all job posts
      */
     public function index(Request $request)
     {
         $userId = Auth::id();
-        $matchSkill = $request->query('match_skill'); // 1 or null
+        $apiKey = env('GOOGLE_MAPS_API_KEY');
 
-        // 🔹 Employee profile
+        $matchSkill = $request->query('match_skill');
+
+        // Employee profile
         $employee = Employee::where('user_id', $userId)
             ->select('services', 'latitude', 'longitude', 'work_radius_km')
             ->first();
 
         $employeeServices = $employee && !empty($employee->services)
-        ? (array) $employee->services
-        : [];
+            ? (array) $employee->services
+            : [];
 
-        // 🔹 Jobs
+        // Jobs
         $jobsQuery = JobPost::with('user')
             ->where('status', 'active');
 
-        /**
-         * 🔹 Distance calculation
-         */
-
-
-        if ($employee && $employee->latitude && $employee->longitude) {
-
-            $jobsQuery->selectRaw('
-            job_posts.*,
-            (
-                6371 * acos(
-                    cos(radians(?))
-                    * cos(radians(job_posts.latitude))
-                    * cos(radians(job_posts.longitude) - radians(?))
-                    + sin(radians(?))
-                    * sin(radians(job_posts.latitude))
-                )
-            ) AS distance_km
-        ', [
-                $employee->latitude,
-                $employee->longitude,
-                $employee->latitude,
-            ]);
-            // result of qery
-
-
-            if ($employee->work_radius_km) {
-                $jobsQuery->having('distance_km', '<=', $employee->work_radius_km);
-            }
-
-            $jobsQuery->orderBy('distance_km', 'asc');
-        } else {
-            $jobsQuery->selectRaw('job_posts.*, NULL AS distance_km')
-              ->latest();
-        }
-
         $jobs = $jobsQuery->get();
 
-
-
         /**
-         * 🔹 Applied jobs
+         * Applied Jobs
          */
         $appliedJobIds = DB::table('job_applications')
             ->where('user_id', $userId)
+            ->where('status', 'active')
             ->pluck('job_id')
             ->toArray();
 
         /**
-         * 🔹 Transform + skill match
+         * Distance Calculation using Google API
+         */
+        foreach ($jobs as $job) {
+
+            $job->distance_km = null;
+
+            if (
+                $employee &&
+                $employee->latitude &&
+                $employee->longitude &&
+                $job->latitude &&
+                $job->longitude
+            ) {
+
+                $distance = $this->getGoogleDistance(
+                    $employee->latitude,
+                    $employee->longitude,
+                    $job->latitude,
+                    $job->longitude
+                );
+
+                if ($distance !== null) {
+                    $job->distance_km = round($distance, 2);
+                }
+            }
+        }
+
+        /**
+         * Filter by work radius
+         */
+        if ($employee && $employee->work_radius_km) {
+            $jobs = $jobs->filter(function ($job) use ($employee) {
+                return $job->distance_km !== null &&
+                       $job->distance_km <= $employee->work_radius_km;
+            });
+        }
+
+        /**
+         * Transform + skill match
          */
         $jobs = $jobs->filter(function ($job) use (
             $employeeServices,
@@ -104,19 +229,16 @@ class JobPostController extends Controller
             )) > 0 ? 1 : 0;
 
             $job->applied = in_array($job->id, $appliedJobIds);
+
             $job->user_details = $job->user;
             unset($job->user);
 
-            if (isset($job->distance_km)) {
-                $job->distance_km = round($job->distance_km, 2);
-            }
-
-            // ✅ FILTER HERE
             if ($matchSkill === '1') {
                 return $job->skill_matched === 1;
             }
 
-            return true; // return all if not requested
+            return true;
+
         })->values();
 
         return response()->json([
@@ -174,6 +296,9 @@ class JobPostController extends Controller
             $jobApplication = JobApplication::where('job_id', $id)
                 ->first();
 
+            $userId = $job->user_id;
+            $resident_details = User::where('id', $userId)->select('id', 'name', 'email', 'phone', 'avatar')->first();
+
             if ($jobApplication) {
                 $jobApplicationStatus = $jobApplication->status;
             }
@@ -183,6 +308,7 @@ class JobPostController extends Controller
             'status' => true,
             'job_application_status' => $jobApplicationStatus,
             'data' => $job,
+            'resident_details' => $resident_details,
         ]);
     }
 
@@ -231,12 +357,16 @@ class JobPostController extends Controller
             ], 404);
         }
 
-        $societyId = $user->details->society_id ?? null;
-        if (!$societyId) {
-            return response()->json([
-                'status' => false,
-                'message' => 'User does not belong to any society.',
-            ], 400);
+        if ($user->user_residential_status == 'society') {
+            $societyId = $user->details->society_id ?? null;
+            if (!$societyId) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User does not belong to any society.',
+                ], 400);
+            }
+        } else {
+            $societyId = 0;
         }
 
         $validated = $validator->validated();
@@ -425,6 +555,7 @@ class JobPostController extends Controller
             'skills.*' => 'string|max:100',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'work_radius' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -446,6 +577,35 @@ class JobPostController extends Controller
         // if ($request->filled('min_pay')) {
         //     $query->where('pay_amount', '>=', (float) $request->min_pay);
         // }
+
+        // get employee latitude and longitude auth user
+        $userId = auth()->id();
+        $employee = Employee::where('user_id', $userId)
+            ->select('latitude', 'longitude')
+            ->first();
+
+        //work radius filter
+        if ($request->filled('work_radius')) {
+            // check if employee has latitude and longitude
+            if (!$employee || !$employee->latitude || !$employee->longitude) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Employee location not found.',
+                ], 200);
+            }
+
+            // Assuming you have latitude and longitude of the job posts stored in the database
+            $userLatitude = $employee->latitude;
+            $userLongitude = $employee->longitude;
+            $workRadius = (float) $request->work_radius;
+
+            // Haversine formula to calculate distance
+            $query->selectRaw('job_posts.*, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance', [
+                $userLatitude,
+                $userLongitude,
+                $userLatitude,
+            ])->having('distance', '<=', $workRadius);
+        }
 
         if ($request->has('min_pay') && $request->min_pay !== '') {
             $query->whereRaw('CAST(pay_amount AS DECIMAL(10,2)) >= ?', [

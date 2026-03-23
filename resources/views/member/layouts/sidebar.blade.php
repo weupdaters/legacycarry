@@ -100,72 +100,101 @@
 
         <!-- Dashboard -->
         <li class="menu-title">Dashboard</li>
-        <li>
-          <a href="{{ route('member.dashboard') }}" class="tp-link">
-            <i data-feather="home"></i>
-            <span> Overview </span>
-          </a>
-        </li>
+
+        @if (has_permission('resident_show'))
+          <li>
+            <a href="{{ route('member.dashboard') }}" class="tp-link">
+              <i data-feather="home"></i>
+              <span> Overview </span>
+            </a>
+          </li>
+        @endif
 
 
-
-
-
-        <!-- USER & ROLE MANAGEMENT -->
         <li class="menu-title mt-2">User Management</li>
-        <li>
-          <a href="{{ route('member.employees.index') }}" class="tp-link">
-            <i data-feather="user-check"></i>
-            <span> Service Providers </span>
-          </a>
-        </li>
 
-        <li>
-          <a href="{{ route('member.residents.index') }}" class="tp-link">
-            <i data-feather="user-check"></i>
-            <span> Residents </span>
-          </a>
-        </li>
-
-        <li>
-          <a href="{{ route('member.guards.index') }}" class="tp-link">
-            <i data-feather="user-check"></i>
-            <span> Guards </span>
-          </a>
-        </li>
+        {{-- Service Providers --}}
+        @if (has_permission('service_provider_index'))
+          <li>
+            <a href="{{ route('member.employees.index') }}" class="tp-link">
+              <i data-feather="user-check"></i>
+              <span> Service Providers </span>
+            </a>
+          </li>
+        @endif
 
 
-        <li>
-          <a href="{{ route('member.shift.guards.index') }}" class="tp-link">
-            <i data-feather="clock"></i>
-            <span> Guard Shifts </span>
-          </a>
-        </li>
+        {{-- Residents --}}
+        @if (has_permission('resident_index'))
+          <li>
+            <a href="{{ route('member.residents.index') }}" class="tp-link">
+              <i data-feather="user-check"></i>
+              <span> Residents </span>
+            </a>
+          </li>
+        @endif
 
-        <li>
-          <a href="{{ route('member.guards.all-pass-history') }}" class="tp-link">
-            <i data-feather="clock"></i>
-            <span> Pass history </span>
-          </a>
-        </li>
 
+        {{-- Guards --}}
+        @if (has_permission('guard_index'))
+          <li>
+            <a href="{{ route('member.guards.index') }}" class="tp-link">
+              <i data-feather="shield"></i>
+              <span> Guards </span>
+            </a>
+          </li>
+        @endif
+
+
+        {{-- Guard Shifts --}}
+        @if (has_permission('guard_shift_index'))
+          <li>
+            <a href="{{ route('member.shift.guards.index') }}" class="tp-link">
+              <i data-feather="clock"></i>
+              <span> Guard Shifts </span>
+            </a>
+          </li>
+        @endif
+
+
+        {{-- Pass History --}}
+        @if (has_permission('pass_history_index'))
+          <li>
+            <a href="{{ route('member.guards.all-pass-history') }}" class="tp-link">
+              <i data-feather="file-text"></i>
+              <span> Pass History </span>
+            </a>
+          </li>
+        @endif
+
+
+        {{-- Utility Bills --}}
 
         <li>
           <a href="#" class="tp-link">
-            <i data-feather="clock"></i>
-            <span> Utility Bills </span></span>
+            <i data-feather="credit-card"></i>
+            <span> Utility Bills </span>
           </a>
         </li>
 
+
+
+        {{-- Facility Management --}}
+
         <li>
           <a href="#" class="tp-link">
-            <i data-feather="clock"></i>
+            <i data-feather="settings"></i>
             <span> Facility Management </span>
           </a>
         </li>
+
+
+
+        {{-- Public Notice --}}
+
         <li>
           <a href="#" class="tp-link">
-            <i data-feather="clock"></i>
+            <i data-feather="bell"></i>
             <span> Public Notice </span>
           </a>
         </li>

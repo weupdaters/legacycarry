@@ -149,7 +149,7 @@
 
 
         {{-- DROPDOWN + SUBMIT BUTTON --}}
-        <form action="{{ route('member.employees.update-verification', $user->id) }}" method="POST"
+        <form action="{{ route('member.residents.update-verification', $user->id) }}" method="POST"
           class="d-flex align-items-center mt-2">
           @csrf
           @method('PATCH')
@@ -473,5 +473,5 @@
         </div>
       </div>
     </div>
-    @endforeach
-  @endsection
+  @endforeach
+@endsection

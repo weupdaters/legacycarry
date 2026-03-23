@@ -71,7 +71,7 @@
 
     {{-- PROFILE HEADER --}}
     <div class="glass-card p-4 mb-4 d-flex align-items-center gap-4">
-      @if ($user->avatar && file_exists(public_path('storage/' . $user->avatar)))
+      @if ($user->avatar)
         @php $avatar = asset('storage/'.$user->avatar); @endphp
       @else
         @php $avatar = null; @endphp
@@ -458,7 +458,7 @@
                 <th>ID</th>
                 <th>Vehicle Number</th>
                 <th>Type</th>
-                <th>Model</th>
+
                 <th>Color</th>
                 <th>Update Status</th>
                 <th>Status</th>
@@ -470,8 +470,7 @@
                   <td>{{ $vehicle->id }}</td>
                   <td>{{ strtoupper($vehicle->vehicle_number) }}</td>
                   <td>{{ ucfirst($vehicle->vehicle_type ?? '-') }}</td>
-                  <td>{{ $vehicle->vehicle_model ?? '-' }}</td>
-                  <td>{{ $vehicle->vehicle_color ?? '-' }}</td>
+                  <td>{{ $vehicle->color ?? '-' }}</td>
                   <td>
                     <form action="{{ route('admin.resiVehicle.update-status', $vehicle->id) }}" method="POST"
                       class="d-flex gap-2">

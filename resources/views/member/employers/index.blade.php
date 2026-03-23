@@ -145,19 +145,22 @@
                   </td>
 
                   <td>
-                    {{-- Ban / Unban --}}
-                    <form action="{{ route('member.toggle-ban', $emp->id) }}" method="POST"
-                      style="display:inline-block;">
-                      @csrf
-                      @method('PATCH')
-                      <button type="submit" class="btn btn-sm {{ $emp->is_active ? 'btn-warning' : 'btn-success' }}">
+                    @if (has_permission('service_provider_edit'))
+                      {{-- Ban / Unban --}}
+                      <form action="{{ route('member.toggle-ban', $emp->id) }}" method="POST"
+                        style="display:inline-block;">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-sm {{ $emp->is_active ? 'btn-warning' : 'btn-success' }}">
 
-                        {{ $emp->is_active ? 'Ban' : 'Unban' }}
-                      </button>
-                    </form>
+                          {{ $emp->is_active ? 'Ban' : 'Unban' }}
+                        </button>
+                      </form>
+                    @endif
 
-
-                    <a href="{{ route('member.employees.view', $emp->id) }}" class="btn btn-info btn-sm">View</a>
+                    @if (has_permission('service_provider_show'))
+                      <a href="{{ route('member.employees.view', $emp->id) }}" class="btn btn-info btn-sm">View</a>
+                    @endif
                   </td>
                 </tr>
               @endforeach

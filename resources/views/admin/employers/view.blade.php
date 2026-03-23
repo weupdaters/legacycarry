@@ -56,7 +56,7 @@
 
         {{-- Avatar --}}
         <div>
-          @if ($user->avatar && file_exists(public_path('storage/' . $user->avatar)))
+          @if ($user->avatar)
             <img src="{{ asset('storage/' . $user->avatar) }}" class="profile-avatar">
           @else
             <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center"
@@ -164,6 +164,21 @@
               <p><strong>Services:</strong> {{ $services ? implode(', ', $services) : '-' }}</p>
               <p><strong>Work Radius:</strong> {{ $user->employee->work_radius_km }} km</p>
               <p><strong>About:</strong> {{ $user->employee->about ?? '-' }}</p>
+              <p><strong>Joined:</strong> {{ $user->employee->created_at->format('d M Y') }}</p>
+              <p><strong>Address:</strong> {{ $user->employee->address }}</p>
+              <p><strong>Emergency Contact Name:</strong> {{ $user->employee->emergency_contact_name }}</p>
+              <p><strong>Emergency Contact Phone:</strong> {{ $user->employee->emergency_contact_phone }}</p>
+              <p><strong>Gender:</strong> {{ $user->employee->gender }}</p>
+              <p><strong>Date of Birth:</strong>
+                {{ $user->employee->date_of_birth ? $user->employee->date_of_birth->format('d M Y') : '-' }}</p>
+              <p><strong>Marital Status:</strong> {{ $user->employee->marital_status }}</p>
+              <p><strong>Occupation:</strong> {{ $user->employee->occupation }}</p>
+              <p><strong>User Residential Status:</strong> {{ ucfirst($user->user_residential_status) }}</p>
+              @if ($user->user_residential_status == 'society')
+                <p><strong>Society:</strong> {{ $user->society->name }}</p>
+              @endif
+
+
             </div>
 
             {{-- Verification --}}

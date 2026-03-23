@@ -33,95 +33,128 @@ class UserController extends Controller
         $request->validate([
             'phone' => 'required|string',
             'otp' => 'required|string',
+            'device_token' => 'required|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
         ]);
 
         $phone = $request->phone;
         $otp = $request->otp;
 
-        // Find the OTP code for login
+        // Find user
+        $user = User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ]);
+        }
+
+        if ($user->is_active == 0) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User is inactive. Please contact support.',
+            ]);
+        }
+
+        if ($user->deleted_at) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User account is deleted. Please contact support.',
+            ]);
+        }
+
+        // Get latest OTP for login
         $userCode = UserCode::where('phone', $phone)
-                            ->where('purpose', 'login')
-                            ->latest()
-                            ->first();
-        //  dd(!Hash::check($otp, $userCode->code_hash));
+            ->where('purpose', 'login')
+            ->latest()
+            ->first();
+
+
+
         if (!$userCode) {
             return response()->json([
                 'status' => false,
                 'message' => 'OTP not found',
-            ], 200);
+            ]);
         }
 
-        // Check expiration
-        if (now()->gt($userCode->expires_at)) {
+        // Check OTP expiry
+        if (now()->greaterThan($userCode->expires_at)) {
             return response()->json([
                 'status' => false,
                 'message' => 'OTP expired',
-            ], 200);
+            ]);
         }
 
-        // Check attempts
+        // Check max attempts
         if ($userCode->attempts >= 5) {
             return response()->json([
                 'status' => false,
-                'message' => 'Too many attempts',
-            ], 200);
+                'message' => 'Too many attempts. Please request a new OTP.',
+            ]);
         }
 
         // Verify OTP
         if (!Hash::check($otp, $userCode->code_hash)) {
             $userCode->increment('attempts');
+
             return response()->json([
                 'status' => false,
                 'message' => 'Invalid OTP',
-            ], 200);
+            ]);
         }
 
-        // OTP is valid
+        // OTP verified → delete it
         $userCode->delete();
 
 
-        $user = User::where('phone', $phone)->first();
-        if (!$user) {
-            return response()->json([
-                'status' => false,
-                'message' => 'User not found',
-            ], 200);
-        }
 
-        if (!$user->is_active) {
-            return response()->json([
-                'status' => false,
-                'message' => 'User is inactive. Please contact support.',
-            ], 200);
-        }
+        // ✅ Save device token (important)
+        $user->fcm_token = $request->device_token;
+        $user->save();
 
+        // OPTIONAL (recommended): revoke old tokens
+        $user->tokens()->delete();
 
-        $user->avatar = $user && $user->avatar
-            ? asset('storage/' . $user->avatar)
-            : null;
-
-        if ($user->role == 'labor') {
-            $userDetail = Employee::where('user_id', $user->id)->first();
-            if ($userDetail) {
-                $user->employee_details = $userDetail;
+        // Load role-based details
+        if ($user->role === 'labor') {
+            $user->employee_details = Employee::where('user_id', $user->id)->first();
+            // save employees latitude and longitude if provided
+            if ($request->has('latitude') && $request->has('longitude')) {
+                $employee = Employee::where('user_id', $user->id)->first();
+                if ($employee) {
+                    $employee->latitude = $request->latitude;
+                    $employee->longitude = $request->longitude;
+                    $employee->save();
+                }
             }
         } else {
-            $userDetail = UserDetail::where('user_id', $user->id)->first();
-            if ($userDetail) {
-                $user->user_details = $userDetail;
-            }
+            $user->user_details = UserDetail::where('user_id', $user->id)->first();
         }
 
-        // Generate token (if using sanctum or passport)
+        // Generate auth token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => true,
             'message' => 'Login successful',
-            'user' => $user,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'phone' => $user->phone,
+                'email' => $user->email,
+                'role' => $user->role,
+                'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                'details' => $user->role === 'labor'
+                    ? $user->employee_details
+                    : $user->user_details,
+            ],
             'token' => $token,
         ]);
     }
+
 
 
 
@@ -135,6 +168,8 @@ class UserController extends Controller
             'role' => ['required', Rule::in(['labor','customer','guard','super_admin'])],
             'is_active' => 'required|boolean',
             'otp' => 'required|string',
+            'user_residential_status' => 'nullable|in:society,individual',
+            'user_society_id' => 'nullable|exists:societies,id',
 
             // Employee-specific fields
             'experience_years' => 'required|string|max:50',
@@ -147,6 +182,16 @@ class UserController extends Controller
             'selfie' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            // Additional fields
+            'address' => 'nullable|string',
+            'emergency_contact_name' => 'nullable|string|max:100',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'gender' => 'nullable',
+            'date_of_birth' => 'nullable|date_format:d-m-Y',
+            'marital_status' => 'nullable',
+            'occupation' => 'nullable|string|max:100',
+            'floor_number' => 'nullable|string|max:10',
+            'flat_id' => 'nullable|string|max:10',
         ]);
 
         if ($validator->fails()) {
@@ -203,7 +248,10 @@ class UserController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make(Str::random(10)),
                 'role' => $request->role,
+                'user_society_id' => $request->user_society_id,
+                'user_residential_status' => $request->user_residential_status ?? ($request->user_society_id ? 'society' : 'individual'),
                 'is_active' => $request->is_active,
+                'aadhaar_number' => $request->aadhaar_number,
             ]);
 
             // Handle file uploads
@@ -243,6 +291,15 @@ class UserController extends Controller
                     'phone_verified' => 1,
                     'latitude' => $request->latitude,
                     'longitude' => $request->longitude,
+                    'address' => $request->address,
+                    'emergency_contact_name' => $request->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergency_contact_phone,
+                    'gender' => $request->gender,
+                    'date_of_birth' => $request->date_of_birth ? Carbon::createFromFormat('d-m-Y', $request->date_of_birth) : null,
+                    'marital_status' => $request->marital_status,
+                    'occupation' => $request->occupation,
+                    'floor_number' => $request->floor_number,
+                    'flat_id' => $request->flat_id,
                 ]);
             }
 
@@ -354,13 +411,14 @@ class UserController extends Controller
             'flat_id' => 'nullable|exists:flats,id',
             'floor_number' => 'nullable|string|max:50',
             // UserDetails fields
-            'society_id' => 'required|exists:societies,id',
+            'society_id' => 'nullable|exists:societies,id',
+            'user_residential_status' => 'nullable|in:society,individual',
             'full_name' => 'required|string|max:100',
             'address' => 'nullable|string|max:255',
             'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:Male,Female,Other',
+            'gender' => 'nullable',
             'occupation' => 'nullable|string|max:100',
-            'marital_status' => 'nullable|in:Single,Married,Divorced,Widowed',
+            'marital_status' => 'nullable',
             'emergency_contact_name' => 'nullable|string|max:100',
             'emergency_contact_phone' => 'nullable|string|max:20',
         ]);
@@ -415,12 +473,14 @@ class UserController extends Controller
                 'password' => Hash::make(Str::random(10)),
                 'role' => $request->role,
                 'is_active' => $request->is_active,
+                'user_society_id' => $request->society_id ?? 0,
+                'user_residential_status' => $request->user_residential_status ?? ($request->society_id ? 'society' : 'individual'),
             ]);
 
             // Create UserDetails
             $userDetail = UserDetail::create([
                 'user_id' => $user->id,
-                'society_id' => $request->society_id,
+                'society_id' => $request->society_id ?? 0,
                 'full_name' => $request->full_name,
                 'email' => $request->email,
                 'phone' => $request->phone ?? null,
@@ -470,7 +530,7 @@ class UserController extends Controller
             'phone' => 'sometimes|nullable|string|max:25|unique:users,phone,' . $user_id,
             'language' => 'sometimes|string|max:50',
             'region' => 'sometimes|string|max:50',
-            'avatar' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
+            'avatar' => 'sometimes|image|mimes:jpg,jpeg,png',
         ];
 
         /* -------------------------------------------------
@@ -489,6 +549,15 @@ class UserController extends Controller
                 'selfie' => 'sometimes|image|mimes:jpg,jpeg,png|max:4096',
                 'latitude' => 'sometimes|numeric',
                 'longitude' => 'sometimes|numeric',
+                'address' => 'sometimes|string',
+                'emergency_contact_name' => 'sometimes|string|max:100',
+                'emergency_contact_phone' => 'sometimes|string|max:20',
+                'gender' => 'sometimes',
+                'date_of_birth' => 'sometimes|date',
+                'marital_status' => 'sometimes',
+                'occupation' => 'sometimes|string|max:100',
+                'floor_number' => 'sometimes|string|max:10',
+                'flat_id' => 'sometimes|string|max:10',
             ]);
         }
         /* -------------------------------------------------
@@ -501,9 +570,9 @@ class UserController extends Controller
                 'flat_id' => 'sometimes|integer',
                 'floor_number' => 'sometimes|integer',
                 'date_of_birth' => 'sometimes|date',
-                'gender' => 'sometimes|in:Male,Female,Other',
+                'gender' => 'sometimes',
                 'occupation' => 'sometimes|string|max:100',
-                'marital_status' => 'sometimes|in:Single,Married,Divorced,Widowed',
+                'marital_status' => 'sometimes',
                 'emergency_contact_name' => 'sometimes|string|max:100',
                 'emergency_contact_phone' => 'sometimes|string|max:20',
             ]);
@@ -556,6 +625,15 @@ class UserController extends Controller
                     'id_number',
                     'latitude',
                     'longitude',
+                    'address',
+                    'emergency_contact_name',
+                    'emergency_contact_phone',
+                    'gender',
+                    'date_of_birth',
+                    'marital_status',
+                    'occupation',
+                    'floor_number',
+                    'flat_id',
                 ]);
 
                 if ($request->hasFile('id_proof')) {
@@ -617,7 +695,7 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Profile update failed',
+                'message' => 'Profile update failed'. $e->getMessage(),
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -652,4 +730,32 @@ class UserController extends Controller
         ]);
     }
 
+    public function tempdeleteAccount(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        // already deleted check
+        if ($user->deleted_at) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User already deleted',
+            ]);
+        }
+
+        $user->deleted_at = now();
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'User deleted successfully',
+        ]);
+
+    }
 }

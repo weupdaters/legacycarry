@@ -22,12 +22,20 @@
       <!-- Right: Actions -->
       <ul class="list-unstyled topnav-menu mb-0 d-flex align-items-center">
 
+        <li class="d-none d-sm-flex me-2">
+          <span class="nav-link" id="current-date-time">{{ now()->format('F d, Y H:i:s') }}</span>
+        </li>
+
+
         <!-- Fullscreen -->
         <li class="d-none d-sm-flex me-2">
           <button type="button" class="btn nav-link" data-toggle="fullscreen">
             <i data-feather="maximize" class="noti-icon"></i>
           </button>
         </li>
+
+
+
 
         <!-- Light / Dark Mode -->
         <li class="d-none d-sm-flex me-2">
@@ -196,6 +204,12 @@
           <a href="{{ route('settings') }}" class="tp-link">
             <i data-feather="file-text"></i>
             <span> Settings </span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ route('admin.notifications.index') }}" class="tp-link">
+            <i data-feather="file-text"></i>
+            <span> Notifications </span>
           </a>
         </li>
         {{-- <li>

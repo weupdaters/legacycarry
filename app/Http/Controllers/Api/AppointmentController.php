@@ -19,41 +19,58 @@ class AppointmentController extends Controller
     // Approve Appointment & Generate Entry Token
     public function approve(Request $req, Appointment $appointment)
     {
-        // ❌ Guard already scanned → NEVER regenerate
-        if ($appointment->entry_token && $appointment->entry_token_used == 1) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Entry already scanned by guard. New entry pass not allowed.',
-            ], 422);
+
+
+        if ($appointment->society_id != 0) {
+            // ❌ Guard already scanned → NEVER regenerate
+            if ($appointment->entry_token && $appointment->entry_token_used == 1) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Entry already scanned by guard. New entry pass not allowed.',
+                ], 422);
+            }
+
+            // ❌ Token already generated but not yet scanned → reuse
+            if ($appointment->entry_token && $appointment->entry_token_used == 0) {
+                return response()->json([
+                    'status' => true,
+                    'entry_token' => $appointment->entry_token,
+                    'message' => 'Entry token already active.',
+                ]);
+            }
+
+
+            // ❌ Employer already inside society via OTHER appointment
+            $alreadyInside = Appointment::where('employer_id', $appointment->employer_id)
+                ->where('society_id', $appointment->society_id)
+                ->where('entry_token_used', 0)
+                ->whereNotNull('entry_token')
+                ->where('id', '!=', $appointment->id)
+                ->exists();
+
+            if ($alreadyInside) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Employer already has an active entry inside society.',
+                ], 422);
+            }
+
+            // ✅ Generate token ONLY ONCE
+            $appointment->entry_token = (string) Str::uuid();
+            $appointment->entry_token_used = 0;
+
+            // 🔔 Notify employer
+            PushNotificationService::sendToUser(
+                $appointment->employer_id,
+                'New Job Approved',
+                'Entry pass generated. Show QR at gate.',
+                [
+                    'appointment_id' => $appointment->id,
+                    'entry_token' => $appointment->entry_token,
+                ]
+            );
+
         }
-
-        // ❌ Token already generated but not yet scanned → reuse
-        if ($appointment->entry_token && $appointment->entry_token_used == 0) {
-            return response()->json([
-                'status' => true,
-                'entry_token' => $appointment->entry_token,
-                'message' => 'Entry token already active.',
-            ]);
-        }
-
-        // ❌ Employer already inside society via OTHER appointment
-        $alreadyInside = Appointment::where('employer_id', $appointment->employer_id)
-            ->where('society_id', $appointment->society_id)
-            ->where('entry_token_used', 0)
-            ->whereNotNull('entry_token')
-            ->where('id', '!=', $appointment->id)
-            ->exists();
-
-        if ($alreadyInside) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Employer already has an active entry inside society.',
-            ], 422);
-        }
-
-        // ✅ Generate token ONLY ONCE
-        $appointment->entry_token = (string) Str::uuid();
-        $appointment->entry_token_used = 0;
 
         // 💰 Payment
         $appointment->advance_amount =
@@ -65,20 +82,11 @@ class AppointmentController extends Controller
         $appointment->status = 'approved';
         $appointment->save();
 
-        // 🔔 Notify employer
-        PushNotificationService::sendToUser(
-            $appointment->employer_id,
-            'New Job Approved',
-            'Entry pass generated. Show QR at gate.',
-            [
-                'appointment_id' => $appointment->id,
-                'entry_token' => $appointment->entry_token,
-            ]
-        );
+
 
         return response()->json([
             'status' => true,
-            'entry_token' => $appointment->entry_token,
+            'entry_token' => $appointment->entry_token ?? null,
             'advance_amount' => $appointment->advance_amount,
             'final_amount' => $appointment->final_amount,
         ]);
@@ -364,7 +372,7 @@ class AppointmentController extends Controller
 
 
         //job post status update to completed
-        $jobPost = JobPost::find($appointment->job_id);
+        $jobPost = JobPost::find($jobApplication->job_id);
         if ($jobPost) {
             $jobPost->status = 'completed';
             $jobPost->completed_at = now();

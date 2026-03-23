@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\JobPost;
 use App\Models\Society;
 use App\Models\User;
@@ -18,7 +19,6 @@ use Illuminate\Support\Facades\Storage;
 class UserController extends Controller
 {
     use SafeFilter;
-
 
     public function index()
     {
@@ -490,6 +490,24 @@ class UserController extends Controller
     }
 
 
+    //get all notifications of user
+    public function notifications(Request $request)
+    {
+        $query = AppNotification::query();
 
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%')
+                  ->orWhere('sent_to', 'like', '%' . $request->search . '%');
+        }
+
+        $notifications = $query->orderByDesc('id')->paginate(10);
+
+        if ($request->ajax()) {
+            return view('admin.notifications.table', compact('notifications'))->render();
+        }
+
+        return view('admin.notifications.index', compact('notifications'));
+    }
 
 }

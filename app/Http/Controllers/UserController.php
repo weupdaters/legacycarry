@@ -18,8 +18,13 @@ class UserController extends Controller
 {
     use SafeFilter;
 
+
     public function Residents(Request $request)
     {
+        if (!has_permission('resident_index')) {
+            abort(403, 'Permission denied');
+        }
+
         $residents = User::where('role', 'customer')
             ->with('details')
 
@@ -51,12 +56,20 @@ class UserController extends Controller
 
     public function editResident($id)
     {
+        if (!has_permission('resident_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with('details')->findOrFail($id);
         return view('member.residents.edit', compact('user'));
     }
 
     public function updateResident(Request $request, $id)
     {
+        if (!has_permission('resident_update')) {
+            abort(403);
+        }
+
         $user = User::findOrFail($id);
 
         // ---------------------
@@ -142,6 +155,9 @@ class UserController extends Controller
 
     public function Employees(Request $request)
     {
+        if (!has_permission('service_provider_index')) {
+            abort(403, 'Permission denied');
+        }
 
         $query = $request->input('query');
         $societyId = optional(auth()->user()->details)->society_id;
@@ -213,6 +229,9 @@ class UserController extends Controller
 
     public function viewEmployees($id)
     {
+        if (!has_permission('service_provider_show')) {
+            abort(403, 'Permission denied');
+        }
 
         $societyId = optional(auth()->user()->details)->society_id;
 
@@ -235,6 +254,10 @@ class UserController extends Controller
 
     public function editEmployees($id)
     {
+        if (!has_permission('service_provider_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with('employee')->findOrFail($id);
         return view('member.employers.edit', compact('user'));
     }
@@ -249,11 +272,19 @@ class UserController extends Controller
 
     public function create()
     {
+        if (!has_permission('user_create')) {
+            abort(403, 'Permission denied');
+        }
+
         return view('member.users.create');
     }
 
     public function store(Request $request)
     {
+        if (!has_permission('user_create')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:25',
@@ -288,11 +319,19 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         return view('users.edit', compact('user'));
     }
 
     public function update(Request $request, User $user)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:25',
@@ -331,6 +370,10 @@ class UserController extends Controller
 
     public function toggleBan($id)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::findOrFail($id);
 
         $user->is_active = !$user->is_active;
@@ -341,6 +384,10 @@ class UserController extends Controller
 
     public function viewResident($id)
     {
+        if (!has_permission('resident_show')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with(['details',
         'details.society',
         'details.flat'])->findOrFail($id);
@@ -359,6 +406,10 @@ class UserController extends Controller
 
     public function destroy($id)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::findOrFail($id);
         $user->delete();
 
@@ -367,6 +418,10 @@ class UserController extends Controller
 
     public function updateVerification(Request $request, $id)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         // Validate allowed values
         $request->validate([
             'verification_status' => 'required|in:unverified,pending,verified,rejected',
@@ -385,6 +440,10 @@ class UserController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
+        if (!has_permission('user_update')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'status' => 'required|in:pending,approved,rejected',
             'remarks' => 'nullable|string|max:255',
@@ -401,6 +460,10 @@ class UserController extends Controller
 
     public function Guards(Request $request)
     {
+        if (!has_permission('guard_index')) {
+            abort(403, 'Permission denied');
+        }
+
         $guards = User::where('role', 'guard')
             ->with('details')
 
@@ -430,18 +493,30 @@ class UserController extends Controller
 
     public function editGuard($id)
     {
+        if (!has_permission('guard_update')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with('details')->findOrFail($id);
         return view('member.guards.edit', compact('user'));
     }
 
     public function destroyGuard($id)
     {
+        if (!has_permission('guard_update')) {
+            abort(403, 'Permission denied');
+        }
+
         return $this->destroy($id);
     }
 
 
     public function toggleBanGuard($id)
     {
+        if (!has_permission('guard_update')) {
+            abort(403, 'Permission denied');
+        }
+
         return $this->toggleBan($id);
     }
 

@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftController;
+use App\Http\Controllers\Api\SocietyController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserDocumentController;
 use App\Http\Controllers\Api\UserPayoutMethodController;
@@ -40,9 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
-Route::get('/societies', [App\Http\Controllers\Api\SocietyController::class, 'index']);
-Route::get('/societies/{id}', [App\Http\Controllers\Api\SocietyController::class, 'show']);
-Route::post('/societies-create', [App\Http\Controllers\Api\SocietyController::class, 'store']);
+Route::get('/societies', [SocietyController::class, 'index']);
+Route::get('/societies/{id}', [SocietyController::class, 'show']);
+Route::post('/societies-create', [SocietyController::class, 'store']);
 
 
 Route::get('/countries', [LocationController::class, 'getAll']);
@@ -61,9 +62,20 @@ Route::post('/resident-users-create', [UserController::class, 'residentUsersCrea
 Route::post('/login-otp', [UserController::class, 'loginWithOtp']);
 
 
+/*|--------------------------------------------------------------------------
+    | SERVICES AND CATEGORIES
+    |--------------------------------------------------------------------------
+    */
+
+Route::get('/service-categories', [ServiceController::class, 'categories']);
+Route::get('/services/{id?}', [ServiceController::class, 'servicesByCategory']);
+
 // Other API routes...
 
 Route::middleware('auth:sanctum')->group(function () {
+    //temp user delete account
+
+    Route::post('/temp-delete-user', [UserController::class, 'tempdeleteAccount']);
     // CRUD API for Job Posts
     Route::get('/jobs/{user_id?}', [JobPostController::class, 'index']);        // Get all jobs
     Route::get('/job-detials/{id}', [JobPostController::class, 'show']);    // Get single job
@@ -76,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/filter-jobs/{employer_id}/{status}', [JobApplicationController::class, 'filterJobsByStatus']);
     //Route::post('job/status', [JobPostController::class, 'updateEmployerJobStatus']);
     Route::get('/resident-jobs/{id}/{status?}/{pay_type?}', [JobPostController::class, 'residentJobByID']);
+    Route::get('/resident-dashboard/{user_id}', [JobPostController::class, 'residentDashboard']);
 
     // search jobs
     Route::post('/search-jobs', [JobPostController::class, 'searchJobs']);
@@ -324,17 +337,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/audit/passes/{pass_id}', [AuditController::class, 'passLogs']);
     Route::get('/audit/search', [AuditController::class, 'search']);
 
-    /*|--------------------------------------------------------------------------
-    | SERVICES AND CATEGORIES
-    |--------------------------------------------------------------------------
-    */
 
-    Route::get('/service-categories', [ServiceController::class, 'categories']);
-    Route::get('/services/{id?}', [ServiceController::class, 'servicesByCategory']);
 
 
     Route::post('/labor/earnings', [PaymentController::class, 'laborEarnings']);
     Route::get('/labor/appointment/payments', [PaymentController::class, 'laborAppointmentPayments']);
+
+
+    Route::get('/resident/payments', [PaymentController::class, 'residentPayments']);
+
 
 
     Route::get('/guard/filter-passes/{society_id}', [GuardController::class, 'filterPasses']);
@@ -342,6 +353,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     Route::prefix('guard')->group(function () {
+        Route::get('/dashboard/{society_id}', [GuardController::class, 'dashboardSummary']);
         Route::post('identify', [GuardController::class, 'identify']);
         Route::post('approve-entry', [GuardController::class, 'approveEntry']);
         Route::post('approve-exit', [GuardController::class, 'approveExit']);
@@ -385,6 +397,15 @@ Route::middleware('auth:sanctum')->group(function () {
             '/shift-requests/{id}/decide',
             [GuardShiftController::class, 'decide']
         );
+    });
+
+
+    Route::prefix('notifications')->group(function () {
+
+        Route::post('device/token', [NotificationController::class, 'registerToken']);
+        Route::post('push-notification/send', [NotificationController::class, 'send']);
+        Route::get('list/{user_id}', [NotificationController::class, 'index']);
+
     });
 
 

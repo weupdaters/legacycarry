@@ -4,6 +4,8 @@ use App\Models\ResidentAssignment;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserDetail;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 if (!function_exists('setting')) {
 
@@ -91,4 +93,29 @@ if (!function_exists('getSocietyId')) {
 
         return $userDetail?->society_id;
     }
+}
+
+
+if (!function_exists('has_permission')) {
+
+    function has_permission($permissionCode)
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+
+        $user = Auth::user();
+
+        // Super admin bypass
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return DB::table('permission_user')
+            ->join('permissions', 'permissions.id', '=', 'permission_user.permission_id')
+            ->where('permission_user.user_id', $user->id)
+            ->where('permissions.permission_code', $permissionCode)
+            ->exists();
+    }
+
 }

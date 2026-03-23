@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Payment;
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
@@ -17,16 +17,18 @@ class PaymentController extends Controller
     {
         $req->validate([
             'user_id' => 'required|exists:users,id',
-            'payment_reference' => 'required|string'
+            'payment_reference' => 'required|string',
         ]);
 
         // ❌ Advance already paid for this appointment
         if ($appointment->advance_paid) {
             return response()->json([
                 'status' => false,
-                'message' => 'Advance already paid'
+                'message' => 'Advance already paid',
             ], 422);
         }
+
+
 
         // 🔍 Find payment reference
         $payment = Payment::where('payment_id', $req->payment_reference)->first();
@@ -34,15 +36,24 @@ class PaymentController extends Controller
         if (!$payment) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference not found'
+                'message' => 'Payment reference not found',
             ], 404);
         }
+
+        // ✅ VERIFY FROM CASHFREE
+        if (!$this->verifyCashfreePayment($payment->payment_id)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment not completed or failed',
+            ], 422);
+        }
+
 
         // ❌ Payment already used
         if ($payment->payment_type != 'advance' && $payment->payment_type != null) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference already used'
+                'message' => 'Payment reference already used',
             ], 422);
         }
 
@@ -50,7 +61,7 @@ class PaymentController extends Controller
         if ($payment->appointment_id && $payment->appointment_id !== $appointment->id) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference already linked to another appointment'
+                'message' => 'Payment reference already linked to another appointment',
             ], 422);
         }
 
@@ -59,13 +70,13 @@ class PaymentController extends Controller
         $appointment->save();
 
         $payment->update([
-            'appointment_id'     => $appointment->id,
-            'target_account'     => 'admin'
+            'appointment_id' => $appointment->id,
+            'target_account' => 'admin',
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => 'Advance payment recorded successfully'
+            'message' => 'Advance payment recorded successfully',
         ]);
     }
 
@@ -79,14 +90,14 @@ class PaymentController extends Controller
     {
         $req->validate([
             'user_id' => 'required|exists:users,id',
-            'payment_reference' => 'required|string'
+            'payment_reference' => 'required|string',
         ]);
 
         // ❌ Final already paid
         if ($appointment->final_paid) {
             return response()->json([
                 'status' => false,
-                'message' => 'Final payment already paid'
+                'message' => 'Final payment already paid',
             ], 422);
         }
 
@@ -96,15 +107,24 @@ class PaymentController extends Controller
         if (!$payment) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference not found'
+                'message' => 'Payment reference not found',
             ], 404);
+        }
+
+        $verifiedPayment = $this->verifyCashfreePayment($payment->payment_id);
+
+        if (!$verifiedPayment) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment not completed or failed',
+            ], 422);
         }
 
         // ❌ Payment already used
         if ($payment->payment_type != 'final' && $payment->payment_type != null) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference already used'
+                'message' => 'Payment reference already used',
             ], 422);
         }
 
@@ -112,7 +132,7 @@ class PaymentController extends Controller
         if ($payment->appointment_id && $payment->appointment_id !== $appointment->id) {
             return response()->json([
                 'status' => false,
-                'message' => 'Payment reference already linked to another appointment'
+                'message' => 'Payment reference already linked to another appointment',
             ], 422);
         }
 
@@ -121,25 +141,82 @@ class PaymentController extends Controller
         $appointment->save();
 
         $payment->update([
-            'appointment_id'     => $appointment->id,
-            'target_account'     => 'employer'
+            'appointment_id' => $appointment->id,
+            'target_account' => 'employer',
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => 'Final payment recorded successfully'
+            'message' => 'Final payment recorded successfully',
         ]);
     }
 
 
 
+    private function verifyCashfreePayment($orderId)
+    {
+        try {
+
+            // find local payment first
+            $payment = Payment::where('payment_id', $orderId)->first();
+
+            if (!$payment) {
+                return false;
+            }
+
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'x-client-id' => config('services.cashfree.app_id'),
+                'x-client-secret' => config('services.cashfree.secret_key'),
+                'x-api-version' => '2022-09-01',
+            ])->get(config('services.cashfree.base_url') . '/' . $orderId . '/payments');
+
+            if (!$response->successful()) {
+                return false;
+            }
+
+            $payments = $response->json();
+
+            if (!is_array($payments)) {
+                return false;
+            }
+
+            foreach ($payments as $p) {
+
+                if (
+                    isset($p['payment_status']) &&
+                    strtoupper($p['payment_status']) === 'SUCCESS'
+                ) {
+
+                    // ✅ UPDATE DATABASE ONLY IF NOT ALREADY SUCCESS
+                    if ($payment->status !== 'success') {
+
+                        $payment->update([
+                            'status' => 'success',
+                            'paid_at' => now(),
+                            'payment_reference' => $p['cf_payment_id'] ?? $payment->payment_reference,
+                            'payment_method' => $p['payment_method'] ?? $payment->payment_method,
+                        ]);
+                    }
+
+                    return $payment; // return updated model
+                }
+            }
+
+            return false;
+
+        } catch (\Exception $e) {
+
+            \Log::error('Cashfree verify failed: ' . $e->getMessage());
+            return false;
+        }
+    }
 
     public function laborEarnings(Request $request)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'payment_type' => 'nullable|in:advance,final',
-            'date' => 'nullable|date'
+            'date' => 'nullable|date',
         ]);
 
         $user = User::find($request->user_id);
@@ -148,7 +225,7 @@ class PaymentController extends Controller
         if ($user->role !== 'labor') {
             return response()->json([
                 'status' => false,
-                'message' => 'User is not labor'
+                'message' => 'User is not labor',
             ], 403);
         }
 
@@ -216,9 +293,9 @@ class PaymentController extends Controller
             'user_id' => $user->id,
             'summary' => [
                 'current_balance' => $currentBalance,
-                'pending_payout' => $pendingPayout
+                'pending_payout' => $pendingPayout,
             ],
-            'transactions' => $transactions
+            'transactions' => $transactions,
         ]);
     }
 
@@ -227,7 +304,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'appointment_id' => 'required|exists:appointments,id'
+            'appointment_id' => 'required|exists:appointments,id',
         ]);
 
         $user = User::find($request->user_id);
@@ -235,7 +312,7 @@ class PaymentController extends Controller
         if ($user->role !== 'labor') {
             return response()->json([
                 'status' => false,
-                'message' => 'User is not labor'
+                'message' => 'User is not labor',
             ], 403);
         }
 
@@ -245,7 +322,7 @@ class PaymentController extends Controller
         if ($appointment->labor_id !== $user->id) {
             return response()->json([
                 'status' => false,
-                'message' => 'Access denied'
+                'message' => 'Access denied',
             ], 403);
         }
 
@@ -258,10 +335,97 @@ class PaymentController extends Controller
             'appointment_id' => $appointment->id,
             'advance_paid' => $appointment->advance_paid,
             'final_paid' => $appointment->final_paid,
-            'payments' => $payments
+            'payments' => $payments,
         ]);
     }
 
-    
-    
+    /**
+ * Resident Payment History & Summary
+ * payer_id = resident
+ */
+    public function residentPayments(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'payment_type' => 'nullable|in:advance,final',
+            'date' => 'nullable|date',
+        ]);
+
+        $resident = User::find($request->user_id);
+
+        // ❌ Only resident allowed
+        if ($resident->role !== 'customer') {
+            return response()->json([
+                'status' => false,
+                'message' => 'User is not a resident',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUMMARY
+        |--------------------------------------------------------------------------
+        */
+
+        $totalPaid = Payment::where('payer_id', $resident->id)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $advancePaid = Payment::where('payer_id', $resident->id)
+            ->where('payment_type', 'advance')
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $finalPaid = Payment::where('payer_id', $resident->id)
+            ->where('payment_type', 'final')
+            ->where('status', 'success')
+            ->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | PAYMENT HISTORY
+        |--------------------------------------------------------------------------
+        */
+
+        $query = Payment::where('payer_id', $resident->id)
+            ->where('status', 'success')
+            ->with([
+                'payee:id,name',           // appointment
+            ]);
+
+        if ($request->filled('payment_type')) {
+            $query->where('payment_type', $request->payment_type);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('paid_at', $request->date);
+        }
+
+        $payments = $query
+            ->orderByDesc('paid_at')
+            ->get()
+            ->map(function ($payment) {
+                return [
+                    'payment_id' => $payment->id,
+                    'labor_name' => optional($payment->payee)->name ?? 'Labor',
+                    'payment_type' => $payment->payment_type,
+                    'amount' => '₹' . number_format($payment->amount, 0),
+                    'raw_amount' => $payment->amount,
+                    'paid_at' => optional($payment->paid_at)->format('d M Y, h:i A'),
+                ];
+            });
+
+        return response()->json([
+            'status' => true,
+            'resident_id' => $resident->id,
+            'summary' => [
+                'total_paid' => $totalPaid,
+                'advance_paid' => $advancePaid,
+                'final_paid' => $finalPaid,
+            ],
+            'payments' => $payments,
+        ]);
+    }
+
+
 }

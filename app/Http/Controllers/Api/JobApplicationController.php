@@ -177,7 +177,9 @@ class JobApplicationController extends Controller
 
                 return [
                     'application_id' => $application->id,
+                    'appointment_id' => $appointment?->id,
                     'job_id' => $application->job_id,
+                    'applying_employer_amount' => $application->expected_cost,
                     'user_id' => $application->user_id,
                     'status' => $application->status,
                     'shortlisted' => $application->shortlisted,
@@ -189,6 +191,7 @@ class JobApplicationController extends Controller
                     'about' => $application->employee->about,
                     'id_number' => $application->employee->id_number,
                     'message_to_employer' => $application->message_to_employer,
+                    'certificate_photo' => $application->certificate_photo ? $application->certificate_photo : null,
                     // 💰 DERIVED PAYMENT INFO (NO PARAM USED)
                     'payment_stage' => $paymentStage,   // advance | final | completed | none
                     'payment_amount' => $paymentAmount,
@@ -369,15 +372,25 @@ class JobApplicationController extends Controller
              */
             if ($validated['status'] === 'hired') {
 
-                $resident = User::find($application->resident_id)->with('society')->first();
+                $resident = User::with([
+                     'details.society',
+                 ])
+                 ->find($application->resident_id);
+
+                if ($resident->details->society_id == 0) {
+                    $entry_token = null;
+                } else {
+                    $entry_token = \Str::uuid();
+                }
+
+
                 $expectedCost = $application->expected_cost ?? 0;
                 $advance = $expectedCost * 0.10;
 
                 $appointment = Appointment::create([
                     'resident_id' => $application->resident_id,
                     'employer_id' => $application->user_id,
-                    'society_id' => $resident->society->id,
-
+                    'society_id' => $resident->details->society_id ?? 0,
                     'total_amount' => $expectedCost,
                     'advance_percentage' => 10,
                     'advance_amount' => $advance,
@@ -386,7 +399,7 @@ class JobApplicationController extends Controller
                     'status' => 'pending',
                     'job_application_id' => $application->id,
 
-                    'entry_token' => \Str::uuid(),
+                    'entry_token' => $entry_token,
                     'entry_token_used' => 0,
                 ]);
 
@@ -416,16 +429,17 @@ class JobApplicationController extends Controller
 
     public function filterJobsByStatus($employer_id, $status)
     {
-        if (!in_array($status, ['active', 'upcoming', 'completed'])) {
+        if (!in_array($status, ['active', 'upcoming', 'applied', 'completed'])) {
             return response()->json([
                 'status' => false,
                 'message' => 'Invalid status type.',
-            ], 422);
+            ], 200);
         }
 
         $statusMap = [
             'active' => ['hired'],
             'upcoming' => ['applied'],
+            'applied' => ['applied'],
             'completed' => ['completed'],
         ];
 
@@ -451,6 +465,11 @@ class JobApplicationController extends Controller
                 $exitToken = null;
 
 
+                // society_id = 0 → individual job (NO guard / NO QR)
+                // society_id > 0 → society job (FULL flow)
+
+
+
 
                 // ---------- FLOW LOGIC ----------
                 if (
@@ -458,37 +477,75 @@ class JobApplicationController extends Controller
                     $appointment
                 ) {
 
-                    if ($appointment->advance_paid == 0) {
-                        $jobFlowState = 'advance_pending';
-                        $canGuardEntry = true;
-                    } elseif (!$appointment->entry_token_used) {
-                        $jobFlowState = 'guard_entry_pending';
-                        $canGuardEntry = true;
-                    } elseif ($appointment->entry_token_used && is_null($appointment->job_start_time)) {
-                        $jobFlowState = 'job_start_pending';
-                        $canStartJob = true;
-                    } elseif ($appointment->job_start_time && is_null($appointment->job_end_time)) {
-                        $jobFlowState = 'job_in_progress';
-                        $canEndJob = true;
-                    } elseif ($appointment->resident_confirmation === 'pending') {
-                        $jobFlowState = 'resident_confirmation_pending';
-                        $canResidentConfirm = true;
-                    } elseif (!$appointment->exit_token_used) {
-                        $jobFlowState = 'exit_pending';
-                        $canExitJob = true;
-                        $exitToken = $appointment->exit_token; // show token only if NOT used
-                    } elseif ($appointment->exit_token_used) {
-                        $jobFlowState = 'completed';
-                        $isCompleted = true;
+                    // ---------- SOCIETY JOB ----------
+                    if ($appointment->society_id != 0) {
+
+                        if ($appointment->advance_paid == 0) {
+                            $jobFlowState = 'advance_pending';
+                            $canGuardEntry = true;
+
+                        } elseif (!$appointment->entry_token_used) {
+                            // 🔹 GUARD ENTRY ONLY FOR SOCIETY
+                            $jobFlowState = 'guard_entry_pending';
+                            $canGuardEntry = true;
+
+                        } elseif ($appointment->entry_token_used && is_null($appointment->job_start_time)) {
+                            $jobFlowState = 'job_start_pending';
+                            $canStartJob = true;
+
+                        } elseif ($appointment->job_start_time && is_null($appointment->job_end_time)) {
+                            $jobFlowState = 'job_in_progress';
+                            $canEndJob = true;
+
+                        } elseif ($appointment->resident_confirmation === 'pending') {
+                            $jobFlowState = 'resident_confirmation_pending';
+                            $canResidentConfirm = true;
+
+                        } elseif (!$appointment->exit_token_used) {
+                            // 🔹 EXIT TOKEN ONLY FOR SOCIETY
+                            $jobFlowState = 'exit_pending';
+                            $canExitJob = true;
+                            $exitToken = $appointment->exit_token;
+
+                        } else {
+                            $jobFlowState = 'completed';
+                            $isCompleted = true;
+                        }
+
+                    } else {
+
+                        // ❌ NO guard_entry_pending
+                        // ❌ NO exit_pending
+                        if ($appointment->advance_paid == 0) {
+                            $jobFlowState = 'advance_pending';
+                            $canGuardEntry = true;
+                        } elseif (is_null($appointment->job_start_time)) {
+                            $jobFlowState = 'job_start_pending';
+                            $canStartJob = true;
+
+                        } elseif ($appointment->job_start_time && is_null($appointment->job_end_time)) {
+                            $jobFlowState = 'job_in_progress';
+                            $canEndJob = true;
+
+                        } elseif ($appointment->resident_confirmation === 'pending') {
+                            $jobFlowState = 'resident_confirmation_pending';
+                            $canResidentConfirm = true;
+
+                        } else {
+                            $jobFlowState = 'completed';
+                            $isCompleted = true;
+                        }
                     }
                 }
+
 
                 return [
                     // 🔹 APPLICATION DATA
                     'application_id' => $application->id,
+                    'appointment_id' => $appointment?->id,
                     'job_id' => $application->job_id,
                     'status' => $application->status,
-
+                    'society_job' => $appointment->society_id ?? 0,
                     // 🔹 JOB POST DATA (FULL OBJECT)
                     'job_post' => $application->jobPost,
 

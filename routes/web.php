@@ -48,26 +48,26 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::get('/employees/{id}/edit', [UserController::class, 'editEmployees'])->name('employees.edit');
     Route::patch('/employees/{id}', [UserController::class, 'updateEmployees'])->name('employees.update');
     Route::get('/employees/{id}/view', [UserController::class, 'viewEmployees'])->name('employees.view');
-    Route::delete('/employees/{id}', [SocietyController::class, 'destroyEmployees'])->name('employees.destroy');
+    Route::delete('/employees/{id}', [UserController::class, 'destroyEmployees'])->name('employees.destroy');
     Route::patch('/employees/{id}/update-verification', [UserController::class, 'updateVerification'])->name('employees.update-verification');
     Route::patch('/employees/documents/{id}/update-status', [UserController::class, 'updateStatus'])->name('employees.documents.update-status');
 
 
     // Job Posts (Web Routes)
-    Route::get('/jobs', [JobPostController::class, 'index'])->name('jobs.index');            // List all jobs
-    Route::get('/jobs/create', [JobPostController::class, 'create'])->name('jobs.create');  // Show create form
-    Route::post('/jobs', [JobPostController::class, 'store'])->name('jobs.store');          // Save job
-    Route::get('/job-view/{id}', [JobPostController::class, 'view'])->name('jobs.view'); // Show job details (AJAX)
+    // Route::get('/jobs', [JobPostController::class, 'index'])->name('jobs.index');            // List all jobs
+    // Route::get('/jobs/create', [JobPostController::class, 'create'])->name('jobs.create');  // Show create form
+    // Route::post('/jobs', [JobPostController::class, 'store'])->name('jobs.store');          // Save job
+    // Route::get('/job-view/{id}', [JobPostController::class, 'view'])->name('jobs.view'); // Show job details (AJAX)
 
-    Route::get('/jobs/{id}/applications', [JobPostController::class, 'applications'])
-     ->name('jobs.applications');
+    // Route::get('/jobs/{id}/applications', [JobPostController::class, 'applications'])
+    //  ->name('jobs.applications');
 
 
-    Route::get('/jobs/{id}', [JobPostController::class, 'show'])->name('jobs.show');        // Show single job
-    Route::get('/jobs/{id}/edit', [JobPostController::class, 'edit'])->name('jobs.edit');   // Show edit form
-    Route::put('/jobs/{id}', [JobPostController::class, 'update'])->name('jobs.update');    // Update job
+    // Route::get('/jobs/{id}', [JobPostController::class, 'show'])->name('jobs.show');        // Show single job
+    // Route::get('/jobs/{id}/edit', [JobPostController::class, 'edit'])->name('jobs.edit');   // Show edit form
+    // Route::put('/jobs/{id}', [JobPostController::class, 'update'])->name('jobs.update');    // Update job
 
-    Route::delete('/jobs/{id}', [JobPostController::class, 'destroy'])->name('jobs.destroy'); // Delete job
+    // Route::delete('/jobs/{id}', [JobPostController::class, 'destroy'])->name('jobs.destroy'); // Delete job
 
 
     Route::get('guards', [GuardController::class, 'index'])->name('guards.index');
@@ -99,16 +99,16 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
 
 
     // Export routes
-    Route::get('/societies/export', [SocietyController::class, 'export'])->name('societies.export');
-    Route::get('/residents/export', [ExcelController::class, 'exportResidentsFull'])->name('residents.export');
-    Route::get('/guards/export', [ExcelController::class, 'exportGuards'])->name('guards.export');
-    Route::get('/employees/export', [ExcelController::class, 'exportEmployeesFull'])->name('employees.export');
-    Route::get('/job/export', [ExcelController::class, 'exportJobsFull'])
-    ->name('jobs.export');
-    Route::get('/resident-assign/export', [ExcelController::class, 'exportResidentAssign'])
-    ->name('resident.assign.export');
-    Route::get('/admin/jobs/{id}/applications/export', [ExcelController::class, 'exportJobApplications'])
-    ->name('admin.jobs.applications.export');
+    // Route::get('/societies/export', [ExcelController::class, 'export'])->name('societies.export');
+    // Route::get('/residents/export', [ExcelController::class, 'exportResidentsFull'])->name('residents.export');
+    // Route::get('/guards/export', [ExcelController::class, 'exportGuards'])->name('guards.export');
+    // Route::get('/employees/export', [ExcelController::class, 'exportEmployeesFull'])->name('employees.export');
+    // Route::get('/job/export', [ExcelController::class, 'exportJobsFull'])
+    // ->name('jobs.export');
+    // Route::get('/resident-assign/export', [ExcelController::class, 'exportResidentAssign'])
+    // ->name('resident.assign.export');
+    // Route::get('/admin/jobs/{id}/applications/export', [ExcelController::class, 'exportJobApplications'])
+    // ->name('admin.jobs.applications.export');
 
 
 
@@ -127,3 +127,7 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
 
 
 });
+
+
+Route::get('/page/{slug}', [IndexController::class, 'singlePage'])
+    ->where('slug', 'privacy_policy|terms_and_conditions|return_refund_policy');

@@ -9,10 +9,11 @@
         Guard Shifts
         <small class="text-muted">({{ ucfirst($statusFilter) }})</small>
       </h3>
-
-      <a href="{{ route('member.shift.guards.assign') }}" class="btn btn-primary">
-        + Assign Shift
-      </a>
+      @if (has_permission('guard_shift_create'))
+        <a href="{{ route('member.shift.guards.assign') }}" class="btn btn-primary">
+          + Assign Shift
+        </a>
+      @endif
     </div>
 
     {{-- FILTERS --}}
@@ -116,12 +117,13 @@
                 </td>
 
                 <td>{{ $shift->assignedByUser->name ?? '-' }}</td>
-
-                <td>
-                  <a href="{{ route('shift.guards.show', $shift->id) }}" class="btn btn-sm btn-outline-primary">
-                    View
-                  </a>
-                </td>
+                @if (has_permission('guard_shift_show'))
+                  <td>
+                    <a href="{{ route('member.shift.guards.show', $shift->id) }}" class="btn btn-sm btn-outline-primary">
+                      View
+                    </a>
+                  </td>
+                @endif
               </tr>
             @empty
               <tr>

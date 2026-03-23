@@ -73,9 +73,11 @@
                       </td>
 
                       <td>
-                        <a href="{{ route('member.residents.view', $resident->user->id) }}" class="btn btn-info btn-sm">
-                          View
-                        </a>
+                        @if (has_permission('resident_show'))
+                          <a href="{{ route('member.residents.view', $resident->user->id) }}" class="btn btn-info btn-sm">
+                            View
+                          </a>
+                        @endif
 
 
 

@@ -23,11 +23,21 @@ class Employee extends Model
         'selfie_path',
         'latitude',
         'longitude',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'gender',
+        'marital_status',
+        'occupation',
+        'floor_number',
+        'flat_id',
+        'date_of_birth',
     ];
 
     protected $casts = [
         'services' => 'array',
         'phone_verified' => 'boolean',
+        'date_of_birth' => 'date',
     ];
 
     public function user()

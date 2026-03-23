@@ -78,6 +78,10 @@ class IndexController extends Controller
 
     public function Residents()
     {
+        if (!has_permission('resident_index')) {
+            abort(403, 'Permission denied');
+        }
+
         $userId = auth()->id();
 
         // Find UserDetail using user_id
@@ -109,6 +113,10 @@ class IndexController extends Controller
 
     public function viewResident($id)
     {
+        if (!has_permission('resident_show')) {
+            abort(403, 'Permission denied');
+        }
+
         $loggedUserId = auth()->id();
 
         // Logged-in user's detail
@@ -155,6 +163,10 @@ class IndexController extends Controller
 
     public function updateVerification(Request $request, $id)
     {
+        if (!has_permission('resident_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         // Validate allowed values
         $request->validate([
             'verification_status' => 'required|in:unverified,pending,verified,rejected',
@@ -173,6 +185,10 @@ class IndexController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
+        if (!has_permission('resident_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'status' => 'required|in:pending,approved,rejected',
             'remarks' => 'nullable|string|max:255',
@@ -190,6 +206,10 @@ class IndexController extends Controller
 
     public function jobsIndex()
     {
+        if (!has_permission('resident_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $loggedUserId = auth()->id();
 
         // Logged-in user's detail
@@ -208,6 +228,10 @@ class IndexController extends Controller
 
     public function ResiVehicleUpdateStatus(Request $request, $id)
     {
+        if (!has_permission('resident_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'status' => 'required|in:active,inactive,pending',
         ]);
@@ -222,5 +246,28 @@ class IndexController extends Controller
 
 
 
+    public function singlePage($slug)
+    {
+        $allowedPages = [
+            'privacy_policy',
+            'terms_and_conditions',
+            'return_refund_policy',
+        ];
 
+        if (!in_array($slug, $allowedPages)) {
+            abort(404);
+        }
+
+        $page = \App\Models\Setting::where('key', $slug)->first();
+
+        if (!$page) {
+            abort(404);
+        }
+
+
+        return view('pages.index', [
+            'title' => $page->label,
+            'content' => $page->value,
+        ]);
+    }
 }

@@ -24,6 +24,9 @@ class GuardController extends Controller
     ======================= */
     public function index(Request $request)
     {
+        if (!has_permission('guard_index')) {
+            abort(403, 'Permission denied');
+        }
 
         $guards = User::with(['details.society'])
             ->where('role', 'guard')
@@ -56,6 +59,9 @@ class GuardController extends Controller
     ======================= */
     public function create()
     {
+        if (!has_permission('guard_create')) {
+            abort(403, 'Permission denied');
+        }
 
         return view('member.guards.create');
     }
@@ -65,6 +71,10 @@ class GuardController extends Controller
     ======================= */
     public function store(Request $request)
     {
+        if (!has_permission('guard_create')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -117,6 +127,10 @@ class GuardController extends Controller
     ======================= */
     public function edit($id)
     {
+        if (!has_permission('guard_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with('details', 'details.society')
             ->where('role', 'guard')
             ->findOrFail($id);
@@ -129,6 +143,10 @@ class GuardController extends Controller
     ======================= */
     public function update(Request $request, $id)
     {
+        if (!has_permission('guard_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with('details', 'details.society')->findOrFail($id);
 
         $request->validate([
@@ -183,6 +201,10 @@ class GuardController extends Controller
     ======================= */
     public function view($id)
     {
+        if (!has_permission('guard_show')) {
+            abort(403, 'Permission denied');
+        }
+
         $user = User::with(['details', 'details.society', 'details.flat'])
             ->where('role', 'guard')
             ->findOrFail($id);
@@ -197,6 +219,10 @@ class GuardController extends Controller
     ======================= */
     public function toggleStatus(Request $request)
     {
+        if (!has_permission('guard_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $guard = User::whereHas('assignment', function ($q) {
             $q->where('society_id', auth()->user()->assignment->society_id);
         })
@@ -213,6 +239,10 @@ class GuardController extends Controller
     ======================= */
     public function destroy($id)
     {
+        if (!has_permission('guard_delete')) {
+            abort(403, 'Permission denied');
+        }
+
         UserDetail::where('user_id', $id)->delete();
         User::where('id', $id)->delete();
 
@@ -221,6 +251,9 @@ class GuardController extends Controller
 
     public function allGuardHistory(Request $request)
     {
+        if (!has_permission('pass_history_index')) {
+            abort(403, 'Permission denied');
+        }
         // ---------------- AUTH SOCIETY ----------------
         $societyId = auth()->user()->assignment->society_id ?? null;
 

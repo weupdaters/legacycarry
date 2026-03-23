@@ -140,4 +140,28 @@ class AdminChatController extends Controller
         return 'Firestore chats synced into MySQL successfully';
     }
 
+    public function chatBetweenResidentEmployer($residentId, $employerId)
+    {
+        $resident = User::findOrFail($residentId);
+        $employer = User::findOrFail($employerId);
+
+        // create chat id same as firebase
+        $ids = [$residentId,$employerId];
+        sort($ids);
+
+        $chatId = $ids[0].'_'.$ids[1];
+
+        $users = [
+            $resident->id => $resident->name,
+            $employer->id => $employer->name,
+        ];
+
+        return view('admin.chats.index', compact(
+            'resident',
+            'employer',
+            'chatId',
+            'users'
+        ));
+    }
+
 }

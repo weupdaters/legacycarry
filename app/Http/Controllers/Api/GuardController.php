@@ -12,6 +12,7 @@ use App\Models\ScanHistory;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleLog;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,6 +22,66 @@ class GuardController extends Controller
      * Identify the token across Pass, Appointment, Vehicle.
      * Returns type and record snapshot.
      */
+    /**
+ * Dashboard summary for passes & visitors
+ * GET /api/guard/dashboard/{society_id}
+ */
+    public function dashboardSummary($societyId)
+    {
+        $today = now()->toDateString();
+
+        // -------------------------------
+        // TOTAL PASSES
+        // -------------------------------
+        $totalPasses = Pass::where('society_id', $societyId)->count();
+
+        // -------------------------------
+        // TODAY PASSES
+        // -------------------------------
+        $todayPasses = Pass::where('society_id', $societyId)
+            ->whereDate('created_at', $today)
+            ->count();
+
+        // -------------------------------
+        // ACTIVE VISITORS (INSIDE)
+        // token_used = 1 AND scanned_out_at IS NULL
+        // -------------------------------
+        $activeVisitors = Pass::where('society_id', $societyId)
+            ->where('token_used', 1)
+            ->whereNull('scanned_out_at')
+            ->count();
+
+        // -------------------------------
+        // EXITED VISITORS (TODAY)
+        // -------------------------------
+        $exitedVisitors = Pass::where('society_id', $societyId)
+            ->whereNotNull('scanned_out_at')
+            ->whereDate('scanned_out_at', $today)
+            ->count();
+
+        // -------------------------------
+        // UPCOMING VISITORS (TODAY)
+        // not entered yet
+        // -------------------------------
+        $upcomingVisitors = Pass::where('society_id', $societyId)
+            ->whereNull('scanned_in_at')
+            ->whereDate('valid_from', '<=', $today)
+            ->whereDate('valid_until', '>=', $today)
+            ->count();
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'total_passes' => $totalPasses,
+                'today_passes' => $todayPasses,
+                'active_visitors' => $activeVisitors,
+                'exited_visitors' => $exitedVisitors,
+                'upcoming_visitors' => $upcomingVisitors,
+            ],
+        ]);
+    }
+
+
 
     private function identifyTokenRecord(string $requestToken)
     {
@@ -70,19 +131,32 @@ class GuardController extends Controller
         $pass = Pass::where('token', $token)->first();
         if ($pass) {
 
-            $canApproveEntry =
-                !$pass->token_used &&
-                now()->between($pass->valid_from, $pass->valid_until);
+            $resident_details = $pass->load([ 'createdByUser', 'society', 'assignment']);
 
-            $canApproveExit =
-                $pass->token_used &&
-                is_null($pass->scanned_out_at);
+
+            //get name, phone, society name
+            $resident_name = optional($pass->createdByUser)->name ?? null;
+            $resident_phone = optional($pass->createdByUser)->phone ?? null;
+            $society_name = optional($pass->society)->name ?? null;
+
+
+            $canApproveEntry =
+            ! $pass->token_used &&
+            now()->between(
+                Carbon::parse($pass->valid_from)->startOfDay(),
+                Carbon::parse($pass->valid_until)->endOfDay()
+            );
+
+            $canApproveExit = $pass->token_used && is_null($pass->scanned_out_at);
 
             return response()->json([
                 'status' => true,
                 'type' => $pass->pass_type, // visitor | delivery | staff | etc
                 'can_approve_entry' => $canApproveEntry,
                 'can_approve_exit' => $canApproveExit,
+                'resident_name' => $resident_name,
+                'resident_phone' => $resident_phone,
+                'resident_society_name' => $society_name,
                 'data' => [
                     'name' => $pass->guest_name,
                     'phone' => $pass->guest_phone,
@@ -106,6 +180,13 @@ class GuardController extends Controller
             $isEntryToken = $appointment->entry_token === $token;
             $isExitToken = $appointment->exit_token === $token;
 
+            $resident_details = $appointment->load([ 'resident', 'society']);
+            //get name, phone, society name
+            $resident_name = optional($resident_details->resident)->name ?? null;
+            $resident_phone = optional($resident_details->resident)->phone ?? null;
+            $society_name = optional($resident_details->society)->name ?? null;
+
+
             $canApproveEntry =
                 $isEntryToken &&
                 !$appointment->entry_token_used &&
@@ -121,6 +202,9 @@ class GuardController extends Controller
                 'type' => 'worker',
                 'can_approve_entry' => $canApproveEntry,
                 'can_approve_exit' => $canApproveExit,
+                'resident_name' => $resident_name,
+                'resident_phone' => $resident_phone,
+                'resident_society_name' => $society_name,
                 'data' => [
                     'avatar' => optional($appointment->employer)->avatar,
                     'worker_name' => optional($appointment->employer)->name ?? 'Worker',
@@ -144,6 +228,14 @@ class GuardController extends Controller
                 ->latest()
                 ->first();
 
+            $resident_details = $vehicle->load([ 'user', 'Society']);
+
+            //get name, phone, society name
+            $resident_name = optional($resident_details->user)->name ?? null;
+            $resident_phone = optional($resident_details->user)->phone ?? null;
+            $society_name = optional($resident_details->society)->name ?? null;
+
+
             $isInside = $lastLog && $lastLog->direction === 'in';
 
             return response()->json([
@@ -151,6 +243,9 @@ class GuardController extends Controller
                 'type' => 'vehicle',
                 'can_approve_entry' => !$isInside,
                 'can_approve_exit' => $isInside,
+                'resident_name' => $resident_name,
+                'resident_phone' => $resident_phone,
+                'resident_society_name' => $society_name,
                 'data' => [
                     'vehicle_number' => $vehicle->vehicle_number,
                     'vehicle_type' => ucfirst($vehicle->vehicle_type),
@@ -225,17 +320,26 @@ class GuardController extends Controller
                     return response()->json(['status' => false, 'message' => 'Entry already used for this pass'], 400);
                 }
 
-                if (! now()->between($visitorPass->valid_from, $visitorPass->valid_until)) {
+
+
+                if (! now()->between(
+                    Carbon::parse($visitorPass->valid_from)->startOfDay(),
+                    Carbon::parse($visitorPass->valid_until)->endOfDay()
+                )) {
                     DB::rollBack();
-                    return response()->json(['status' => false, 'message' => 'Pass is not valid at this time'], 400);
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Pass is not valid for today',
+                    ], 400);
                 }
 
-                if ($visitorPass->pass_type === 'delivery') {
-                    if (empty($providedOtp) || $providedOtp !== $visitorPass->otp) {
-                        DB::rollBack();
-                        return response()->json(['status' => false, 'message' => 'Invalid or missing OTP for delivery pass'], 403);
-                    }
-                }
+
+                // if ($visitorPass->pass_type === 'delivery') {
+                //     if (empty($providedOtp) || $providedOtp !== $visitorPass->otp) {
+                //         DB::rollBack();
+                //         return response()->json(['status' => false, 'message' => 'Invalid or missing OTP for delivery pass'], 403);
+                //     }
+                // }
 
                 $visitorPass->token_used = 1;
                 $visitorPass->scanned_in_by = $guardUser->id;

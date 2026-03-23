@@ -17,6 +17,10 @@ class GuardShiftController extends Controller
      ===========================*/
     public function create()
     {
+        if (!has_permission('guard_shift_create')) {
+            abort(403, 'Permission denied');
+        }
+
         $societyId = auth()->user()->assignment?->society_id;
 
         // Default empty collection
@@ -40,6 +44,10 @@ class GuardShiftController extends Controller
      * =============================== */
     public function store(Request $request)
     {
+        if (!has_permission('guard_shift_create')) {
+            abort(403, 'Permission denied');
+        }
+
         $society = getSocietyId();
         $request->validate([
             'guard_id' => 'required|exists:users,id',
@@ -78,6 +86,10 @@ class GuardShiftController extends Controller
      ===========================*/
     public function index(Request $request)
     {
+        if (!has_permission('guard_shift_index')) {
+            abort(403, 'Permission denied');
+        }
+
         $statusFilter = $request->query('status', 'assigned');
 
         $shifts = GuardShift::with(['guardUser', 'assignedByUser'])
@@ -115,6 +127,10 @@ class GuardShiftController extends Controller
      ===========================*/
     public function show($shiftId)
     {
+        if (!has_permission('guard_shift_show')) {
+            abort(403, 'Permission denied');
+        }
+
         $shift = GuardShift::with([
             'guardUser',
             'assignedByUser',
@@ -132,6 +148,10 @@ class GuardShiftController extends Controller
      ===========================*/
     public function requestChange(Request $request, $shiftId)
     {
+        if (!has_permission('guard_shift_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'new_date' => 'nullable|date',
             'new_start' => 'nullable',
@@ -164,6 +184,10 @@ class GuardShiftController extends Controller
      ===========================*/
     public function decide(Request $request, $requestId)
     {
+        if (!has_permission('guard_shift_edit')) {
+            abort(403, 'Permission denied');
+        }
+
         $request->validate([
             'status' => 'required|in:approved,rejected',
         ]);

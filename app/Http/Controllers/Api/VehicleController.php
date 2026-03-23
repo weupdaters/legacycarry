@@ -55,7 +55,7 @@ class VehicleController extends Controller
             'society_id' => $user->details->society_id,
             'vehicle_number' => $request->vehicle_number,
             'vehicle_type' => $request->vehicle_type ?? 'car',
-            'vehicle_color' => $request->color,
+            'color' => $request->color,
             'qr_token' => $qr_token,
             'status' => 'pending', // default
         ]);

@@ -18,6 +18,8 @@ use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserDetailController;
 use App\Http\Controllers\Admin\UserPayoutMethodController;
+use App\Http\Controllers\Admin\UserPermissionController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Logout route
@@ -229,10 +231,34 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
 
     Route::get('/dashboard/chat', [AdminChatController::class, 'completeChat'])->name('dashboard.chat');
 
+    Route::get('/admin/jobs/{job}/applications/{user}/chat', [AdminChatController::class, 'JobApplicationChat'])
+        ->name('admin.job.application.chat');
+
     Route::get(
-        '/admin/jobs/{job}/applications/{user}/chat',
-        [AdminChatController::class, 'JobApplicationChat']
-    )->name('admin.job.application.chat');
+        '/chat/resident/{residentId}/employer/{userId}',
+        [AdminChatController::class, 'chatBetweenResidentEmployer']
+    )->name('admin.chat.resident.employer');
+
+
+    // Route::get('/jobs/{job}/chat', [ChatController::class, 'openJobChat'])
+    // ->name('job.chat');
+
+    //get all notifications of user
+    Route::get('/admin/notifications', [UserController::class, 'notifications'])
+     ->name('admin.notifications.index');
+
+
+
+
+    // Edit permissions page
+    Route::get('/users/{id}/permissions/edit', [UserPermissionController::class, 'edit'])
+    ->name('admin.permissions.edit');
+
+    // Store permissions
+    Route::post('/users/{id}/permissions', [UserPermissionController::class, 'store'])
+    ->name('admin.permissions.store');
+
+    // Route::get('/chat/{user?}', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
 
 
 });

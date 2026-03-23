@@ -167,24 +167,29 @@
                 class="btn btn-sm btn-outline-primary">
                 View
               </a>
-          <td>
-            <a href="{{ route('applications.chat', $app->id) }}" class="btn btn-sm btn-outline-primary">
+              {{-- <td>
+            <a href="{{ route('chat.resident.employer', [$app->user_id, $job->user_id]) }}"
+              class="btn btn-sm btn-outline-primary">
               <i class="bi bi-chat-dots"></i> Chat
             </a>
+          </td> --}}
+            @else
+              <span class="text-muted">None</span>
+            @endif
           </td>
-        @else
-          <span class="text-muted">None</span>
-      @endif
-      </td>
-
-      <td>
-        <a href="{{ route('applications.chat', $app->id) }}" class="btn btn-sm btn-outline-primary">
+          <td>{{ $app->created_at->format('d M Y, h:i A') }}</td>
+          <td>
+            <a href="{{ route('admin.chat.resident.employer', [$app->user_id, $job->user_id]) }}"
+              class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-chat-dots"></i> Chat
+            </a>
+            {{-- <a href="{{ route('applications.chat', $app->id) }}" class="btn btn-sm btn-outline-primary">
           <i class="bi bi-chat-dots"></i> Chat
-        </a>
-      </td>
+        </a> --}}
+          </td>
 
-      <td>{{ $app->created_at->format('d M Y, h:i A') }}</td>
-      </tr>
+
+        </tr>
       @endforeach
     </tbody>
   </table>

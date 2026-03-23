@@ -91,10 +91,15 @@
                 <td>{{ $l['name'] }}<br>({{ $l['to_phone'] }})</td>
                 <td>
                   @if (!empty($l['resident_id']))
-                    <a href="{{ route('residents.view', ['id' => $l['resident_id']]) }}" target="_blank">
+                    @if (has_permission('resident_show'))
+                      <a href="{{ route('residents.view', ['id' => $l['resident_id']]) }}" target="_blank">
+
+                        {{ $l['resident_name'] }}
+                      </a>
+                    @else
                       {{ $l['resident_name'] }}
-                    </a>
-                    <br>
+                    @endif
+
                     ({{ $l['resident_phone'] }})
                   @else
                     {{ $l['resident_name'] }}<br>

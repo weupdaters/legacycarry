@@ -10,9 +10,11 @@
       </h4>
 
       <div class="text-end">
-        <a href="{{ route('member.guards.create') }}" class="btn btn-primary btn-sm">
-          <i class="bi bi-plus-circle"></i> Add Guard
-        </a>
+        @if (has_permission('guard_create'))
+          <a href="{{ route('member.guards.create') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle"></i> Add Guard
+          </a>
+        @endif
 
         {{-- <a href="{{ route('member.guards.export', ['type' => 'excel']) }}" class="btn btn-success btn-sm me-2">Export Excel</a> --}}
 

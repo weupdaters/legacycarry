@@ -57,6 +57,7 @@
                       <th>Name</th>
                       <th>Phone</th>
                       <th>Email</th>
+                      <th>Resident Type</th>
                       <th>Verification</th>
                       <th>Flat</th>
                       <th>Village/Town</th>
@@ -76,6 +77,7 @@
                         <td>{{ $resident->name }}</td>
                         <td>{{ $resident->phone }}</td>
                         <td>{{ $resident->email }}</td>
+                        <td>{{ $resident->user_residential_status }}</td>
 
                         <td>
                           @if ($resident->verification_status == 'verified')
@@ -93,10 +95,12 @@
                         <td>{{ $detail->address ?? '-' }}</td>
 
                         <td>
-                          @if ($resident->is_active)
+                          @if ($resident->is_active == 1)
                             <span class="badge bg-success">Active</span>
+                          @elseif ($resident->is_active == 2)
+                            <span class="badge bg-warning text-dark">Suspended</span>
                           @else
-                            <span class="badge bg-danger">Banned</span>
+                            <span class="badge bg-secondary">Inactive</span>
                           @endif
                         </td>
 
@@ -109,10 +113,11 @@
                             style="display:inline-block;">
                             @csrf
                             @method('PATCH')
-                            <button type="submit"
-                              class="btn btn-sm {{ $resident->is_active ? 'btn-warning' : 'btn-success' }}">
-                              {{ $resident->is_active ? 'Ban' : 'Unban' }}
-                            </button>
+                            <select name="status" onchange="this.form.submit()" class="form-select form-select-sm">
+                              <option value="1" {{ $resident->is_active == 1 ? 'selected' : '' }}>Active</option>
+                              <option value="0" {{ $resident->is_active == 0 ? 'selected' : '' }}>Inactive</option>
+                              <option value="2" {{ $resident->is_active == 2 ? 'selected' : '' }}>Suspended</option>
+                            </select>
                           </form>
 
                           {{-- <form action="{{ route('users.destroy', $resident->id) }}" method="POST" style="display:inline-block;">

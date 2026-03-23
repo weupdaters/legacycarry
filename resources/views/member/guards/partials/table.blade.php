@@ -38,21 +38,26 @@
             </td>
 
             <td>
-              <a href="{{ route('member.guards.view', $g->id) }}" class="btn btn-info btn-sm" title="View">
-                <i class="mdi mdi-eye"></i>
-              </a>
+              @if (has_permission('guard_show'))
+                <a href="{{ route('member.guards.view', $g->id) }}" class="btn btn-info btn-sm" title="View">
+                  <i class="mdi mdi-eye"></i>
+                </a>
+              @endif
 
-              <a href="{{ route('member.guards.edit', $g->id) }}" class="btn btn-primary btn-sm" title="Edit">
-                <i class="mdi mdi-pencil"></i>
-              </a>
+              @if (has_permission('guard_edit'))
+                <a href="{{ route('member.guards.edit', $g->id) }}" class="btn btn-primary btn-sm" title="Edit">
+                  <i class="mdi mdi-pencil"></i>
+                </a>
+              @endif
 
-              <button onclick="toggleStatus({{ $g->id }})" class="btn btn-warning btn-sm" title="Change Status">
-                <i class="mdi mdi-refresh"></i>
-              </button>
+              @if (has_permission('guard_edit'))
+                <button onclick="toggleStatus({{ $g->id }})" class="btn btn-warning btn-sm"
+                  title="Change Status">
+                  <i class="mdi mdi-refresh"></i>
+                </button>
+              @endif
 
-              <button onclick="deleteGuard({{ $g->id }})" class="btn btn-danger btn-sm" title="Delete">
-                <i class="mdi mdi-delete"></i>
-              </button>
+
             </td>
 
           </tr>
