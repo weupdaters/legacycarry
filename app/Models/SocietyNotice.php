@@ -7,6 +7,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\Society;
+use App\Models\User;
 
 class SocietyNotice extends Model
 {
@@ -45,5 +47,21 @@ class SocietyNotice extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    // Relationships
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function targetUser()
+    {
+        return $this->belongsTo(User::class, 'target_user_id');
+    }
+
+    public function society()
+    {
+        return $this->belongsTo(Society::class, 'society_id');
     }
 }
