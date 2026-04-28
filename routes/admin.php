@@ -1,6 +1,6 @@
-<?php
+    <?php
 
-use App\Http\Controllers\Admin\AdminChatController;
+    use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\ExcelController;
 use App\Http\Controllers\Admin\FlatController;
@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ResidentAssignController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SocietyController;
+use App\Http\Controllers\Admin\SocietyNoticeController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserDetailController;
@@ -34,7 +35,7 @@ Route::get('/admin-logout', function () {
 // Dashboard (only for super_admin)
 Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [HomeController::class, 'index'])
-     ->name('admin.dashboard');
+    ->name('admin.dashboard');
 
     // User management routes
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -77,7 +78,7 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
 
     //payment method management routes
     Route::patch('/payments/status/{id}', [UserPayoutMethodController::class, 'updateStatus'])
-     ->name('payments.updateStatus');
+    ->name('payments.updateStatus');
 
 
 
@@ -105,7 +106,7 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/states/{id}/cities', [LocationController::class, 'getCities']);
 
     Route::get('/societies-ajax-list', [SocietyController::class, 'ajaxList'])
-     ->name('societies.ajax');
+    ->name('societies.ajax');
 
     // Job Posts (Web Routes)
     Route::get('/jobs', [JobPostController::class, 'index'])->name('jobs.index');            // List all jobs
@@ -114,7 +115,7 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/job-view/{id}', [JobPostController::class, 'view'])->name('jobs.view'); // Show job details (AJAX)
 
     Route::get('/jobs/{id}/applications', [JobPostController::class, 'applications'])
-     ->name('jobs.applications');
+    ->name('jobs.applications');
 
 
     Route::get('/jobs/{id}', [JobPostController::class, 'show'])->name('jobs.show');        // Show single job
@@ -245,7 +246,7 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
 
     //get all notifications of user
     Route::get('/admin/notifications', [UserController::class, 'notifications'])
-     ->name('admin.notifications.index');
+    ->name('admin.notifications.index');
 
 
 
@@ -257,6 +258,18 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     // Store permissions
     Route::post('/users/{id}/permissions', [UserPermissionController::class, 'store'])
     ->name('admin.permissions.store');
+
+
+    Route::prefix('notices')->group(function () {
+
+        Route::get('/', [SocietyNoticeController::class, 'index'])->name('admin.notices.index'); // list all
+        Route::get('/create', [SocietyNoticeController::class, 'create'])->name('admin.notices.create'); // create notice
+        Route::post('/', [SocietyNoticeController::class, 'store'])->name('admin.notices.store'); // store notice
+        Route::get('/{id}/edit', [SocietyNoticeController::class, 'edit'])->name('admin.notices.edit'); // edit notice
+        Route::put('/{id}', [SocietyNoticeController::class, 'update'])->name('admin.notices.update'); // update notice
+        Route::delete('/{id}', [SocietyNoticeController::class, 'destroy'])->name('admin.notices.destroy'); // delete notice
+
+    });
 
     // Route::get('/chat/{user?}', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
 

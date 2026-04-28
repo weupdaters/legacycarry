@@ -125,6 +125,12 @@
             <span> Societies </span>
           </a>
         </li>
+        <li>
+          <a href="{{ route('admin.notices.index') }}" class="tp-link">
+            <i data-feather="file-text"></i>
+            <span> Notices </span>
+          </a>
+        </li>
 
         <!-- JOB SYSTEM -->
         <li class="menu-title mt-2">Job System</li>

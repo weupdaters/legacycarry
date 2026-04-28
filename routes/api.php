@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\SocietyController;
+use App\Http\Controllers\Api\SocietyNoticeApiController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserDocumentController;
 use App\Http\Controllers\Api\UserPayoutMethodController;
@@ -407,6 +408,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('list/{user_id}', [NotificationController::class, 'index']);
 
     });
+
+    Route::get('/notices', [SocietyNoticeApiController::class, 'index']);
+    Route::get('/notices/{notice}', [SocietyNoticeApiController::class, 'show']);
 
 
 });

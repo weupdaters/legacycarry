@@ -8,14 +8,49 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// Index
 Route::get('/', function () {
-    return view('auth.login');
-})->name('login');
+    return view('frontend.index');
+})->name('index');
+
+//about
+Route::get('/about', function () {
+    return view('frontend.about');
+})->name('about');
+
+//contact
+Route::get('/contact', function () {
+    return view('frontend.contact');
+})->name('contact');
+
+//privacy
+Route::get('/privacy', function () {
+    return view('frontend.privacy');
+})->name('privacy');
+
+//refund policy
+Route::get('/refund', function () {
+    return view('frontend.refund');
+})->name('refund');
+
+
+//privacy
+Route::get('/terms', function () {
+    return view('frontend.terms');
+})->name('terms');
+
+Route::get('/resident-terms', function () {
+    return view('frontend.resident_terms');
+})->name('resident-terms');
+
+Route::get('/service-provider-terms', function () {
+    return view('frontend.service_provider_terms');
+})->name('service-provider-terms');
 
 // Show login page
 Route::get('/login', function () {
     return view('auth.login');
-})->name('users.login');
+})->name('login');
 
 
 // Handle login (Admin + Resident - single function)
