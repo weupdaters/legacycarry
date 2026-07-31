@@ -25,12 +25,12 @@
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center flex-wrap gap-2">
                         <span class="text-muted fw-bold fs-10 text-uppercase me-1">⚡ Launchpad:</span>
-                        @if(Route::has('admin.notices.create'))<a href="{{ route('admin.notices.create') }}" class="btn btn-xs bg-primary-subtle text-primary fw-bold border-0 px-3 py-1"><i data-feather="plus" class="icon-xxs me-1"></i>Notice</a>@endif
-                        @if(Route::has('guards.create'))<a href="{{ route('guards.create') }}" class="btn btn-xs bg-info-subtle text-info fw-bold border-0 px-3 py-1"><i data-feather="shield" class="icon-xxs me-1"></i>Guard</a>@endif
-                        @if(Route::has('societies.create'))<a href="{{ route('societies.create') }}" class="btn btn-xs bg-warning-subtle text-warning fw-bold border-0 px-3 py-1"><i data-feather="home" class="icon-xxs me-1"></i>Society</a>@endif
-                        @if(Route::has('resident.assign.create'))<a href="{{ route('resident.assign.create') }}" class="btn btn-xs bg-danger-subtle text-danger fw-bold border-0 px-3 py-1"><i data-feather="user-plus" class="icon-xxs me-1"></i>Assign</a>@endif
-                        @if(Route::has('services.create'))<a href="{{ route('services.create') }}" class="btn btn-xs bg-dark-subtle text-dark fw-bold border-0 px-3 py-1"><i data-feather="tool" class="icon-xxs me-1"></i>Service</a>@endif
-                        @if(Route::has('shift.guards.store'))<a href="{{ route('shift.guards.index') }}" class="btn btn-xs bg-secondary-subtle text-secondary fw-bold border-0 px-3 py-1"><i data-feather="clock" class="icon-xxs me-1"></i>Shifts</a>@endif
+                        @if(has_permission('notice_create'))<a href="{{ route('admin.notices.create') }}" class="btn btn-xs bg-primary-subtle text-primary fw-bold border-0 px-3 py-1"><i data-feather="plus" class="icon-xxs me-1"></i>Notice</a>@endif
+                        @if(has_permission('guard_create'))<a href="{{ route('guards.create') }}" class="btn btn-xs bg-info-subtle text-info fw-bold border-0 px-3 py-1"><i data-feather="shield" class="icon-xxs me-1"></i>Guard</a>@endif
+                        @if(has_permission('society_create'))<a href="{{ route('societies.create') }}" class="btn btn-xs bg-warning-subtle text-warning fw-bold border-0 px-3 py-1"><i data-feather="home" class="icon-xxs me-1"></i>Society</a>@endif
+                        @if(has_permission('resident_assign_create'))<a href="{{ route('resident.assign.create') }}" class="btn btn-xs bg-danger-subtle text-danger fw-bold border-0 px-3 py-1"><i data-feather="user-plus" class="icon-xxs me-1"></i>Assign</a>@endif
+                        @if(has_permission('service_create'))<a href="{{ route('services.create') }}" class="btn btn-xs bg-dark-subtle text-dark fw-bold border-0 px-3 py-1"><i data-feather="tool" class="icon-xxs me-1"></i>Service</a>@endif
+                        @if(has_permission('shift_index'))<a href="{{ route('shift.guards.index') }}" class="btn btn-xs bg-secondary-subtle text-secondary fw-bold border-0 px-3 py-1"><i data-feather="clock" class="icon-xxs me-1"></i>Shifts</a>@endif
                         
                     </div>
                 </div>

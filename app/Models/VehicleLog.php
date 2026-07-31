@@ -33,6 +33,7 @@ class VehicleLog extends Model
         return $this->belongsTo(Society::class, 'society_id');
     }
 
-
-
-}
+    public function guard()
+    {
+        return $this->belongsTo(User::class, 'guard_id');
+    }}

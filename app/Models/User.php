@@ -15,9 +15,11 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    use Notifiable;
     use HasApiTokens;
     use HasFactory;
-    use Notifiable;
+
+    protected $appends = ['avatar_url'];
 
     protected $fillable = [
         'name',
@@ -144,4 +146,8 @@ class User extends Authenticatable
         return $this->hasOne(UserDetail::class, 'user_id', 'id');
     }
 
+    public function getAvatarUrlAttribute()
+    {
+        return $this->avatar ? asset('storage/' . $this->avatar) : null;
+    }
 }

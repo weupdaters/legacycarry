@@ -69,13 +69,27 @@
       </ol>
     </div>
 
+    @php $avatar = $user->avatar_url; @endphp
+
+    <!-- Modal -->
+    <div class="modal fade" id="avatarModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+          @if ($avatar)
+            <img src="{{ $avatar }}" class="img-fluid rounded">
+          @else
+            <div class="rounded-circle bg-light border mx-auto d-flex justify-content-center align-items-center"
+              style="width:120px;height:120px;font-size:48px;font-weight:600;">
+              {{ strtoupper($user->name[0]) }}
+            </div>
+          @endif
+        </div>
+      </div>
+    </div>
+
     {{-- PROFILE HEADER --}}
     <div class="glass-card p-4 mb-4 d-flex align-items-center gap-4">
-      @if ($user->avatar)
-        @php $avatar = asset('storage/'.$user->avatar); @endphp
-      @else
-        @php $avatar = null; @endphp
-      @endif
+
 
       <!-- Avatar -->
       <div data-bs-toggle="modal" data-bs-target="#avatarModal" style="cursor:pointer;">
@@ -89,21 +103,7 @@
         @endif
       </div>
 
-      <!-- Modal -->
-      <div class="modal fade" id="avatarModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content text-center p-3">
-            @if ($avatar)
-              <img src="{{ $avatar }}" class="img-fluid rounded">
-            @else
-              <div class="rounded-circle bg-light border mx-auto d-flex justify-content-center align-items-center"
-                style="width:120px;height:120px;font-size:48px;font-weight:600;">
-                {{ strtoupper($user->name[0]) }}
-              </div>
-            @endif
-          </div>
-        </div>
-      </div>
+
 
 
 
@@ -115,6 +115,8 @@
           <i class="mdi mdi-phone me-1"></i>{{ $user->phone }}
         </div>
       </div>
+
+
 
       <div>
         {{-- <strong>Status:</strong> --}}
@@ -458,10 +460,8 @@
                 <th>ID</th>
                 <th>Vehicle Number</th>
                 <th>Type</th>
-
                 <th>Color</th>
                 <th>Update Status</th>
-                <th>Status</th>
               </tr>
             </thead>
             <tbody>

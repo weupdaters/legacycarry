@@ -19,7 +19,7 @@ class PassController extends Controller
         $request->validate([
             'society_id' => 'required|integer',
             'created_by' => 'required|exists:users,id',
-            'pass_type' => 'required|in:visitor,vehicle,delivery,staff,Maintenance',
+            'pass_type' => 'required|in:visitor,vehicle,delivery,staff,maintenance',
             'guest_name' => 'nullable|string',
             'guest_phone' => 'nullable|string',
             'vehicle_number' => 'nullable|string',

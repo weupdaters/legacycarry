@@ -56,14 +56,28 @@
     </div>
 
     {{-- PROFILE CARD --}}
+    @php
+      $avatar = $user->avatar ? asset('storage/' . $user->avatar) : null;
+    @endphp
+
+    <!-- Avatar Modal -->
+    <div class="modal fade" id="avatarModal">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+          @if ($avatar)
+            <img src="{{ $avatar }}" class="img-fluid rounded">
+          @else
+            <div class="rounded-circle bg-light border mx-auto d-flex justify-content-center align-items-center"
+              style="width:120px;height:120px;font-size:48px;font-weight:bold;">
+              {{ strtoupper($user->name[0]) }}
+            </div>
+          @endif
+        </div>
+      </div>
+    </div>
+
     <div class="glass-card p-4 mb-4 d-flex align-items-center gap-4">
 
-      @php
-        $avatar =
-            $user->avatar && file_exists(public_path('storage/' . $user->avatar))
-                ? asset('storage/' . $user->avatar)
-                : null;
-      @endphp
 
       <!-- Avatar -->
       <div style="cursor:pointer" data-bs-toggle="modal" data-bs-target="#avatarModal">
@@ -77,21 +91,7 @@
         @endif
       </div>
 
-      <!-- Avatar Modal -->
-      <div class="modal fade" id="avatarModal">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content text-center p-3">
-            @if ($avatar)
-              <img src="{{ $avatar }}" class="img-fluid rounded">
-            @else
-              <div class="rounded-circle bg-light border mx-auto d-flex justify-content-center align-items-center"
-                style="width:120px;height:120px;font-size:48px;font-weight:bold;">
-                {{ strtoupper($user->name[0]) }}
-              </div>
-            @endif
-          </div>
-        </div>
-      </div>
+
 
       <!-- Profile Info -->
       <div class="flex-grow-1">

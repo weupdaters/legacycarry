@@ -25,6 +25,7 @@
 
                         <div class="col-md-3">
                             <label>Building Number</label>
+                            <input type="hidden" name="flats[{{ $index }}][id]" value="{{ $flat->id }}">
                             <input type="text"
                                    name="flats[{{ $index }}][building_no]"
                                    class="form-control"

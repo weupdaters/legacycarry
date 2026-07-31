@@ -38,18 +38,31 @@ class FlatController extends Controller
         ]);
 
         $society_id = $request->society_id;
+        $submitted_ids = collect($request->flats)->pluck('id')->filter()->toArray();
 
-        // Delete all old flats FIRST
-        Flat::where('society_id', $society_id)->delete();
+        // 1. Delete flats that were removed in the UI (not in submitted_ids)
+        Flat::where('society_id', $society_id)
+            ->whereNotIn('id', $submitted_ids)
+            ->delete();
 
-        // Recreate all submitted flats
-        foreach ($request->flats as $flat) {
-            Flat::create([
-                'society_id'  => $society_id,
-                'building_no' => $flat['building_no'],
-                'owner_name'  => $flat['owner_name'] ?? null,
-                'status'      => $flat['status'],
-            ]);
+        // 2. Update or Create
+        foreach ($request->flats as $flatData) {
+            if (isset($flatData['id']) && !empty($flatData['id'])) {
+                // Update existing
+                Flat::where('id', $flatData['id'])->update([
+                    'building_no' => $flatData['building_no'],
+                    'owner_name'  => $flatData['owner_name'] ?? null,
+                    'status'      => $flatData['status'],
+                ]);
+            } else {
+                // Create new
+                Flat::create([
+                    'society_id'  => $society_id,
+                    'building_no' => $flatData['building_no'],
+                    'owner_name'  => $flatData['owner_name'] ?? null,
+                    'status'      => $flatData['status'],
+                ]);
+            }
         }
 
         return redirect()->route('societies.index')

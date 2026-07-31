@@ -106,8 +106,8 @@ if (!function_exists('has_permission')) {
 
         $user = Auth::user();
 
-        // Super admin bypass
-        if ($user->role === 'admin') {
+        // Only Super admin bypasses everything
+        if ($user->role === 'super_admin') {
             return true;
         }
 
@@ -118,4 +118,44 @@ if (!function_exists('has_permission')) {
             ->exists();
     }
 
+}
+if (!function_exists('send_push_notification')) {
+    /**
+     * Send push notification using Firebase
+     * @param array|string $tokens
+     * @param string $title
+     * @param string $body
+     * @param array $data
+     */
+    function send_push_notification($tokens, $title, $body, $data = [])
+    {
+        if (empty($tokens)) return false;
+
+        $messaging = app('firebase.messaging');
+        $tokens = is_array($tokens) ? $tokens : [$tokens];
+        
+        // Remove empty or null tokens
+        $tokens = array_filter($tokens);
+        if (empty($tokens)) return false;
+
+        try {
+            $notification = \Kreait\Firebase\Messaging\Notification::create($title, $body);
+            
+
+            // Since we use Multicast for multiple tokens
+            $cloudMessage = \Kreait\Firebase\Messaging\CloudMessage::new()
+                ->withNotification($notification)
+                ->withData($data);
+
+            $report = $messaging->sendMulticast($cloudMessage, $tokens);
+            
+            return [
+                'success' => $report->successes()->count(),
+                'failure' => $report->failures()->count(),
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Firebase Notification Error: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

@@ -260,18 +260,18 @@ class UserController extends Controller
 
             if ($request->hasFile('id_proof')) {
                 $idProofFolder = 'employees/id_proofs';
-                if (!Storage::exists($idProofFolder)) {
-                    Storage::makeDirectory($idProofFolder);
+                if (!Storage::disk('public')->exists($idProofFolder)) {
+                    Storage::disk('public')->makeDirectory($idProofFolder);
                 }
-                $idProofPath = $request->file('id_proof')->store($idProofFolder);
+                $idProofPath = $request->file('id_proof')->store($idProofFolder, 'public');
             }
 
             if ($request->hasFile('selfie')) {
                 $selfieFolder = 'employees/selfies';
-                if (!Storage::exists($selfieFolder)) {
-                    Storage::makeDirectory($selfieFolder);
+                if (!Storage::disk('public')->exists($selfieFolder)) {
+                    Storage::disk('public')->makeDirectory($selfieFolder);
                 }
-                $selfiePath = $request->file('selfie')->store($selfieFolder);
+                $selfiePath = $request->file('selfie')->store($selfieFolder, 'public');
             }
 
             // Only create Employee if role is 'labor'
@@ -571,7 +571,7 @@ class UserController extends Controller
                 'floor_number' => 'sometimes|integer',
                 'date_of_birth' => 'sometimes|date',
                 'gender' => 'sometimes',
-                'occupation' => 'sometimes|string|max:100',
+                'occupation' => 'sometimes|string',
                 'marital_status' => 'sometimes',
                 'emergency_contact_name' => 'sometimes|string|max:100',
                 'emergency_contact_phone' => 'sometimes|string|max:20',

@@ -161,6 +161,20 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
         ->name('shift.request.decide');
 
 
+    // Manage Buildings (Flats)
+    Route::get('/manage-buildings', [IndexController::class, 'manageFlats'])->name('flats.manage');
+    Route::post('/manage-buildings', [IndexController::class, 'storeFlats'])->name('flats.store');
+
+    // Notices
+    Route::get('/notices', [\App\Http\Controllers\Member\NoticeController::class, 'index'])->name('notices.index');
+    Route::get('/notices/create', [\App\Http\Controllers\Member\NoticeController::class, 'create'])->name('notices.create');
+    Route::post('/notices', [\App\Http\Controllers\Member\NoticeController::class, 'store'])->name('notices.store');
+    Route::get('/notices/{id}', [\App\Http\Controllers\Member\NoticeController::class, 'show'])->name('notices.show');
+    Route::get('/notices/{id}/edit', [\App\Http\Controllers\Member\NoticeController::class, 'edit'])->name('notices.edit');
+    Route::patch('/notices/{id}', [\App\Http\Controllers\Member\NoticeController::class, 'update'])->name('notices.update');
+    Route::delete('/notices/{id}', [\App\Http\Controllers\Member\NoticeController::class, 'destroy'])->name('notices.destroy');
+
+
 });
 
 

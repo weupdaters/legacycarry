@@ -290,6 +290,14 @@ class AppointmentController extends Controller
     // Resident Start Job
     public function start(Request $req, Appointment $appointment)
     {
+        if ($req->has('user_id') && $req->user_id != $appointment->resident_id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (!$appointment->entry_token_used || !$appointment->guard_in_time) {
+            return response()->json(['status' => false, 'message' => 'Worker has not entered yet'], 400);
+        }
+
         $appointment->job_start_time = now();
         $appointment->status = 'in_progress';
         $appointment->save();
@@ -308,6 +316,14 @@ class AppointmentController extends Controller
     // Resident End Job
     public function end(Request $req, Appointment $appointment)
     {
+        if ($req->has('user_id') && $req->user_id != $appointment->resident_id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (!$appointment->job_start_time) {
+            return response()->json(['status' => false, 'message' => 'Job has not started yet'], 400);
+        }
+
         $appointment->job_end_time = now();
         $appointment->status = 'waiting_resident_confirmation';
         $appointment->save();
@@ -329,6 +345,10 @@ class AppointmentController extends Controller
     // Resident Approve Job + Generate Exit Token
     public function confirm(Request $req, Appointment $appointment)
     {
+        if ($req->has('user_id') && $req->user_id != $appointment->resident_id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
         // ❌ Final payment not done
         if (!$appointment->final_paid) {
             return response()->json([

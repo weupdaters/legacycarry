@@ -39,17 +39,42 @@ class GuardController extends Controller
         // TODAY PASSES
         // -------------------------------
         $todayPasses = Pass::where('society_id', $societyId)
-            ->whereDate('created_at', $today)
+            ->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereDate('valid_from', '<=', $today)
+                        ->whereDate('valid_until', '>=', $today);
+                })
+                ->orWhereDate('scanned_in_at', $today)
+                ->orWhereDate('scanned_out_at', $today);
+            })
             ->count();
 
         // -------------------------------
         // ACTIVE VISITORS (INSIDE)
-        // token_used = 1 AND scanned_out_at IS NULL
+        // Includes: active visitor passes + workers inside + vehicles inside
         // -------------------------------
-        $activeVisitors = Pass::where('society_id', $societyId)
+        $activePasses = Pass::where('society_id', $societyId)
             ->where('token_used', 1)
             ->whereNull('scanned_out_at')
             ->count();
+
+        $activeAppointments = Appointment::where('society_id', $societyId)
+            ->where('status', 'employee_in_society')
+            ->count();
+
+        $vehicleLogs = VehicleLog::where('society_id', $societyId)
+            ->latest('created_at')
+            ->get()
+            ->unique('vehicle_id');
+
+        $activeVehiclesCount = 0;
+        foreach ($vehicleLogs as $log) {
+            if ($log->direction === 'in') {
+                $activeVehiclesCount++;
+            }
+        }
+
+        $activeVisitors = $activePasses + $activeAppointments + $activeVehiclesCount;
 
         // -------------------------------
         // EXITED VISITORS (TODAY)
@@ -78,6 +103,28 @@ class GuardController extends Controller
                 'exited_visitors' => $exitedVisitors,
                 'upcoming_visitors' => $upcomingVisitors,
             ],
+        ]);
+    }
+
+    public function todayPasses($societyId)
+    {
+        $today = now()->toDateString();
+        $passes = Pass::where('society_id', $societyId)
+            ->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereDate('valid_from', '<=', $today)
+                        ->whereDate('valid_until', '>=', $today);
+                })
+                ->orWhereDate('scanned_in_at', $today)
+                ->orWhereDate('scanned_out_at', $today);
+            })
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'count' => $passes->count(),
+            'passes' => $passes,
         ]);
     }
 
@@ -362,7 +409,7 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Visitor entry recorded', 'pass' => $visitorPass]);
+                return response()->json(['status' => true, 'message' => 'Visitor entry recorded', 'pass' => $visitorPass, 'resident_fcm_token' => optional($visitorPass->createdByUser)->fcm_token]);
             }
 
             if ($identifiedType === 'appointment') {
@@ -392,6 +439,7 @@ class GuardController extends Controller
                 $appointment->save();
 
                 Notify::to($appointment->resident_id, 'Worker Entered', 'Worker verified at gate.', ['appointment_id' => $appointment->id]);
+                Notify::to($appointment->employer_id, 'Start Job', 'You have entered the society. You can now start the job.', ['appointment_id' => $appointment->id]);
 
                 Audit::log($guardUser->id, 'approve_entry', 'appointments', $appointment->id, null, ['guard_in_time' => $appointment->guard_in_time]);
                 ScanHistory::create([
@@ -405,7 +453,7 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Appointment entry recorded', 'appointment' => $appointment]);
+                return response()->json(['status' => true, 'message' => 'Appointment entry recorded', 'appointment' => $appointment, 'resident_fcm_token' => optional($appointment->resident)->fcm_token]);
             }
 
             if ($identifiedType === 'vehicle') {
@@ -442,7 +490,7 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Vehicle entry recorded', 'vehicle_log' => $vehicleLog, 'vehicle' => $vehicle]);
+                return response()->json(['status' => true, 'message' => 'Vehicle entry recorded', 'vehicle_log' => $vehicleLog, 'vehicle' => $vehicle, 'resident_fcm_token' => optional($vehicle->user)->fcm_token]);
             }
 
             DB::rollBack();
@@ -552,6 +600,9 @@ class GuardController extends Controller
                 $appointment->save();
 
                 Audit::log($guardUser->id, 'approve_exit', 'appointments', $appointment->id, null, ['guard_out_time' => $appointment->guard_out_time]);
+                
+                // Notify worker that exit was registered and job completed
+                Notify::to($appointment->employer_id, 'Job Completed', 'Your exit has been recorded and job completion registered.', ['appointment_id' => $appointment->id]);
                 ScanHistory::create([
                     'society_id' => $appointment->society_id,
                     'guard_id' => $guardUser->id,
@@ -1064,6 +1115,8 @@ class GuardController extends Controller
             ->with([
                 'scannedInGuard:id,name',
                 'scannedOutGuard:id,name',
+                'createdByUser',
+                'society'
             ])
             ->get();
 
@@ -1080,6 +1133,12 @@ class GuardController extends Controller
                 'entry_guard' => optional($pass->scannedInGuard)->name,
                 'exit_time' => optional($pass->scanned_out_at)->format('d M Y, h:i A'),
                 'exit_guard' => optional($pass->scannedOutGuard)->name,
+                'resident_id' => $pass->created_by,
+                'resident_name' => optional($pass->createdByUser)->name,
+                'resident_phone_number' => optional($pass->createdByUser)->phone,
+                'resident_device_token' => optional($pass->createdByUser)->fcm_token,
+                'society_id' => $pass->society_id,
+                'society_name' => optional($pass->society)->name,
                 'sort_time' => $pass->scanned_in_at,
             ]);
         }
@@ -1096,6 +1155,8 @@ class GuardController extends Controller
                 'guardOut:id,name',
                 'employer:id,name',
                 'jobApplication.jobPost:id,job_title',
+                'resident',
+                'society'
             ])
             ->get();
 
@@ -1112,6 +1173,12 @@ class GuardController extends Controller
                 'entry_guard' => optional($appt->guardIn)->name,
                 'exit_time' => optional($appt->guard_out_time)->format('d M Y, h:i A'),
                 'exit_guard' => optional($appt->guardOut)->name,
+                'resident_id' => $appt->resident_id,
+                'resident_name' => optional($appt->resident)->name,
+                'resident_phone_number' => optional($appt->resident)->phone,
+                'resident_device_token' => optional($appt->resident)->fcm_token,
+                'society_id' => $appt->society_id,
+                'society_name' => optional($appt->society)->name,
                 'sort_time' => $appt->guard_in_time,
             ]);
         }
@@ -1123,11 +1190,12 @@ class GuardController extends Controller
         */
         $vehicleLogs = VehicleLog::where('society_id', $societyId)
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->with('vehicle')
+            ->with(['vehicle.user', 'society', 'guard'])
             ->get();
 
         foreach ($vehicleLogs as $log) {
-            $guard = User::find($log->guard_id);
+            $guard = $log->guard;
+            $resident = optional($log->vehicle)->user;
 
             $results->push([
                 'type' => 'vehicle',
@@ -1149,6 +1217,12 @@ class GuardController extends Controller
                 'exit_guard' => $log->direction === 'out'
                     ? optional($guard)->name
                     : null,
+                'resident_id' => optional($resident)->id,
+                'resident_name' => optional($resident)->name,
+                'resident_phone_number' => optional($resident)->phone,
+                'resident_device_token' => optional($resident)->fcm_token,
+                'society_id' => $log->society_id,
+                'society_name' => optional($log->society)->name,
                 'sort_time' => $log->created_at,
             ]);
         }
@@ -1248,14 +1322,22 @@ class GuardController extends Controller
     {
         $status = $request->query('status', 'all'); // all | active | upcoming | expired
         $search = $request->query('search');
+        $today = now()->toDateString();
 
         $query = Pass::where('society_id', $society_id)
-            ->whereDate('created_at', now()->toDateString());
+            ->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereDate('valid_from', '<=', $today)
+                        ->whereDate('valid_until', '>=', $today);
+                })
+                ->orWhereDate('scanned_in_at', $today)
+                ->orWhereDate('scanned_out_at', $today);
+            });
 
         /* 🔍 Search by visitor name or vehicle number */
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('visitor_name', 'LIKE', "%{$search}%")
+                $q->where('guest_name', 'LIKE', "%{$search}%")
                 ->orWhere('vehicle_number', 'LIKE', "%{$search}%");
             });
         }
@@ -1267,13 +1349,12 @@ class GuardController extends Controller
         }
 
         if ($status === 'upcoming') {
-            $query->whereNull('scanned_in_at')
-                ->where('valid_from', '>', now());
+            $query->whereNull('scanned_in_at');
         }
 
         if ($status === 'expired') {
-            $query->where(function ($q) {
-                $q->where('valid_until', '<', now())
+            $query->where(function ($q) use ($today) {
+                $q->whereDate('valid_until', '<', $today)
                 ->orWhereNotNull('scanned_out_at');
             });
         }

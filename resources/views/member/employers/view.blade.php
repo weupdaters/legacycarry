@@ -56,7 +56,7 @@
 
       {{-- Avatar --}}
       <div>
-        @if ($user->avatar && file_exists(public_path('storage/' . $user->avatar)))
+        @if ($user->avatar)
           <img src="{{ asset('storage/' . $user->avatar) }}" class="profile-avatar">
         @else
           <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center"
@@ -182,7 +182,7 @@
             <p>
               <strong>ID Proof:</strong><br>
               @if ($user->employee->id_proof_path)
-                <a href="{{ asset('uploads/id_proof/' . $user->employee->id_proof_path) }}"
+                <a href="{{ asset('storage/' . $user->employee->id_proof_path) }}"
                   class="btn btn-sm btn-primary" target="_blank">View ID</a>
               @else
                 <span class="text-muted">Not uploaded</span>
@@ -192,7 +192,7 @@
             <p>
               <strong>Selfie:</strong><br>
               @if ($user->employee->selfie_path)
-                <img src="{{ asset('uploads/selfies/' . $user->employee->selfie_path) }}"
+                <img src="{{ asset('storage/' . $user->employee->selfie_path) }}"
                   style="width:70px;height:70px;border-radius:8px;object-fit:cover;">
               @else
                 <span class="text-muted">Not uploaded</span>

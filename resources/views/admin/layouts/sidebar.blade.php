@@ -43,17 +43,19 @@
 
         <!-- User Menu -->
         <li class="dropdown topbar-dropdown">
-          <a class="nav-link dropdown-toggle nav-user" data-bs-toggle="dropdown">
-            <img
-              src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : asset('images/default-avatar.png') }}"
-              class="rounded-circle" height="32" alt="Avatar">
-            <span class="ms-1">{{ Auth::user()->name }} <i class="mdi mdi-chevron-down"></i></span>
+          <a class="nav-link dropdown-toggle nav-user d-flex align-items-center" data-bs-toggle="dropdown">
+            <div class="position-relative">
+              <img src="{{ Auth::user()->avatar_url ?? asset('assets/images/users/user-13.jpg') }}" 
+                   class="rounded-circle border border-2 border-white shadow-sm" 
+                   height="34" width="34" style="object-fit: cover;">
+              <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" 
+                    style="width: 10px; height: 10px; transform: translate(25%, 25%);"></span>
+            </div>
+            <span class="ms-2 fw-medium d-none d-sm-inline-block text-dark">{{ Auth::user()->name }} <i class="mdi mdi-chevron-down"></i></span>
           </a>
 
           <div class="dropdown-menu dropdown-menu-end profile-dropdown">
-            <a href="{{ route('settings') }}?tab=admin" class="dropdown-item">
-              <i class="mdi mdi-account-circle-outline me-1"></i> My Account
-            </a>
+
             <div class="dropdown-divider"></div>
             <a href="{{ route('logout') }}" class="dropdown-item text-danger">
               <i class="mdi mdi-location-exit me-1"></i> Logout
@@ -83,6 +85,10 @@
         <a href="{{ route('admin.dashboard') }}" class="logo logo-dark d-flex align-items-center gap-2">
           <span class="logo-lg">
             <img src="{{ $logoUrl }}" style="height: {{ $logoHeight }}; width: auto; max-height: 44px;" alt="Website Logo">
+          </span>
+          <span class="badge rounded-pill px-2 py-1"
+                style="background: rgba(255, 107, 107, 0.1); border: 1px solid rgba(255, 107, 107, 0.2); color: #ff6b6b; font-size: 10px; font-weight: 700; text-transform: uppercase;">
+                Admin Portal
           </span>
         </a>
       </div>

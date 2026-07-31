@@ -41,9 +41,15 @@
 
         <!-- User Menu -->
         <li class="dropdown topbar-dropdown">
-          <a class="nav-link dropdown-toggle nav-user" data-bs-toggle="dropdown">
-            <img src="{{ asset('assets/images/users/user-13.jpg') }}" class="rounded-circle" height="32">
-            <span class="ms-1">{{ Auth::user()->name }} <i class="mdi mdi-chevron-down"></i></span>
+          <a class="nav-link dropdown-toggle nav-user d-flex align-items-center" data-bs-toggle="dropdown">
+            <div class="position-relative">
+              <img src="{{ Auth::user()->avatar_url ?? asset('assets/images/users/user-13.jpg') }}" 
+                   class="rounded-circle border border-2 border-white shadow-sm" 
+                   height="34" width="34" style="object-fit: cover;">
+              <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" 
+                    style="width: 10px; height: 10px; transform: translate(25%, 25%);"></span>
+            </div>
+            <span class="ms-2 fw-medium d-none d-sm-inline-block text-dark">{{ Auth::user()->name }} <i class="mdi mdi-chevron-down"></i></span>
           </a>
 
           <div class="dropdown-menu dropdown-menu-end profile-dropdown">
@@ -51,13 +57,7 @@
               <h6 class="m-0">Welcome!</h6>
             </div>
 
-            <a href="{{ url('pages-profile') }}" class="dropdown-item">
-              <i class="mdi mdi-account-circle-outline me-1"></i> My Account
-            </a>
 
-            <a href="{{ url('auth-lock-screen') }}" class="dropdown-item">
-              <i class="mdi mdi-lock-outline me-1"></i> Lock Screen
-            </a>
 
             <div class="dropdown-divider"></div>
 
@@ -81,18 +81,21 @@
       <!-- Logo -->
       <div class="logo-box text-center py-3">
 
-        <a href="{{ route('admin.dashboard') }}" class="logo logo-light">
+        <a href="{{ route('member.dashboard') }}" class="logo logo-light">
           <span class="logo-lg">
             <img src="{{ asset('assets/images/logo-light.png') }}" height="28">
           </span>
         </a>
-        <span class="btn-sm btn ml-10"
+        <span class="badge rounded-pill px-3 py-2 ms-2"
           style="
-                background: transparent;
-                border: 1px dashed #108dff;
+                background: rgba(16, 141, 255, 0.1);
+                border: 1px solid rgba(16, 141, 255, 0.2);
                 color: #108dff;
-            ">Resident
-          area</span>
+                font-size: 11px;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+                font-weight: 700;
+            ">Resident Area</span>
       </div>
 
 
@@ -103,7 +106,7 @@
 
         @if (has_permission('resident_show'))
           <li>
-            <a href="{{ route('member.dashboard') }}" class="tp-link">
+            <a href="{{ route('member.dashboard') }}" class="tp-link {{ Request::routeIs('member.dashboard') ? 'active' : '' }}">
               <i data-feather="home"></i>
               <span> Overview </span>
             </a>
@@ -116,7 +119,7 @@
         {{-- Service Providers --}}
         @if (has_permission('service_provider_index'))
           <li>
-            <a href="{{ route('member.employees.index') }}" class="tp-link">
+            <a href="{{ route('member.employees.index') }}" class="tp-link {{ Request::routeIs('member.employees.*') ? 'active' : '' }}">
               <i data-feather="user-check"></i>
               <span> Service Providers </span>
             </a>
@@ -127,9 +130,16 @@
         {{-- Residents --}}
         @if (has_permission('resident_index'))
           <li>
-            <a href="{{ route('member.residents.index') }}" class="tp-link">
-              <i data-feather="user-check"></i>
+            <a href="{{ route('member.residents.index') }}" class="tp-link {{ Request::routeIs('member.residents.*') ? 'active' : '' }}">
+              <i data-feather="users"></i>
               <span> Residents </span>
+            </a>
+          </li>
+
+          <li>
+            <a href="{{ route('member.flats.manage') }}" class="tp-link {{ Request::routeIs('member.flats.*') ? 'active' : '' }}">
+              <i data-feather="layers"></i>
+              <span> Manage Buildings </span>
             </a>
           </li>
         @endif
@@ -138,7 +148,7 @@
         {{-- Guards --}}
         @if (has_permission('guard_index'))
           <li>
-            <a href="{{ route('member.guards.index') }}" class="tp-link">
+            <a href="{{ route('member.guards.index') }}" class="tp-link {{ Request::routeIs('member.guards.index') || Request::routeIs('member.guards.view') || Request::routeIs('member.guards.edit') ? 'active' : '' }}">
               <i data-feather="shield"></i>
               <span> Guards </span>
             </a>
@@ -149,7 +159,7 @@
         {{-- Guard Shifts --}}
         @if (has_permission('guard_shift_index'))
           <li>
-            <a href="{{ route('member.shift.guards.index') }}" class="tp-link">
+            <a href="{{ route('member.shift.guards.index') }}" class="tp-link {{ Request::routeIs('member.shift.guards.*') ? 'active' : '' }}">
               <i data-feather="clock"></i>
               <span> Guard Shifts </span>
             </a>
@@ -160,7 +170,7 @@
         {{-- Pass History --}}
         @if (has_permission('pass_history_index'))
           <li>
-            <a href="{{ route('member.guards.all-pass-history') }}" class="tp-link">
+            <a href="{{ route('member.guards.all-pass-history') }}" class="tp-link {{ Request::routeIs('member.guards.all-pass-history') ? 'active' : '' }}">
               <i data-feather="file-text"></i>
               <span> Pass History </span>
             </a>
@@ -171,9 +181,9 @@
         {{-- Utility Bills --}}
 
         <li>
-          <a href="#" class="tp-link">
+          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
             <i data-feather="credit-card"></i>
-            <span> Utility Bills </span>
+            <span> Utility Bills <small class="badge bg-soft-warning font-10">Soon</small> </span>
           </a>
         </li>
 
@@ -182,20 +192,44 @@
         {{-- Facility Management --}}
 
         <li>
-          <a href="#" class="tp-link">
+          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
             <i data-feather="settings"></i>
-            <span> Facility Management </span>
+            <span> Facility Management <small class="badge bg-soft-warning font-10">Soon</small> </span>
           </a>
         </li>
 
 
 
         {{-- Public Notice --}}
+        @if (has_permission('notice_index'))
+          <li>
+            <a href="{{ route('member.notices.index') }}" class="tp-link {{ Request::routeIs('member.notices.*') ? 'active' : '' }}">
+              <i data-feather="bell"></i>
+              <span> Notices </span>
+            </a>
+          </li>
+        @endif
+
+        <li class="menu-title mt-2">Society Services (Coming Soon)</li>
 
         <li>
-          <a href="#" class="tp-link">
-            <i data-feather="bell"></i>
-            <span> Public Notice </span>
+          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+            <i data-feather="message-square"></i>
+            <span> Complaint management <small class="badge bg-soft-warning font-10">Soon</small> </span>
+          </a>
+        </li>
+
+        <li>
+          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+            <i data-feather="calendar"></i>
+            <span> Amenity Booking <small class="badge bg-soft-warning font-10">Soon</small> </span>
+          </a>
+        </li>
+
+        <li>
+          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+            <i data-feather="pie-chart"></i>
+            <span> Polls & Surveys <small class="badge bg-soft-warning font-10">Soon</small> </span>
           </a>
         </li>
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Helpers\Notify;
 use App\Models\Appointment;
 use App\Models\Employee;
 use App\Models\JobApplication;
@@ -190,6 +191,7 @@ class JobApplicationController extends Controller
                                             : '',
                     'about' => $application->employee->about,
                     'id_number' => $application->employee->id_number,
+                    'fcm_token' => optional($application->user)->fcm_token,
                     'message_to_employer' => $application->message_to_employer,
                     'certificate_photo' => $application->certificate_photo ? $application->certificate_photo : null,
                     // 💰 DERIVED PAYMENT INFO (NO PARAM USED)
@@ -371,6 +373,17 @@ class JobApplicationController extends Controller
              * ⭐ AUTO CREATE APPOINTMENT ON HIRED
              */
             if ($validated['status'] === 'hired') {
+                
+                // Prevent concurrent hiring overlap
+                $hasOverlap = Appointment::where('employer_id', $application->user_id)
+                    ->whereIn('status', ['approved', 'employee_in_society', 'in_progress', 'waiting_resident_confirmation'])
+                    ->exists();
+
+                if ($hasOverlap) {
+                    return response()->json(['status' => false, 'message' => 'Worker is already booked or currently active in another job.'], 422);
+                }
+
+                Notify::to($application->user_id, 'You are Hired!', 'You have been hired for the job. Please check your appointments.', ['application_id' => $application->id]);
 
                 $resident = User::with([
                      'details.society',
@@ -445,7 +458,7 @@ class JobApplicationController extends Controller
 
         $applications = JobApplication::where('user_id', $employer_id)
             ->whereIn('status', $statusMap[$status])
-            ->with(['jobPost', 'user', 'appointment'])
+            ->with(['jobPost', 'user', 'appointment', 'resident'])
             ->latest()
             ->get()
             ->map(function ($application) {
@@ -548,6 +561,7 @@ class JobApplicationController extends Controller
                     'society_job' => $appointment->society_id ?? 0,
                     // 🔹 JOB POST DATA (FULL OBJECT)
                     'job_post' => $application->jobPost,
+                    'resident_fcm_token' => optional($application->resident)->fcm_token,
 
                     // 🔹 FLOW STATE
                     'job_flow_state' => $jobFlowState,

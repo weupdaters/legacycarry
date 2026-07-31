@@ -99,6 +99,30 @@ class NotificationController extends Controller
         );
 
         if (! $response->successful()) {
+            $responseBody = $response->json();
+            $errorCode = null;
+
+            if (isset($responseBody['error']['details'])) {
+                foreach ($responseBody['error']['details'] as $detail) {
+                    if (isset($detail['errorCode'])) {
+                        $errorCode = $detail['errorCode'];
+                        break;
+                    }
+                }
+            }
+
+            if ($response->status() === 404 || $errorCode === 'UNREGISTERED' || $errorCode === 'INVALID_ARGUMENT') {
+                // Clear the stale/invalid fcm_token
+                $user->fcm_token = null;
+                $user->save();
+
+                return response()->json([
+                    'message' => 'Notification saved, but recipient\'s device token is unregistered or expired.',
+                    'user_id' => $user->id,
+                    'warning' => 'unregistered_device',
+                ], 200);
+            }
+
             return response()->json([
                 'error' => 'FCM failed',
                 'status' => $response->status(),
@@ -156,22 +180,50 @@ class NotificationController extends Controller
     ) {
         $accessToken = $this->getFirebaseAccessToken();
 
+        $notificationPayload = [
+            'title' => $title,
+            'body' => $body ?? '',
+        ];
+
+        $dataPayload = [
+            'notification_id' => (string) $notificationId,
+            'user_id' => (string) $userId,
+        ];
+
+        $message = [
+            'token' => $token,
+        ];
+
+        if (!empty($image)) {
+            $notificationPayload['image'] = $image;
+            $dataPayload['image'] = $image;
+
+            $message['android'] = [
+                'notification' => [
+                    'image' => $image,
+                ],
+            ];
+
+            $message['apns'] = [
+                'payload' => [
+                    'aps' => [
+                        'mutable-content' => 1,
+                    ],
+                ],
+                'fcm_options' => [
+                    'image' => $image,
+                ],
+            ];
+        }
+
+        $message['notification'] = $notificationPayload;
+        $message['data'] = $dataPayload;
+
         return Http::withToken($accessToken)
             ->post(
                 'https://fcm.googleapis.com/v1/projects/' . env('FIREBASE_PROJECT_ID') . '/messages:send',
                 [
-                    'message' => [
-                        'token' => $token,
-                        'notification' => [
-                            'title' => $title,
-                            'body' => $body ?? '',
-                            'image' => $image,
-                        ],
-                        'data' => [
-                            'notification_id' => (string) $notificationId,
-                            'user_id' => (string) $userId,
-                        ],
-                    ],
+                    'message' => $message,
                 ]
             );
     }

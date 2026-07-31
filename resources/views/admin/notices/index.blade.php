@@ -10,12 +10,11 @@
       </h4>
 
       <div class="text-end">
+        @if (has_permission('notice_create'))
         <a href="{{ route('admin.notices.create') }}" class="btn btn-primary btn-sm">
           <i class="bi bi-plus-circle"></i> Add Notice
         </a>
-
-
-
+        @endif
       </div>
     </div>
 
@@ -41,8 +40,8 @@
               @forelse($notices as $notice)
                 <tr>
                   <td>
-                    @if ($notice->image_url)
-                      <img src="{{ $notice->image_url }}" width="60" height="60" style="object-fit:cover;"
+                    @if ($notice->image)
+                      <img src="{{ asset('storage/' . $notice->image) }}" width="60" height="60" style="object-fit:cover;"
                         class="rounded">
                     @else
                       <span class="text-muted">No image</span>
@@ -61,8 +60,11 @@
                   </td>
                   <td>{{ optional($notice->published_at)->format('d M, Y h:i A') ?? '-' }}</td>
                   <td>
+                    @if (has_permission('notice_edit'))
                     <a href="{{ route('admin.notices.edit', $notice->id) }}" class="btn btn-sm btn-warning">Edit</a>
+                    @endif
 
+                    @if (has_permission('notice_delete'))
                     <form action="{{ route('admin.notices.destroy', $notice->id) }}" method="POST" class="d-inline">
                       @csrf
                       @method('DELETE')
@@ -70,6 +72,7 @@
                         Delete
                       </button>
                     </form>
+                    @endif
                   </td>
                 </tr>
               @empty

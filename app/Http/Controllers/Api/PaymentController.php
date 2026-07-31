@@ -20,8 +20,16 @@ class PaymentController extends Controller
             'payment_reference' => 'required|string',
         ]);
 
-        // ❌ Advance already paid for this appointment
-        if ($appointment->advance_paid) {
+        if ($req->user_id != $appointment->resident_id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($req, $appointment) {
+            // Lock the appointment for update to prevent concurrent double-payments
+            $appointment = \App\Models\Appointment::where('id', $appointment->id)->lockForUpdate()->first();
+
+            // ❌ Advance already paid for this appointment
+            if ($appointment->advance_paid) {
             return response()->json([
                 'status' => false,
                 'message' => 'Advance already paid',
@@ -74,10 +82,13 @@ class PaymentController extends Controller
             'target_account' => 'admin',
         ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Advance payment recorded successfully',
-        ]);
+        \App\Helpers\Notify::to($appointment->employer_id, 'Advance Payment Received', 'Resident has paid the advance payment.', ['appointment_id' => $appointment->id]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Advance payment recorded successfully',
+            ]);
+        });
     }
 
 
@@ -93,8 +104,16 @@ class PaymentController extends Controller
             'payment_reference' => 'required|string',
         ]);
 
-        // ❌ Final already paid
-        if ($appointment->final_paid) {
+        if ($req->user_id != $appointment->resident_id) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($req, $appointment) {
+            // Lock the appointment for update
+            $appointment = \App\Models\Appointment::where('id', $appointment->id)->lockForUpdate()->first();
+
+            // ❌ Final already paid
+            if ($appointment->final_paid) {
             return response()->json([
                 'status' => false,
                 'message' => 'Final payment already paid',
@@ -145,10 +164,13 @@ class PaymentController extends Controller
             'target_account' => 'employer',
         ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Final payment recorded successfully',
-        ]);
+        \App\Helpers\Notify::to($appointment->employer_id, 'Final Payment Received', 'Resident has paid the final payment.', ['appointment_id' => $appointment->id]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Final payment recorded successfully',
+            ]);
+        });
     }
 
 
