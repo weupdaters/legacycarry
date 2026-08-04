@@ -17,7 +17,9 @@ class NotificationController extends Controller
      */
     public function registerToken(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $input = $this->cleanRequestInput($request);
+
+        $validator = Validator::make($input, [
             'token' => 'required|string',
             'user_id' => 'nullable|exists:users,id',
         ]);
@@ -73,7 +75,9 @@ class NotificationController extends Controller
      */
     public function send(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $input = $this->cleanRequestInput($request);
+
+        $validator = Validator::make($input, [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'body' => 'nullable|string',
@@ -83,6 +87,7 @@ class NotificationController extends Controller
             'token' => 'nullable|string',
             'data' => 'nullable|array',
         ]);
+
 
         if ($validator->fails()) {
             return response()->json([
@@ -236,5 +241,34 @@ class NotificationController extends Controller
             'data' => $notifications,
         ]);
     }
+
+    /**
+     * Clean raw JSON input if comments like // are present in Postman/raw JSON
+     */
+    private function cleanRequestInput(Request $request): array
+    {
+        $all = $request->all();
+        if (!empty($all) && (isset($all['title']) || isset($all['token']) || isset($all['user_id']))) {
+            return $all;
+        }
+
+        $raw = $request->getContent();
+        if (!empty($raw)) {
+            $clean = preg_replace('#^\s*//.*$#m', '', $raw);
+            $clean = preg_replace('#/\*.*?\*/#s', '', $clean);
+            $decoded = json_decode($clean, true);
+            if (is_array($decoded) && !empty($decoded)) {
+                $request->merge($decoded);
+                if (method_exists($request, 'setJson')) {
+                    $request->setJson(new \Symfony\Component\HttpFoundation\InputBag($decoded));
+                }
+                return array_merge($all, $decoded);
+            }
+        }
+
+        return $all;
+    }
+
 }
+
 

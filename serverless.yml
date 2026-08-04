@@ -1,0 +1,28 @@
+service: laravel-serverless-api
+
+provider:
+  name: aws
+  region: eu-north-1 # You can set this to the region you are currently viewing
+  environment:
+    APP_ENV: production
+    # Add other environment variables here
+
+plugins:
+  - ./vendor/bref/bref
+
+functions:
+  api:
+    handler: public/index.php
+    runtime: php-83-fpm # Ensure this matches your PHP version (e.g., php-82-fpm, php-83-fpm)
+    timeout: 28 # API Gateway has a max timeout of 29 seconds
+    events:
+      - httpApi: "*"
+
+# Exclude unnecessary files to keep the Lambda deployment package small
+package:
+  patterns:
+    - "!node_modules/**"
+    - "!public/storage"
+    - "!resources/assets/**"
+    - "!storage/**"
+    - "!tests/**"

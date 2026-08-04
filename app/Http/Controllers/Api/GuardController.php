@@ -570,7 +570,14 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Visitor exit recorded', 'pass' => $visitorPass]);
+                $residentFcmToken = optional($visitorPass->createdByUser)->fcm_token ?? optional($visitorPass->creator)->fcm_token;
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Visitor exit recorded',
+                    'pass' => $visitorPass,
+                    'resident_fcm_token' => $residentFcmToken,
+                    'resident_device_token' => $residentFcmToken,
+                ]);
             }
 
             if ($identifiedType === 'appointment') {
@@ -600,9 +607,13 @@ class GuardController extends Controller
                 $appointment->save();
 
                 Audit::log($guardUser->id, 'approve_exit', 'appointments', $appointment->id, null, ['guard_out_time' => $appointment->guard_out_time]);
-                
+
                 // Notify worker that exit was registered and job completed
                 Notify::to($appointment->employer_id, 'Job Completed', 'Your exit has been recorded and job completion registered.', ['appointment_id' => $appointment->id]);
+                if ($appointment->resident_id) {
+                    Notify::to($appointment->resident_id, 'Worker Exited', 'Worker has exited the society.', ['appointment_id' => $appointment->id]);
+                }
+
                 ScanHistory::create([
                     'society_id' => $appointment->society_id,
                     'guard_id' => $guardUser->id,
@@ -614,7 +625,14 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Appointment exit recorded', 'appointment' => $appointment]);
+                $residentFcmToken = optional($appointment->resident)->fcm_token ?? optional($appointment->employer)->fcm_token;
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Appointment exit recorded',
+                    'appointment' => $appointment,
+                    'resident_fcm_token' => $residentFcmToken,
+                    'resident_device_token' => $residentFcmToken,
+                ]);
             }
 
             if ($identifiedType === 'vehicle') {
@@ -648,7 +666,14 @@ class GuardController extends Controller
                 ]);
 
                 DB::commit();
-                return response()->json(['status' => true, 'message' => 'Vehicle exit recorded', 'vehicle_log' => $vehicleLog]);
+                $residentFcmToken = optional($vehicle->user)->fcm_token;
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Vehicle exit recorded',
+                    'vehicle_log' => $vehicleLog,
+                    'resident_fcm_token' => $residentFcmToken,
+                    'resident_device_token' => $residentFcmToken,
+                ]);
             }
 
             DB::rollBack();
