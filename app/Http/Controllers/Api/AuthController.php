@@ -23,6 +23,8 @@ class AuthController extends Controller
             'phone' => 'nullable|string|exists:users,phone',
             'password' => 'nullable|string|min:6',
             'otp' => 'nullable|string',
+            'device_token' => 'nullable|string',
+            'fcm_token' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -32,6 +34,8 @@ class AuthController extends Controller
                 'message' => $errors,
             ], 200);
         }
+
+        $deviceToken = $request->device_token ?? $request->fcm_token;
 
         // Email & Password login
         if ($request->filled('email') && $request->filled('password')) {
@@ -44,12 +48,18 @@ class AuthController extends Controller
                 ], 200);
             }
 
+            if ($deviceToken) {
+                $user->fcm_token = trim($deviceToken);
+                $user->save();
+            }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'status' => true,
                 'message' => 'Login successful',
                 'user' => $user,
+                'fcm_token' => $user->fcm_token,
                 'token' => $token,
             ]);
         }
@@ -88,14 +98,14 @@ class AuthController extends Controller
             }
 
             //check user is active
-            if ($user->is_active !== '1') {
+            if ($user->is_active !== '1' && $user->is_active !== 1 && $user->is_active !== true) {
                 return response()->json(['status' => false, 'message' => 'User is not active'], 200);
             }
 
-            //check user status verified
-            // if ($user->verification_status !== 'verified') {
-            //     return response()->json(['status' => false, 'message' => 'User is not verified'], 200);
-            // }
+            if ($deviceToken) {
+                $user->fcm_token = trim($deviceToken);
+                $user->save();
+            }
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -157,9 +167,8 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'user' => $user,
+            'fcm_token' => $user->fcm_token,
         ], 200);
     }
-
-
-
 }
+

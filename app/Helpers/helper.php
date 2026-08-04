@@ -121,41 +121,35 @@ if (!function_exists('has_permission')) {
 }
 if (!function_exists('send_push_notification')) {
     /**
-     * Send push notification using Firebase
-     * @param array|string $tokens
+     * Global helper function to send push notification using FCM HTTP v1.
+     *
+     * @param string|array|\App\Models\User|int $tokens Single FCM token, array of FCM tokens, User model, or User ID
      * @param string $title
      * @param string $body
      * @param array $data
+     * @param string|null $image
+     * @return array|bool
      */
-    function send_push_notification($tokens, $title, $body, $data = [])
+    function send_push_notification($tokens, string $title, string $body, array $data = [], ?string $image = null)
     {
-        if (empty($tokens)) return false;
-
-        $messaging = app('firebase.messaging');
-        $tokens = is_array($tokens) ? $tokens : [$tokens];
-        
-        // Remove empty or null tokens
-        $tokens = array_filter($tokens);
-        if (empty($tokens)) return false;
-
-        try {
-            $notification = \Kreait\Firebase\Messaging\Notification::create($title, $body);
-            
-
-            // Since we use Multicast for multiple tokens
-            $cloudMessage = \Kreait\Firebase\Messaging\CloudMessage::new()
-                ->withNotification($notification)
-                ->withData($data);
-
-            $report = $messaging->sendMulticast($cloudMessage, $tokens);
-            
-            return [
-                'success' => $report->successes()->count(),
-                'failure' => $report->failures()->count(),
-            ];
-        } catch (\Exception $e) {
-            \Log::error('Firebase Notification Error: ' . $e->getMessage());
-            return false;
-        }
+        return \App\Helpers\FCMHelper::send($tokens, $title, $body, $data, $image);
     }
 }
+
+if (!function_exists('send_fcm_notification')) {
+    /**
+     * Global helper function alias to send FCM push notification.
+     *
+     * @param string|array|\App\Models\User|int $tokens Single FCM token, array of FCM tokens, User model, or User ID
+     * @param string $title
+     * @param string $body
+     * @param array $data
+     * @param string|null $image
+     * @return array|bool
+     */
+    function send_fcm_notification($tokens, string $title, string $body, array $data = [], ?string $image = null)
+    {
+        return \App\Helpers\FCMHelper::send($tokens, $title, $body, $data, $image);
+    }
+}
+

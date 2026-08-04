@@ -401,16 +401,14 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 
-    Route::prefix('notifications')->group(function () {
-
-        Route::post('device/token', [NotificationController::class, 'registerToken']);
-        Route::post('push-notification/send', [NotificationController::class, 'send']);
-        Route::get('list/{user_id}', [NotificationController::class, 'index']);
-
-    });
-
     Route::get('/notices', [SocietyNoticeApiController::class, 'index']);
     Route::get('/notices/{notice}', [SocietyNoticeApiController::class, 'show']);
 
-
 });
+
+Route::prefix('notifications')->group(function () {
+    Route::post('device/token', [NotificationController::class, 'registerToken']);
+    Route::post('push-notification/send', [NotificationController::class, 'send']);
+    Route::get('list/{user_id}', [NotificationController::class, 'index']);
+});
+
