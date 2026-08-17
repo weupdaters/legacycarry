@@ -24,11 +24,16 @@ class GuardShift extends Model
     ];
 
     protected $casts = [
-        'start_shift_date' => 'date',
-        'end_shift_date' => 'date',
+        'start_shift_date' => 'date:Y-m-d',
+        'end_shift_date' => 'date:Y-m-d',
         'start_time' => 'string',
         'end_time' => 'string',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     /* ===========================
      | Relationships

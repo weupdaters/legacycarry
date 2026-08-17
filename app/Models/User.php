@@ -45,10 +45,15 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
+        'email_verified_at' => 'datetime:Y-m-d H:i:s',
         'is_active' => 'boolean',
         'is_deleted' => 'boolean',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     /* ---------------------------------------------------------
         ROLE HELPERS
@@ -94,6 +99,11 @@ class User extends Authenticatable
     public function jobs()
     {
         return $this->hasMany(JobPost::class, 'user_id');
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(UserDocument::class, 'user_id');
     }
 
 

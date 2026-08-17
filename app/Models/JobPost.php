@@ -38,9 +38,15 @@ class JobPost extends Model
         'documents_required' => 'array',
         'tools_provided' => 'boolean',
         'advance_payment' => 'boolean',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
+        'completed_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
 
     public function user()

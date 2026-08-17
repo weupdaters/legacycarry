@@ -31,8 +31,13 @@ class Payment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'paid_at' => 'datetime',
+        'paid_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     // Relationships
     public function job()

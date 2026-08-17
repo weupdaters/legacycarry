@@ -26,9 +26,14 @@ class UserCode extends Model
 
     // Casts
     protected $casts = [
-        'expires_at' => 'datetime',
+        'expires_at' => 'datetime:Y-m-d H:i:s',
         'attempts' => 'integer',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     /**
      * Relation to User

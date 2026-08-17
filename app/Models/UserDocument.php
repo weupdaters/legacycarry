@@ -16,4 +16,9 @@ class UserDocument extends Model
         'status',
         'remarks'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

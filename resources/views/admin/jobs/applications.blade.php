@@ -163,7 +163,7 @@
 
           <td>
             @if ($app->certificate_photo)
-              <a href="{{ asset('uploads/certificates/' . $app->certificate_photo) }}" target="_blank"
+              <a href="{{ asset('storage/' . $app->certificate_photo) }}" target="_blank"
                 class="btn btn-sm btn-outline-primary">
                 View
               </a>

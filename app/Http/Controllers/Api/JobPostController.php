@@ -26,18 +26,42 @@ class JobPostController extends Controller
     {
         $apiKey = env('GOOGLE_MAPS_API_KEY');
 
-        $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$originLat,$originLng&destinations=$destLat,$destLng&mode=driving&key=$apiKey";
+        if (!empty($apiKey)) {
+            try {
+                $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=$originLat,$originLng&destinations=$destLat,$destLng&mode=driving&key=$apiKey";
 
-        $response = file_get_contents($url);
-        $data = json_decode($response, true);
+                $response = @file_get_contents($url);
+                if ($response) {
+                    $data = json_decode($response, true);
 
-        if (
-            isset($data['rows'][0]['elements'][0]['distance']['value'])
-        ) {
-            return $data['rows'][0]['elements'][0]['distance']['value'] / 1000; // km
+                    if (
+                        isset($data['rows'][0]['elements'][0]['distance']['value'])
+                    ) {
+                        return $data['rows'][0]['elements'][0]['distance']['value'] / 1000; // km
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback to Haversine
+            }
         }
 
-        return null;
+        return $this->calculateHaversineDistance($originLat, $originLng, $destLat, $destLng);
+    }
+
+    private function calculateHaversineDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        if (!$lat1 || !$lon1 || !$lat2 || !$lon2) {
+            return null;
+        }
+
+        $earthRadius = 6371; // Radius of the earth in km
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return round($earthRadius * $c, 2);
     }
 
 
@@ -141,21 +165,29 @@ class JobPostController extends Controller
     /**
      * ✅ Get all job posts
      */
-    public function index(Request $request)
+    public function index(Request $request, $user_id = null)
     {
-        $userId = Auth::id();
-        $apiKey = env('GOOGLE_MAPS_API_KEY');
+        $userId = $user_id ?? $request->query('user_id') ?? Auth::id();
 
         $matchSkill = $request->query('match_skill');
 
         // Employee profile
-        $employee = Employee::where('user_id', $userId)
-            ->select('services', 'latitude', 'longitude', 'work_radius_km')
-            ->first();
+        $employee = null;
+        if ($userId) {
+            $employee = Employee::where('user_id', $userId)
+                ->select('services', 'latitude', 'longitude', 'work_radius_km')
+                ->first();
+        }
 
-        $employeeServices = $employee && !empty($employee->services)
-            ? (array) $employee->services
-            : [];
+        $employeeServices = [];
+        if ($employee && !empty($employee->services)) {
+            if (is_array($employee->services)) {
+                $employeeServices = $employee->services;
+            } else {
+                $decoded = json_decode($employee->services, true);
+                $employeeServices = is_array($decoded) ? $decoded : array_map('trim', explode(',', (string) $employee->services));
+            }
+        }
 
         // Jobs
         $jobsQuery = JobPost::with('user')
@@ -166,14 +198,17 @@ class JobPostController extends Controller
         /**
          * Applied Jobs
          */
-        $appliedJobIds = DB::table('job_applications')
-            ->where('user_id', $userId)
-            ->where('status', 'active')
-            ->pluck('job_id')
-            ->toArray();
+        $appliedJobIds = [];
+        if ($userId) {
+            $appliedJobIds = DB::table('job_applications')
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->pluck('job_id')
+                ->toArray();
+        }
 
         /**
-         * Distance Calculation using Google API
+         * Distance Calculation using Google API / Haversine fallback
          */
         foreach ($jobs as $job) {
 
@@ -201,12 +236,14 @@ class JobPostController extends Controller
         }
 
         /**
-         * Filter by work radius
+         * Filter by work radius (only if coordinates exist and distance is measured)
          */
-        if ($employee && $employee->work_radius_km) {
+        if ($employee && !empty($employee->work_radius_km) && $employee->latitude && $employee->longitude) {
             $jobs = $jobs->filter(function ($job) use ($employee) {
-                return $job->distance_km !== null &&
-                       $job->distance_km <= $employee->work_radius_km;
+                if ($job->distance_km !== null) {
+                    return $job->distance_km <= $employee->work_radius_km;
+                }
+                return true;
             });
         }
 
@@ -218,22 +255,54 @@ class JobPostController extends Controller
             $appliedJobIds,
             $matchSkill
         ) {
+            $jobSkills = [];
+            if (!empty($job->skills_required)) {
+                if (is_array($job->skills_required)) {
+                    $jobSkills = $job->skills_required;
+                } else {
+                    $decoded = json_decode($job->skills_required, true);
+                    $jobSkills = is_array($decoded) ? $decoded : array_map('trim', explode(',', (string) $job->skills_required));
+                }
+            }
 
-            $jobSkills = $job->skills_required
-                ? json_decode($job->skills_required, true)
-                : [];
+            $jobTitle = (string) $job->job_title;
 
-            $job->skill_matched = count(array_intersect(
-                array_map('strtolower', $employeeServices),
-                array_map('strtolower', $jobSkills)
-            )) > 0 ? 1 : 0;
+            $matched = false;
+            if (!empty($employeeServices)) {
+                foreach ($employeeServices as $empSkill) {
+                    $empSkillLower = strtolower(trim((string) $empSkill));
+                    if ($empSkillLower === '') continue;
 
+                    // Check skills_required array
+                    foreach ($jobSkills as $jobSkill) {
+                        $jobSkillLower = strtolower(trim((string) $jobSkill));
+                        if ($jobSkillLower === '') continue;
+
+                        if (
+                            $empSkillLower === $jobSkillLower ||
+                            str_contains($jobSkillLower, $empSkillLower) ||
+                            str_contains($empSkillLower, $jobSkillLower)
+                        ) {
+                            $matched = true;
+                            break 2;
+                        }
+                    }
+
+                    // Check job_title string
+                    if (str_contains(strtolower($jobTitle), $empSkillLower)) {
+                        $matched = true;
+                        break;
+                    }
+                }
+            }
+
+            $job->skill_matched = $matched ? 1 : 0;
             $job->applied = in_array($job->id, $appliedJobIds);
 
             $job->user_details = $job->user;
             unset($job->user);
 
-            if ($matchSkill === '1') {
+            if ($matchSkill === '1' || $matchSkill === 1 || $matchSkill === true) {
                 return $job->skill_matched === 1;
             }
 
@@ -277,7 +346,7 @@ class JobPostController extends Controller
      */
     public function show($id)
     {
-        $job = JobPost::find($id);
+        $job = JobPost::with(['user.employee', 'user.documents'])->find($id);
 
         if (!$job) {
             return response()->json([
@@ -286,27 +355,53 @@ class JobPostController extends Controller
             ], 404);
         }
 
-        // check to token of api is valid
-        $userId = auth()->id();
+        $authUserId = auth()->id();
 
         $jobApplication = null;
         $jobApplicationStatus = 'not_applied';
 
-        if ($userId) {
+        if ($authUserId) {
             $jobApplication = JobApplication::where('job_id', $id)
+                ->where('user_id', $authUserId)
                 ->first();
+        }
 
-            $userId = $job->user_id;
-            $resident_details = User::where('id', $userId)->select('id', 'name', 'email', 'phone', 'avatar')->first();
+        if (!$jobApplication) {
+            $jobApplication = JobApplication::where('job_id', $id)->latest()->first();
+        }
 
-            if ($jobApplication) {
-                $jobApplicationStatus = $jobApplication->status;
-            }
+        if ($jobApplication) {
+            $jobApplicationStatus = $jobApplication->status;
+        }
+
+        $resident = $job->user ?? User::find($job->user_id);
+
+        $resident_details = null;
+        if ($resident) {
+            $resident_details = [
+                'id' => $resident->id,
+                'name' => $resident->name,
+                'email' => $resident->email,
+                'phone' => $resident->phone,
+                'avatar' => $resident->avatar,
+                'avatar_url' => $resident->avatar_url,
+            ];
+        }
+
+        $certificate_photo_url = null;
+        if ($jobApplication && $jobApplication->certificate_photo) {
+            $certificate_photo_url = str_starts_with($jobApplication->certificate_photo, 'http')
+                ? $jobApplication->certificate_photo
+                : asset('storage/' . $jobApplication->certificate_photo);
         }
 
         return response()->json([
             'status' => true,
             'job_application_status' => $jobApplicationStatus,
+            'certificate_photo' => $certificate_photo_url,
+            'certificate_photo_url' => $certificate_photo_url,
+            'certificate_path' => $jobApplication?->certificate_photo,
+            'job_application' => $jobApplication,
             'data' => $job,
             'resident_details' => $resident_details,
         ]);

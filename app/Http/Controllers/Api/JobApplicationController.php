@@ -49,8 +49,20 @@ class JobApplicationController extends Controller
 
         // ✅ Handle optional file upload
         $certificatePath = null;
-        if ($request->hasFile('certificate_photo')) {
-            $certificatePath = $request->file('certificate_photo')->store('certificates', 'public');
+        if ($request->hasFile('certificate_photo') && $request->file('certificate_photo')->isValid()) {
+            $file = $request->file('certificate_photo');
+            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $stored = $file->storeAs('certificates', $fileName, 'public');
+            if ($stored) {
+                $certificatePath = $stored;
+            } else {
+                $dest = storage_path('app/public/certificates');
+                if (!file_exists($dest)) {
+                    @mkdir($dest, 0775, true);
+                }
+                $file->move($dest, $fileName);
+                $certificatePath = 'certificates/' . $fileName;
+            }
         }
 
         // ✅ Store data
@@ -61,7 +73,7 @@ class JobApplicationController extends Controller
             'start_datetime' => $validated['start_datetime'],
             'expected_cost' => $validated['expected_cost'],
             'message_to_employer' => $validated['message_to_employer'],
-            'certificate_photo' => $certificatePath,
+            'certificate_photo' => $certificatePath ?: null,
         ]);
 
         // ✅ Return response
@@ -69,6 +81,7 @@ class JobApplicationController extends Controller
             'status' => true,
             'message' => 'Job application submitted successfully.',
             'application' => $jobApplication,
+            'certificate_photo_url' => $jobApplication->certificate_photo_url,
         ], 200);
     }
 
@@ -101,11 +114,43 @@ class JobApplicationController extends Controller
      */
     public function getApplicationsByUserId($user_id)
     {
-        $applications = JobApplication::with(['user', 'employee'])
+        $applications = JobApplication::with(['user.documents', 'employee', 'jobPost'])
             ->where('user_id', $user_id)
             ->latest()
             ->get()
             ->map(function ($application) {
+
+                $certificateUrl = null;
+                if ($application->certificate_photo) {
+                    $certificateUrl = str_starts_with($application->certificate_photo, 'http')
+                        ? $application->certificate_photo
+                        : asset('storage/' . $application->certificate_photo);
+                }
+
+                $idProofUrl = null;
+                if ($application->employee?->id_proof_path) {
+                    $idProofUrl = str_starts_with($application->employee->id_proof_path, 'http')
+                        ? $application->employee->id_proof_path
+                        : asset('storage/' . $application->employee->id_proof_path);
+                }
+
+                $selfieUrl = null;
+                if ($application->employee?->selfie_path) {
+                    $selfieUrl = str_starts_with($application->employee->selfie_path, 'http')
+                        ? $application->employee->selfie_path
+                        : asset('storage/' . $application->employee->selfie_path);
+                }
+
+                $userDocs = ($application->user && $application->user->documents) ? $application->user->documents->map(function ($doc) {
+                    return [
+                        'id' => $doc->id,
+                        'document_type' => $doc->document_type,
+                        'file_path' => $doc->file_path,
+                        'file_url' => $doc->file_path ? (str_starts_with($doc->file_path, 'http') ? $doc->file_path : asset('storage/' . $doc->file_path)) : null,
+                        'status' => $doc->status,
+                        'remarks' => $doc->remarks,
+                    ];
+                }) : [];
 
                 return [
                     'application_id' => $application->id,
@@ -113,14 +158,24 @@ class JobApplicationController extends Controller
                     'user_id' => $application->user_id,
                     'status' => $application->status,
                     'shortlisted' => $application->shortlisted,
-                    'name' => $application->user->name,
-                    'avatar' => $application->user->avatar,
+                    'name' => $application->user?->name,
+                    'avatar' => $application->user?->avatar,
+                    'avatar_url' => $application->user?->avatar_url,
                     'services' => isset($application->employee->services)
-                                            ? implode(', ', $application->employee->services)
+                                            ? (is_array($application->employee->services) ? implode(', ', $application->employee->services) : $application->employee->services)
                                             : '',
                     'about' => $application->employee ? $application->employee->about : '',
                     'id_number' => $application->employee ? $application->employee->id_number : '',
+                    'id_proof_path' => $application->employee?->id_proof_path,
+                    'id_proof_url' => $idProofUrl,
+                    'selfie_path' => $application->employee?->selfie_path,
+                    'selfie_url' => $selfieUrl,
                     'message_to_employer' => $application->message_to_employer,
+                    'certificate_photo' => $certificateUrl,
+                    'certificate_photo_url' => $certificateUrl,
+                    'certificate_path' => $application->certificate_photo,
+                    'user_documents' => $userDocs,
+                    'job_details' => $application->jobPost,
                     'user_detils' => $application->user,
                 ];
             });
@@ -139,7 +194,7 @@ class JobApplicationController extends Controller
      */
     public function getApplicationsResident($user_id)
     {
-        $applications = JobApplication::with(['user', 'employee'])
+        $applications = JobApplication::with(['user.documents', 'employee', 'jobPost', 'appointment'])
             ->where('resident_id', $user_id)
             ->latest()
             ->get()
@@ -176,6 +231,38 @@ class JobApplicationController extends Controller
                     }
                 }
 
+                $certificateUrl = null;
+                if ($application->certificate_photo) {
+                    $certificateUrl = str_starts_with($application->certificate_photo, 'http')
+                        ? $application->certificate_photo
+                        : asset('storage/' . $application->certificate_photo);
+                }
+
+                $idProofUrl = null;
+                if ($application->employee?->id_proof_path) {
+                    $idProofUrl = str_starts_with($application->employee->id_proof_path, 'http')
+                        ? $application->employee->id_proof_path
+                        : asset('storage/' . $application->employee->id_proof_path);
+                }
+
+                $selfieUrl = null;
+                if ($application->employee?->selfie_path) {
+                    $selfieUrl = str_starts_with($application->employee->selfie_path, 'http')
+                        ? $application->employee->selfie_path
+                        : asset('storage/' . $application->employee->selfie_path);
+                }
+
+                $userDocs = ($application->user && $application->user->documents) ? $application->user->documents->map(function ($doc) {
+                    return [
+                        'id' => $doc->id,
+                        'document_type' => $doc->document_type,
+                        'file_path' => $doc->file_path,
+                        'file_url' => $doc->file_path ? (str_starts_with($doc->file_path, 'http') ? $doc->file_path : asset('storage/' . $doc->file_path)) : null,
+                        'status' => $doc->status,
+                        'remarks' => $doc->remarks,
+                    ];
+                }) : [];
+
                 return [
                     'application_id' => $application->id,
                     'appointment_id' => $appointment?->id,
@@ -184,20 +271,29 @@ class JobApplicationController extends Controller
                     'user_id' => $application->user_id,
                     'status' => $application->status,
                     'shortlisted' => $application->shortlisted,
-                    'name' => $application->user->name,
-                    'avatar' => $application->user->avatar,
+                    'name' => $application->user?->name,
+                    'avatar' => $application->user?->avatar,
+                    'avatar_url' => $application->user?->avatar_url,
                     'services' => isset($application->employee->services)
-                                            ? implode(', ', $application->employee->services)
+                                            ? (is_array($application->employee->services) ? implode(', ', $application->employee->services) : $application->employee->services)
                                             : '',
-                    'about' => $application->employee->about,
-                    'id_number' => $application->employee->id_number,
+                    'about' => $application->employee?->about,
+                    'id_number' => $application->employee?->id_number,
+                    'id_proof_path' => $application->employee?->id_proof_path,
+                    'id_proof_url' => $idProofUrl,
+                    'selfie_path' => $application->employee?->selfie_path,
+                    'selfie_url' => $selfieUrl,
                     'fcm_token' => optional($application->user)->fcm_token,
                     'message_to_employer' => $application->message_to_employer,
-                    'certificate_photo' => $application->certificate_photo ? $application->certificate_photo : null,
+                    'certificate_photo' => $certificateUrl,
+                    'certificate_photo_url' => $certificateUrl,
+                    'certificate_path' => $application->certificate_photo,
+                    'user_documents' => $userDocs,
                     // 💰 DERIVED PAYMENT INFO (NO PARAM USED)
                     'payment_stage' => $paymentStage,   // advance | final | completed | none
                     'payment_amount' => $paymentAmount,
                     'payment_status' => $paymentStatus,
+                    'job_details' => $application->jobPost,
                     'user_detils' => $application->user,
                 ];
             });
@@ -210,7 +306,7 @@ class JobApplicationController extends Controller
 
     public function oldgetApplicationsResident($user_id)
     {
-        $applications = JobApplication::with(['user', 'employee', 'appointment'])
+        $applications = JobApplication::with(['user.documents', 'employee', 'jobPost', 'appointment'])
             ->where('resident_id', $user_id)
             ->latest()
             ->get()
@@ -247,6 +343,38 @@ class JobApplicationController extends Controller
                     }
                 }
 
+                $certificateUrl = null;
+                if ($application->certificate_photo) {
+                    $certificateUrl = str_starts_with($application->certificate_photo, 'http')
+                        ? $application->certificate_photo
+                        : asset('storage/' . $application->certificate_photo);
+                }
+
+                $idProofUrl = null;
+                if ($application->employee?->id_proof_path) {
+                    $idProofUrl = str_starts_with($application->employee->id_proof_path, 'http')
+                        ? $application->employee->id_proof_path
+                        : asset('storage/' . $application->employee->id_proof_path);
+                }
+
+                $selfieUrl = null;
+                if ($application->employee?->selfie_path) {
+                    $selfieUrl = str_starts_with($application->employee->selfie_path, 'http')
+                        ? $application->employee->selfie_path
+                        : asset('storage/' . $application->employee->selfie_path);
+                }
+
+                $userDocs = ($application->user && $application->user->documents) ? $application->user->documents->map(function ($doc) {
+                    return [
+                        'id' => $doc->id,
+                        'document_type' => $doc->document_type,
+                        'file_path' => $doc->file_path,
+                        'file_url' => $doc->file_path ? (str_starts_with($doc->file_path, 'http') ? $doc->file_path : asset('storage/' . $doc->file_path)) : null,
+                        'status' => $doc->status,
+                        'remarks' => $doc->remarks,
+                    ];
+                }) : [];
+
                 return [
                     'application_id' => $application->id,
                     'job_id' => $application->job_id,
@@ -254,15 +382,24 @@ class JobApplicationController extends Controller
                     'status' => $application->status,
                     'shortlisted' => $application->shortlisted,
 
-                    'name' => $application->user->name,
-                    'avatar' => $application->user->avatar,
+                    'name' => $application->user?->name,
+                    'avatar' => $application->user?->avatar,
+                    'avatar_url' => $application->user?->avatar_url,
 
                     'services' => $application->employee?->services
-                                        ? implode(', ', $application->employee->services)
+                                        ? (is_array($application->employee->services) ? implode(', ', $application->employee->services) : $application->employee->services)
                                         : '',
 
                     'about' => $application->employee?->about,
                     'id_number' => $application->employee?->id_number,
+                    'id_proof_path' => $application->employee?->id_proof_path,
+                    'id_proof_url' => $idProofUrl,
+                    'selfie_path' => $application->employee?->selfie_path,
+                    'selfie_url' => $selfieUrl,
+                    'certificate_photo' => $certificateUrl,
+                    'certificate_photo_url' => $certificateUrl,
+                    'certificate_path' => $application->certificate_photo,
+                    'user_documents' => $userDocs,
 
                     // 💰 DERIVED PAYMENT INFO (NO PARAM USED)
                     'payment_stage' => $paymentStage,   // advance | final | completed | none
@@ -270,6 +407,7 @@ class JobApplicationController extends Controller
                     'payment_status' => $paymentStatus,
 
                     'appointment_status' => $appointment?->status,
+                    'job_details' => $application->jobPost,
                     'user_details' => $application->user,
                 ];
             });

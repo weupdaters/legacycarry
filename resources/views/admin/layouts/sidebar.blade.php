@@ -227,6 +227,15 @@
           </a>
         </li>
 
+        {{-- ─── SUPPORT & REPORTS ─── --}}
+        <li class="menu-title mt-2">Support & Reports</li>
+        <li>
+          <a href="{{ route('admin.reports.index') }}" class="tp-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+            <i data-feather="alert-circle"></i>
+            <span>Reported Bugs</span>
+          </a>
+        </li>
+
         {{-- ─── SYSTEM SETTINGS ─── --}}
         <li class="menu-title mt-2">System Settings</li>
         <li>

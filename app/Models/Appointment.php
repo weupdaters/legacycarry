@@ -39,11 +39,16 @@ class Appointment extends Model
     ];
 
     protected $casts = [
-        'job_start_time' => 'datetime',
-        'job_end_time' => 'datetime',
-        'guard_in_time' => 'datetime',
-        'guard_out_time' => 'datetime',
+        'job_start_time' => 'datetime:Y-m-d H:i:s',
+        'job_end_time' => 'datetime:Y-m-d H:i:s',
+        'guard_in_time' => 'datetime:Y-m-d H:i:s',
+        'guard_out_time' => 'datetime:Y-m-d H:i:s',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     // 🔗 Link back to Job Application
     public function jobApplication()

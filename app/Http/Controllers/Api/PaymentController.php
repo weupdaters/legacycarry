@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -186,11 +187,13 @@ class PaymentController extends Controller
                 return false;
             }
 
+            $cfConfig = Setting::getCashfreeConfig();
+
             $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'x-client-id' => config('services.cashfree.app_id'),
-                'x-client-secret' => config('services.cashfree.secret_key'),
+                'x-client-id' => $cfConfig['app_id'],
+                'x-client-secret' => $cfConfig['secret_key'],
                 'x-api-version' => '2022-09-01',
-            ])->get(config('services.cashfree.base_url') . '/' . $orderId . '/payments');
+            ])->get($cfConfig['base_url'] . '/' . $orderId . '/payments');
 
             if (!$response->successful()) {
                 return false;

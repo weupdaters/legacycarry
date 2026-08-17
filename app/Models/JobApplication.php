@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class JobApplication extends Model
 {
+    protected $appends = ['certificate_photo_url'];
+
     protected $fillable = [
         'job_id',
         'user_id',
@@ -19,6 +21,29 @@ class JobApplication extends Model
         'appointment_id',
         'completed_at',
     ];
+
+    protected $casts = [
+        'start_datetime' => 'datetime:Y-m-d H:i:s',
+        'completed_at' => 'datetime:Y-m-d H:i:s',
+    ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
+
+    public function getCertificatePhotoUrlAttribute()
+    {
+        if (!$this->certificate_photo) {
+            return null;
+        }
+
+        if (str_starts_with($this->certificate_photo, 'http://') || str_starts_with($this->certificate_photo, 'https://')) {
+            return $this->certificate_photo;
+        }
+
+        return asset('storage/' . $this->certificate_photo);
+    }
 
     // Worker/User
     public function user()

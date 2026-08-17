@@ -37,8 +37,13 @@ class Employee extends Model
     protected $casts = [
         'services' => 'array',
         'phone_verified' => 'boolean',
-        'date_of_birth' => 'date',
+        'date_of_birth' => 'date:Y-m-d',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     public function user()
     {

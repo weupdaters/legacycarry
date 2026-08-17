@@ -23,10 +23,15 @@ class AssignedShift extends Model
     ];
 
     protected $casts = [
-        'shift_date' => 'date',
+        'shift_date' => 'date:Y-m-d',
         'shift_start' => 'string',
         'shift_end' => 'string',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     /**
      * Assigned security guard

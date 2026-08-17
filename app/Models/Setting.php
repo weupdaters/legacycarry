@@ -33,10 +33,19 @@ class Setting extends Model
     /**
      * Set setting value by key
      */
-    public static function setValue($key, $value)
+    public static function setValue($key, $value, $group = null)
     {
         $setting = static::firstOrNew(['key' => $key]);
         $setting->value = $value;
+        if (empty($setting->label)) {
+            $setting->label = \Illuminate\Support\Str::headline($key);
+        }
+        if (empty($setting->type)) {
+            $setting->type = 'text';
+        }
+        if ($group && (empty($setting->group) || $setting->group === 'general')) {
+            $setting->group = $group;
+        }
         return $setting->save();
     }
 
@@ -51,11 +60,41 @@ class Setting extends Model
     /**
      * Get Indian currency formatted value
      */
-    public function getFormattedValueAttribute()
+    /**
+     * Get dynamic Cashfree configuration based on environment mode
+     */
+    public static function getCashfreeConfig(): array
     {
-        if ($this->type === 'amount') {
-            return '₹ ' . number_format($this->value, 2);
+        $environment = static::getValue('cashfree_environment') ?: config('services.cashfree.environment', 'sandbox');
+        $isLive = in_array(strtolower($environment), ['production', 'live']);
+
+        if ($isLive) {
+            $appId = static::getValue('cashfree_live_app_id')
+                ?: static::getValue('cashfree_app_id')
+                ?: config('services.cashfree.app_id');
+            $secretKey = static::getValue('cashfree_live_secret_key')
+                ?: static::getValue('cashfree_secret_key')
+                ?: config('services.cashfree.secret_key');
+            $baseUrl = 'https://api.cashfree.com/pg/orders';
+            $checkoutUrl = 'https://payments.cashfree.com/pg/view';
+        } else {
+            $appId = static::getValue('cashfree_sandbox_app_id')
+                ?: static::getValue('cashfree_app_id')
+                ?: config('services.cashfree.app_id');
+            $secretKey = static::getValue('cashfree_sandbox_secret_key')
+                ?: static::getValue('cashfree_secret_key')
+                ?: config('services.cashfree.secret_key');
+            $baseUrl = 'https://sandbox.cashfree.com/pg/orders';
+            $checkoutUrl = 'https://sandbox.cashfree.com/pg/view';
         }
-        return $this->value;
+
+        return [
+            'environment'  => $isLive ? 'production' : 'sandbox',
+            'is_live'      => $isLive,
+            'app_id'       => $appId,
+            'secret_key'   => $secretKey,
+            'base_url'     => $baseUrl,
+            'checkout_url' => $checkoutUrl,
+        ];
     }
 }

@@ -20,10 +20,24 @@
         <ul class="pro-nav">
 
             @foreach($settings as $group => $groupSettings)
+            @php
+                $icons = [
+                    'general' => 'fas fa-sliders-h',
+                    'payment' => 'fas fa-credit-card',
+                    'business' => 'fas fa-briefcase',
+                    'invoice' => 'fas fa-file-invoice',
+                    'notifications' => 'fas fa-bell',
+                    'seo' => 'fas fa-globe',
+                    'social' => 'fas fa-share-alt',
+                    'security' => 'fas fa-shield-alt',
+                    'guard' => 'fas fa-user-shield',
+                ];
+                $iconClass = $icons[strtolower($group)] ?? 'fas fa-circle';
+            @endphp
             <li class="pro-nav-item 
                 {{ $activeTab == Str::slug($group) ? 'active' : ($loop->first && !$activeTab ? 'active' : '') }}"
                 data-target="#{{ Str::slug($group) }}">
-                <i class="fas fa-circle me-2"></i>{{ ucfirst($group) }}
+                <i class="{{ $iconClass }} me-2"></i>{{ ucfirst($group) }}
             </li>
             @endforeach
         
@@ -76,6 +90,9 @@
                  SETTINGS GROUPS (AUTO-GENERATED)
                  ========================================= -->
             @foreach($settings as $group => $groupSettings)
+            @if($group === 'payment')
+                @continue
+            @endif
             <div class="pro-section {{ $activeTab == Str::slug($group) ? 'active' : ($loop->first && !$activeTab ? 'active' : '') }}"
                 id="{{ Str::slug($group) }}">
            
@@ -219,7 +236,7 @@
             <!-- =========================================
                  PAYMENT SETTINGS CUSTOM SECTION
                  ========================================= -->
-            <div id="payment" class="pro-section">
+            <div id="payment" class="pro-section {{ $activeTab == 'payment' ? 'active' : '' }}">
                 <h4 class="fw-bold mb-3 text-primary">Payment Settings</h4>
 
                 <div class="alert alert-info shadow-sm mb-4">
@@ -248,12 +265,110 @@
                         <label class="fw-semibold mb-1">Payment Gateway</label>
                         <div class="text-muted small mb-2">Select your preferred payment gateway for Indian payments</div>
                         <select name="payment_gateway" class="form-select pro-input" id="main_payment_gateway">
+                            <option value="cashfree" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'cashfree' ? 'selected' : '' }}>Cashfree (Recommended)</option>
                             <option value="razorpay" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'razorpay' ? 'selected' : '' }}>Razorpay</option>
-                            <option value="cashfree" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'cashfree' ? 'selected' : '' }}>Cashfree</option>
                             <option value="stripe" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'stripe' ? 'selected' : '' }}>Stripe</option>
                             <option value="paypal" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'paypal' ? 'selected' : '' }}>PayPal</option>
                             <option value="cod" {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'cod' ? 'selected' : '' }}>Cash on Delivery</option>
                         </select>
+                    </div>
+
+                    <!-- Cashfree Fields -->
+                    @php
+                        $cfCurrentEnv = $settings['payment']->where('key', 'cashfree_environment')->first()->value ?? 'sandbox';
+                        $isCfLive = in_array(strtolower($cfCurrentEnv), ['production', 'live']);
+                    @endphp
+                    <div id="cashfree-section" class="payment-gateway-section" 
+                         style="display: {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'cashfree' ? 'block' : 'none' }};">
+                        <div class="pro-card shadow-sm p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0"><i class="fas fa-wallet me-2 text-success"></i>Cashfree Payment Gateway Settings</h5>
+                                <span class="badge {{ $isCfLive ? 'bg-success' : 'bg-warning text-dark' }} fs-6">
+                                    <i class="fas {{ $isCfLive ? 'fa-check-circle' : 'fa-flask' }} me-1"></i>
+                                    {{ $isCfLive ? 'Live (Production) Active' : 'Testing (Sandbox) Active' }}
+                                </span>
+                            </div>
+
+                            <!-- Environment Mode -->
+                            <div class="mb-4 p-3 bg-light rounded border">
+                                <label class="fw-semibold mb-1 text-dark"><i class="fas fa-toggle-on me-1 text-primary"></i>Active Environment Mode</label>
+                                <div class="text-muted small mb-2">Switch between Testing Mode (Sandbox) and Live Mode (Production)</div>
+                                <select name="cashfree_environment" id="cashfree_environment_select" class="form-select pro-input fw-bold">
+                                    <option value="sandbox" {{ !$isCfLive ? 'selected' : '' }}>🧪 Sandbox (Testing Mode)</option>
+                                    <option value="production" {{ $isCfLive ? 'selected' : '' }}>🚀 Production (Live Mode)</option>
+                                </select>
+                                <div class="small mt-2 {{ $isCfLive ? 'text-success' : 'text-warning text-dark' }}">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    {{ $isCfLive ? 'Live mode is selected: Real payments will be processed via Cashfree Production.' : 'Testing mode is selected: Fake test transactions will be processed via Cashfree Sandbox.' }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Sandbox / Testing Credentials -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-warning shadow-none bg-light">
+                                        <div class="card-header bg-warning bg-opacity-25 fw-bold text-dark">
+                                            <i class="fas fa-vial me-1"></i>Testing (Sandbox) Keys
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label class="fw-semibold mb-1 small">Sandbox App ID (Client ID)</label>
+                                                <input type="text" 
+                                                       class="form-control pro-input" 
+                                                       name="cashfree_sandbox_app_id"
+                                                       value="{{ $settings['payment']->where('key', 'cashfree_sandbox_app_id')->first()->value ?? ($settings['payment']->where('key', 'cashfree_app_id')->first()->value ?? '') }}"
+                                                       placeholder="e.g. TESTXXXXXXXXXX or CF_APP_XXX">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="fw-semibold mb-1 small">Sandbox Secret Key</label>
+                                                <input type="password" 
+                                                       class="form-control pro-input" 
+                                                       name="cashfree_sandbox_secret_key"
+                                                       value="{{ $settings['payment']->where('key', 'cashfree_sandbox_secret_key')->first()->value ?? ($settings['payment']->where('key', 'cashfree_secret_key')->first()->value ?? '') }}"
+                                                       placeholder="Sandbox Secret Key">
+                                            </div>
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="fas fa-external-link-alt me-1"></i>Get from <a href="https://sandbox.cashfree.com" target="_blank">Cashfree Sandbox Dashboard</a>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Production / Live Credentials -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 border-success shadow-none bg-light">
+                                        <div class="card-header bg-success bg-opacity-25 fw-bold text-dark">
+                                            <i class="fas fa-rocket me-1"></i>Production (Live) Keys
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label class="fw-semibold mb-1 small">Production App ID (Client ID)</label>
+                                                <input type="text" 
+                                                       class="form-control pro-input" 
+                                                       name="cashfree_live_app_id"
+                                                       value="{{ $settings['payment']->where('key', 'cashfree_live_app_id')->first()->value ?? ($settings['payment']->where('key', 'cashfree_app_id')->first()->value ?? '') }}"
+                                                       placeholder="e.g. CF_APP_XXXXXXXXXXXX">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="fw-semibold mb-1 small">Production Secret Key</label>
+                                                <input type="password" 
+                                                       class="form-control pro-input" 
+                                                       name="cashfree_live_secret_key"
+                                                       value="{{ $settings['payment']->where('key', 'cashfree_live_secret_key')->first()->value ?? ($settings['payment']->where('key', 'cashfree_secret_key')->first()->value ?? '') }}"
+                                                       placeholder="Production Secret Key">
+                                            </div>
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="fas fa-external-link-alt me-1"></i>Get from <a href="https://merchant.cashfree.com" target="_blank">Cashfree Merchant Dashboard</a>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fallback Direct Keys (Hidden / Auto-synced) -->
+                            <input type="hidden" name="cashfree_app_id" value="{{ $settings['payment']->where('key', 'cashfree_app_id')->first()->value ?? '' }}">
+                            <input type="hidden" name="cashfree_secret_key" value="{{ $settings['payment']->where('key', 'cashfree_secret_key')->first()->value ?? '' }}">
+                        </div>
                     </div>
 
                     <!-- Razorpay Fields -->
@@ -300,40 +415,6 @@
                         </div>
                     </div>
 
-                    <!-- Cashfree Fields -->
-                    <div id="cashfree-section" class="payment-gateway-section" 
-                         style="display: {{ ($settings['payment']->where('key', 'payment_gateway')->first()->value ?? '') == 'cashfree' ? 'block' : 'none' }};">
-                        <div class="pro-card shadow-sm p-4 mb-4">
-                            <h5 class="mb-3"><i class="fas fa-wallet me-2 text-success"></i>Cashfree Settings</h5>
-                            
-                            <div class="mb-3">
-                                <label class="fw-semibold mb-1">Cashfree App ID</label>
-                                <input type="text" 
-                                       class="form-control pro-input" 
-                                       name="cashfree_app_id"
-                                       value="{{ $settings['payment']->where('key', 'cashfree_app_id')->first()->value ?? '' }}"
-                                       placeholder="Your app ID">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="fw-semibold mb-1">Cashfree Secret Key</label>
-                                <input type="password" 
-                                       class="form-control pro-input" 
-                                       name="cashfree_secret_key"
-                                       value="{{ $settings['payment']->where('key', 'cashfree_secret_key')->first()->value ?? '' }}"
-                                       placeholder="Your secret key">
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="fw-semibold mb-1">Environment</label>
-                                <select name="cashfree_environment" class="form-select pro-input">
-                                    <option value="sandbox" {{ ($settings['payment']->where('key', 'cashfree_environment')->first()->value ?? '') == 'sandbox' ? 'selected' : '' }}>Sandbox (Testing)</option>
-                                    <option value="production" {{ ($settings['payment']->where('key', 'cashfree_environment')->first()->value ?? '') == 'production' ? 'selected' : '' }}>Production (Live)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Minimum Amount -->
                     <div class="pro-card shadow-sm p-4 mb-4">
                         <label class="fw-semibold mb-1">Minimum Transaction Amount</label>
@@ -349,6 +430,38 @@
                         <small class="text-muted mt-1 d-block">
                             <i class="fas fa-info-circle me-1"></i>Transactions below this amount will require Cash on Delivery
                         </small>
+                    </div>
+
+                    <!-- GST & UPI Settings -->
+                    <div class="pro-card shadow-sm p-4 mb-4">
+                        <h5 class="mb-3"><i class="fas fa-percentage me-2 text-info"></i>Tax & UPI Settings</h5>
+
+                        <div class="mb-3">
+                            <label class="fw-semibold mb-1">Enable GST Calculation</label>
+                            <div class="d-flex align-items-center mt-1">
+                                <label class="pro-switch">
+                                    <input type="checkbox" name="enable_gst" value="1" {{ ($settings['payment']->where('key', 'enable_gst')->first()->value ?? '0') == '1' ? 'checked' : '' }}>
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="ms-2 fw-bold toggle-text">{{ ($settings['payment']->where('key', 'enable_gst')->first()->value ?? '0') == '1' ? 'Enabled' : 'Disabled' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-semibold mb-1">GST Percentage (%)</label>
+                            <input type="number" step="0.01" class="form-control pro-input" name="gst_percentage" value="{{ $settings['payment']->where('key', 'gst_percentage')->first()->value ?? '18' }}">
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="fw-semibold mb-1">Enable UPI Payments</label>
+                            <div class="d-flex align-items-center mt-1">
+                                <label class="pro-switch">
+                                    <input type="checkbox" name="enable_upi" value="1" {{ ($settings['payment']->where('key', 'enable_upi')->first()->value ?? '0') == '1' ? 'checked' : '' }}>
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="ms-2 fw-bold toggle-text">{{ ($settings['payment']->where('key', 'enable_upi')->first()->value ?? '0') == '1' ? 'Enabled' : 'Disabled' }}</span>
+                            </div>
+                        </div>
                     </div>
 
                 </form>
@@ -865,17 +978,17 @@ $(function () {
     });
 
     // Payment Gateway Selection Handler
-    function handlePaymentGatewayChange() {
-        const gateway = $(this).val();
+    function updateGatewaySections() {
+        const gateway = $('#main_payment_gateway').val() || $('#payment_gateway').val();
         
         // Hide all gateway sections
         $('.payment-gateway-section').hide();
         
         // Show selected gateway section
         if (gateway === 'razorpay') {
-            $('#razorpay-section').show();
+            $('#razorpay-section').slideDown(200);
         } else if (gateway === 'cashfree') {
-            $('#cashfree-section').show();
+            $('#cashfree-section').slideDown(200);
         }
         
         // Also handle gateway fields in dynamic sections
@@ -884,7 +997,7 @@ $(function () {
     }
 
     // Attach payment gateway change handlers
-    $('#payment_gateway, #main_payment_gateway').change(handlePaymentGatewayChange);
+    $('#payment_gateway, #main_payment_gateway').on('change', updateGatewaySections);
 
     // Format currency inputs on blur
     $('input[name*="amount"], input[name*="price"]').on('blur', function() {
@@ -894,8 +1007,19 @@ $(function () {
         }
     });
 
-    // Initialize payment gateway display
-    handlePaymentGatewayChange.call($('#payment_gateway'));
+    // Initialize payment gateway display on page load
+    updateGatewaySections();
+
+    // Cashfree Environment select live change feedback
+    $('#cashfree_environment_select').on('change', function() {
+        const isLive = $(this).val() === 'production';
+        const badge = $(this).closest('.pro-card').find('.badge');
+        if (isLive) {
+            badge.removeClass('bg-warning text-dark').addClass('bg-success').html('<i class="fas fa-check-circle me-1"></i>Live (Production) Active');
+        } else {
+            badge.removeClass('bg-success').addClass('bg-warning text-dark').html('<i class="fas fa-flask me-1"></i>Testing (Sandbox) Active');
+        }
+    });
 
     // Save All Settings
     $("#save-all-btn").click(function () {

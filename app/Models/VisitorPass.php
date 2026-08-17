@@ -11,10 +11,15 @@ class VisitorPass extends Model
 
     protected $casts = [
         'vehicle' => 'array',
-        'valid_from' => 'datetime',
-        'valid_until' => 'datetime',
-        'completed_at' => 'datetime',
+        'valid_from' => 'datetime:Y-m-d H:i:s',
+        'valid_until' => 'datetime:Y-m-d H:i:s',
+        'completed_at' => 'datetime:Y-m-d H:i:s',
     ];
+
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
 
     public function employer()
     {

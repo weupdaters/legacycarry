@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\JobPostController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PaymentsController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ResidentAssignController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -247,6 +248,13 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     //get all notifications of user
     Route::get('/admin/notifications', [UserController::class, 'notifications'])
     ->name('admin.notifications.index');
+
+    // Bug Reports & Support
+    Route::get('/reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('admin.reports.export');
+    Route::get('/reports/{id}', [ReportController::class, 'show'])->name('admin.reports.show');
+    Route::patch('/reports/{id}/status', [ReportController::class, 'updateStatus'])->name('admin.reports.update-status');
+    Route::delete('/reports/{id}', [ReportController::class, 'destroy'])->name('admin.reports.destroy');
 
 
 

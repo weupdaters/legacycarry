@@ -71,6 +71,15 @@ Route::post('/login-otp', [UserController::class, 'loginWithOtp']);
 Route::get('/service-categories', [ServiceController::class, 'categories']);
 Route::get('/services/{id?}', [ServiceController::class, 'servicesByCategory']);
 
+// Public Settings & Configuration
+Route::get('/settings/payment-config', [SettingController::class, 'paymentConfig']);
+Route::get('/payment-config', [SettingController::class, 'paymentConfig']);
+Route::get('/settings/guard-config', [SettingController::class, 'guardConfig']);
+Route::get('/guard/settings', [SettingController::class, 'guardConfig']);
+Route::get('/settings', [SettingController::class, 'index']);
+Route::get('/settings/{identifier}', [SettingController::class, 'show']);
+Route::post('/settings/batch-get', [SettingController::class, 'batchGet']);
+
 // Other API routes...
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -15,6 +15,7 @@ use App\Models\VehicleLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class GuardController extends Controller
 {
@@ -320,22 +321,29 @@ class GuardController extends Controller
      */
     public function approveEntry(Request $request)
     {
-        $request->validate([
+        $input = $this->cleanRequestInput($request);
+
+        $validator = Validator::make($input, [
             'token' => 'required|string',
             'guard_id' => 'required|integer|exists:users,id',
             'otp' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
-        $requestToken = $request->input('token');
-        $guardUser = User::where('id', $request->input('guard_id'))->where('role', 'guard')->first();
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => 'Validation error', 'error' => $validator->errors()], 422);
+        }
+
+        $requestToken = $input['token'] ?? $request->input('token');
+        $guardUser = User::where('id', $input['guard_id'] ?? $request->input('guard_id'))->where('role', 'guard')->first();
 
         if (!$guardUser) {
             return response()->json(['status' => false, 'message' => 'Invalid guard'], 403);
         }
 
-        $providedOtp = $request->input('otp');
-        $additionalNotes = $request->input('notes');
+        $providedOtp = $input['otp'] ?? $request->input('otp');
+        $additionalNotes = $input['notes'] ?? $request->input('notes');
+
 
         $identified = $this->identifyTokenRecord($requestToken);
 
@@ -508,15 +516,21 @@ class GuardController extends Controller
      */
     public function approveExit(Request $request)
     {
-        $request->validate([
+        $input = $this->cleanRequestInput($request);
+
+        $validator = Validator::make($input, [
             'token' => 'required|string',
             'guard_id' => 'required|integer|exists:users,id',
             'notes' => 'nullable|string',
         ]);
 
-        $requestToken = $request->input('token');
-        $guardUser = User::find($request->input('guard_id'));
-        $additionalNotes = $request->input('notes');
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => 'Validation error', 'error' => $validator->errors()], 422);
+        }
+
+        $requestToken = $input['token'] ?? $request->input('token');
+        $guardUser = User::find($input['guard_id'] ?? $request->input('guard_id'));
+        $additionalNotes = $input['notes'] ?? $request->input('notes');
 
         $identified = $this->identifyTokenRecord($requestToken);
 
@@ -1215,11 +1229,11 @@ class GuardController extends Controller
         */
         $vehicleLogs = VehicleLog::where('society_id', $societyId)
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->with(['vehicle.user', 'society', 'guard'])
+            ->with(['vehicle.user', 'society', 'guardUser'])
             ->get();
 
         foreach ($vehicleLogs as $log) {
-            $guard = $log->guard;
+            $guard = $log->guardUser;
             $resident = optional($log->vehicle)->user;
 
             $results->push([
@@ -1393,5 +1407,31 @@ class GuardController extends Controller
         ]);
     }
 
+    /**
+     * Clean raw JSON input if comments like // or /* are present in Postman/raw JSON
+     */
+    private function cleanRequestInput(Request $request): array
+    {
+        $all = $request->all();
+        if (!empty($all) && (isset($all['token']) || isset($all['guard_id']))) {
+            return $all;
+        }
 
-}//
+        $raw = $request->getContent();
+        if (!empty($raw)) {
+            $clean = preg_replace('#^\s*//.*$#m', '', $raw);
+            $clean = preg_replace('#/\*.*?\*/#s', '', $clean);
+            $decoded = json_decode($clean, true);
+            if (is_array($decoded) && !empty($decoded)) {
+                $request->merge($decoded);
+                if (method_exists($request, 'setJson')) {
+                    $request->setJson(new \Symfony\Component\HttpFoundation\InputBag($decoded));
+                }
+                return array_merge($all, $decoded);
+            }
+        }
+
+        return $all;
+    }
+
+}

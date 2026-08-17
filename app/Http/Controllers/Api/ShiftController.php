@@ -53,7 +53,7 @@ class ShiftController extends Controller
     {
         $tab = $r->query('tab', 'assigned'); // assigned|upcoming|completed|all
         $query = AssignedShift::where('society_id', $societyId)
-            ->with(['guard:id,name','assigner:id,name'])
+            ->with(['guardUser:id,name','assigner:id,name'])
             ->orderBy('shift_date', 'desc')->orderBy('shift_start', 'desc');
 
         if ($tab === 'assigned') {
@@ -70,7 +70,7 @@ class ShiftController extends Controller
         $shifts = $query->get()->map(function ($s) {
             return [
                 'id' => $s->id,
-                'guard' => ['id' => $s->guard->id ?? null, 'name' => $s->guard->name ?? null],
+                'guard' => ['id' => $s->guardUser->id ?? null, 'name' => $s->guardUser->name ?? null],
                 'gate_name' => $s->gate_name,
                 'shift_date' => $s->shift_date->toDateString(),
                 'shift_start' => $s->shift_start,
@@ -88,7 +88,7 @@ class ShiftController extends Controller
     public function shiftDetail($id)
     {
         $s = AssignedShift::with([
-            'guard:id,name,phone',
+            'guardUser:id,name,phone',
             'assigner:id,name',
             'changeRequests.requester:id,name',
             'changeRequests.decisionByUser:id,name',
@@ -101,7 +101,7 @@ class ShiftController extends Controller
         return response()->json(['status' => true,'data' => [
             'id' => $s->id,
             'society_id' => $s->society_id,
-            'guard' => $s->guard ? ['id' => $s->guard->id,'name' => $s->guard->name,'phone' => $s->guard->phone] : null,
+            'guard' => $s->guardUser ? ['id' => $s->guardUser->id,'name' => $s->guardUser->name,'phone' => $s->guardUser->phone] : null,
             'gate_name' => $s->gate_name,
             'shift_date' => $s->shift_date->toDateString(),
             'shift_start' => $s->shift_start,

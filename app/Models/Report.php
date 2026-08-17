@@ -17,4 +17,9 @@ class Report extends Model
         'reference',
         'admin_notes'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

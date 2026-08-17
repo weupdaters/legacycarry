@@ -146,6 +146,7 @@ class UserController extends Controller
                 'phone' => $user->phone,
                 'email' => $user->email,
                 'role' => $user->role,
+                'verification_status' => $user->verification_status,
                 'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
                 'fcm_token' => $user->fcm_token,
                 'details' => $user->role === 'labor'

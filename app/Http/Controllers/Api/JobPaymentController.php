@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\JobApplication;
 use App\Models\JobPost;
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -91,6 +92,18 @@ class JobPaymentController extends Controller
         }
 
         // -----------------------------
+        // GET CASHFREE CONFIG FROM ADMIN BACKEND
+        // -----------------------------
+        $cfConfig = Setting::getCashfreeConfig();
+
+        if (empty($cfConfig['app_id']) || empty($cfConfig['secret_key'])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cashfree API credentials are not configured in Admin Settings.',
+            ], 500);
+        }
+
+        // -----------------------------
         // START TRANSACTION
         // -----------------------------
         DB::beginTransaction();
@@ -100,15 +113,25 @@ class JobPaymentController extends Controller
             // UNIQUE ORDER ID
             $orderId = 'JOB'.$job->id.'APP'.$application->id.Str::upper(Str::random(6));
 
+            $custPhone = !empty($application->user?->phone) ? preg_replace('/[^0-9]/', '', $application->user->phone) : '9999999999';
+            if (strlen($custPhone) < 10) {
+                $custPhone = '9999999999';
+            }
+
+            $returnUrl = url('/cashfree-return?order_id={order_id}');
+            if ($cfConfig['is_live'] && str_starts_with($returnUrl, 'http://')) {
+                $returnUrl = preg_replace('/^http:/i', 'https:', $returnUrl);
+            }
+
             // -----------------------------
             // CREATE CASHFREE ORDER
             // -----------------------------
             $response = Http::withHeaders([
-                'x-client-id' => config('services.cashfree.app_id'),
-                'x-client-secret' => config('services.cashfree.secret_key'),
+                'x-client-id' => $cfConfig['app_id'],
+                'x-client-secret' => $cfConfig['secret_key'],
                 'x-api-version' => '2022-09-01',
                 'Content-Type' => 'application/json',
-            ])->post(config('services.cashfree.base_url'), [
+            ])->post($cfConfig['base_url'], [
 
                 'order_id' => $orderId,
                 'order_amount' => (float)$data['amount'],
@@ -118,17 +141,18 @@ class JobPaymentController extends Controller
                     'customer_id' => (string)$application->user_id,
                     'customer_name' => $application->user->name ?? 'User',
                     'customer_email' => $application->user->email ?? 'user@email.com',
-                    'customer_phone' => $application->user->phone ?? '9999999999',
+                    'customer_phone' => $custPhone,
                 ],
 
                 'order_meta' => [
-                    'return_url' => url('/cashfree-return?order_id={order_id}'),
+                    'return_url' => $returnUrl,
                 ],
 
             ]);
 
             if (!$response->successful()) {
                 DB::rollBack();
+                \Log::error('Cashfree order creation failed: ' . $response->body());
                 return response()->json([
                     'status' => false,
                     'message' => 'Cashfree order creation failed',
@@ -137,6 +161,8 @@ class JobPaymentController extends Controller
             }
 
             $cf = $response->json();
+            $paymentSessionId = $cf['payment_session_id'] ?? null;
+            $paymentLink = $cf['payment_link'] ?? ($paymentSessionId ? $cfConfig['checkout_url'] . '/' . $paymentSessionId : null);
 
             // -----------------------------
             // SAVE PAYMENT (PENDING)
@@ -157,10 +183,10 @@ class JobPaymentController extends Controller
                 'status' => 'pending',
             ]);
 
-            // FETCH ALL PAYMENTS (ADVANCE + FINAL) $payments = Payment::where('job_application_id', $application->id) ->orderBy('paid_at') ->get(); // SUMMARY $summary = [ 'advance_paid' => $payments->where('payment_type', 'advance')->sum('amount'), 'final_paid' => $payments->where('payment_type', 'final')->sum('amount'), 'total_paid' => $payments->sum('amount'), ];      // FETCH ALL PAYMENTS (ADVANCE + FINAL)
+            // FETCH ALL PAYMENTS (ADVANCE + FINAL)
             $payments = Payment::where('job_application_id', $application->id)
-            ->orderBy('paid_at')
-            ->get();
+                ->orderBy('paid_at')
+                ->get();
 
             // SUMMARY
             $summary = [
@@ -172,19 +198,28 @@ class JobPaymentController extends Controller
             DB::commit();
 
             // -----------------------------
-            // SEND DATA TO FLUTTER APP
+            // SEND DATA TO FLUTTER / CLIENT APP
             // -----------------------------
             return response()->json([
                 'status' => true,
                 'message' => 'Cashfree order created successfully',
                 'payment_id' => $payment->id,
+                'order_id' => $orderId,
+                'payment_link' => $paymentLink,
+                'payment_url' => $paymentLink,
+                'payment_session_id' => $paymentSessionId,
+                'environment' => $cfConfig['environment'],
                 'latest_payment' => $payment,
                 'payment_summary' => $summary,
                 'payments' => $payments,
-                // REQUIRED FOR FLUTTER SDK
+                // REQUIRED FOR FLUTTER SDK / WEB
                 'cashfree' => [
-                    'order_id' => $cf['order_id'],
-                    'payment_session_id' => $cf['payment_session_id'],
+                    'order_id' => $cf['order_id'] ?? $orderId,
+                    'cf_order_id' => $cf['cf_order_id'] ?? null,
+                    'payment_session_id' => $paymentSessionId,
+                    'payment_link' => $paymentLink,
+                    'payment_url' => $paymentLink,
+                    'environment' => $cfConfig['is_live'] ? 'PRODUCTION' : 'SANDBOX',
                 ],
             ], 200);
 
