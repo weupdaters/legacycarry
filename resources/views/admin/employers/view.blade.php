@@ -175,7 +175,7 @@
               <p><strong>Occupation:</strong> {{ $user->employee->occupation }}</p>
               <p><strong>User Residential Status:</strong> {{ ucfirst($user->user_residential_status) }}</p>
               @if ($user->user_residential_status == 'society')
-                <p><strong>Society:</strong> {{ $user->society->name }}</p>
+                <p><strong>Society:</strong> {{ $user->society->name ?? 'N/A' }}</p>
               @endif
 
 

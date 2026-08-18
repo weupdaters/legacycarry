@@ -216,7 +216,7 @@ class UserController extends Controller
 
     public function viewEmployees($id)
     {
-        $user = User::with('employee')->findOrFail($id);
+        $user = User::with(['employee', 'society'])->findOrFail($id);
 
         // Jobs created by user
         $jobs = JobPost::where('user_id', $id)->latest()->get();
