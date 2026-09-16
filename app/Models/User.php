@@ -117,6 +117,11 @@ class User extends Authenticatable
         return $this->hasOne(ResidentAssignment::class, 'user_id');
     }
 
+    public function residentAssignment()
+    {
+        return $this->hasOne(ResidentAssignment::class, 'user_id');
+    }
+
     public function society()
     {
         return $this->belongsTo(Society::class, 'user_society_id');

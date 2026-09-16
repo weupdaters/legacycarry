@@ -76,7 +76,7 @@ class Setting extends Model
                 ?: static::getValue('cashfree_secret_key')
                 ?: config('services.cashfree.secret_key');
             $baseUrl = 'https://api.cashfree.com/pg/orders';
-            $checkoutUrl = 'https://payments.cashfree.com/pg/view';
+            $checkoutUrl = url('/cashfree-checkout');
         } else {
             $appId = static::getValue('cashfree_sandbox_app_id')
                 ?: static::getValue('cashfree_app_id')
@@ -85,7 +85,7 @@ class Setting extends Model
                 ?: static::getValue('cashfree_secret_key')
                 ?: config('services.cashfree.secret_key');
             $baseUrl = 'https://sandbox.cashfree.com/pg/orders';
-            $checkoutUrl = 'https://sandbox.cashfree.com/pg/view';
+            $checkoutUrl = url('/cashfree-checkout');
         }
 
         return [
@@ -95,6 +95,74 @@ class Setting extends Model
             'secret_key'   => $secretKey,
             'base_url'     => $baseUrl,
             'checkout_url' => $checkoutUrl,
+        ];
+    }
+
+    /**
+     * Get Withdrawal configuration
+     */
+    public static function getWithdrawalConfig(): array
+    {
+        $enabledVal = static::getValue('withdrawal_enabled', '1');
+        $autoVal = static::getValue('auto_withdrawal_enabled', '1');
+
+        return [
+            'enabled' => $enabledVal === '1' || $enabledVal === true || $enabledVal === 'true',
+            'auto_payout_enabled' => $autoVal === '1' || $autoVal === true || $autoVal === 'true',
+            'auto_payout_max_limit' => (float) (static::getValue('auto_withdrawal_max_limit', 1000) ?: 1000),
+            'min_amount' => (float) (static::getValue('min_withdrawal_amount', 100) ?: 100),
+            'max_amount' => (float) (static::getValue('max_withdrawal_amount', 50000) ?: 50000),
+        ];
+    }
+
+    /**
+     * Get dynamic Cashfree Payout configuration
+     */
+    public static function getCashfreePayoutConfig(): array
+    {
+        $environment = static::getValue('cashfree_payout_environment')
+            ?: config('services.cashfree_payout.environment')
+            ?: env('CASHFREE_PAYOUT_ENV', 'production');
+        $isLive = in_array(strtolower((string) $environment), ['production', 'live']);
+
+        if ($isLive) {
+            $clientId = static::getValue('cashfree_payout_live_client_id')
+                ?: static::getValue('cashfree_payout_client_id')
+                ?: config('services.cashfree_payout.client_id')
+                ?: env('CASHFREE_PAYOUT_CLIENT_ID');
+            $clientSecret = static::getValue('cashfree_payout_live_client_secret')
+                ?: static::getValue('cashfree_payout_client_secret')
+                ?: config('services.cashfree_payout.client_secret')
+                ?: env('CASHFREE_PAYOUT_CLIENT_SECRET');
+            $baseUrl = static::getValue('cashfree_payout_live_base_url')
+                ?: config('services.cashfree_payout.base_url')
+                ?: env('CASHFREE_PAYOUT_BASE_URL')
+                ?: 'https://payout-api.cashfree.com';
+        } else {
+            $clientId = static::getValue('cashfree_payout_sandbox_client_id')
+                ?: static::getValue('cashfree_payout_client_id')
+                ?: config('services.cashfree_payout.client_id')
+                ?: env('CASHFREE_PAYOUT_CLIENT_ID');
+            $clientSecret = static::getValue('cashfree_payout_sandbox_client_secret')
+                ?: static::getValue('cashfree_payout_client_secret')
+                ?: config('services.cashfree_payout.client_secret')
+                ?: env('CASHFREE_PAYOUT_CLIENT_SECRET');
+            $baseUrl = static::getValue('cashfree_payout_sandbox_base_url')
+                ?: config('services.cashfree_payout.base_url')
+                ?: env('CASHFREE_PAYOUT_BASE_URL')
+                ?: 'https://payout-gamma.cashfree.com';
+        }
+
+        $fundSourceId = static::getValue('cashfree_payout_fundsource_id')
+            ?: env('CASHFREE_PAYOUT_FUNDSOURCE_ID', 'LEGACY CARRY PRIVATE LIMITED');
+
+        return [
+            'environment'    => $isLive ? 'production' : 'sandbox',
+            'is_live'        => $isLive,
+            'client_id'      => (string) $clientId,
+            'client_secret'  => (string) $clientSecret,
+            'base_url'       => (string) $baseUrl,
+            'fundsource_id'  => (string) $fundSourceId,
         ];
     }
 }

@@ -159,69 +159,62 @@ class UserController extends Controller
             abort(403, 'Permission denied');
         }
 
-        $query = $request->input('query');
-        $societyId = optional(auth()->user()->details)->society_id;
-
         $query = User::where('role', 'labor')
-        ->with('employee')
-        ->whereHas('employee', function ($q) use ($societyId) {
-            $q->where('society_id', $societyId);
-        })
-        ->when($request->search, function ($q) use ($request) {
-            $q->where(function ($sub) use ($request) {
-                $sub->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('phone', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%");
+            ->with(['employee.flat', 'society'])
+            ->when($request->search, function ($q) use ($request) {
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('name', 'like', "%{$request->search}%")
+                        ->orWhere('phone', 'like', "%{$request->search}%")
+                        ->orWhere('email', 'like', "%{$request->search}%");
+                });
+            })
+            ->when(
+                $request->status,
+                fn ($q) =>
+                $q->where('verification_status', $request->status)
+            )
+            ->when($request->availability, function ($q) use ($request) {
+                $q->whereHas(
+                    'employee',
+                    fn ($e) =>
+                    $e->where('availability', $request->availability)
+                );
+            })
+            ->when($request->experience, function ($q) use ($request) {
+                $q->whereHas(
+                    'employee',
+                    fn ($e) =>
+                    $e->where('experience_years', '>=', $request->experience)
+                );
+            })
+            ->when($request->min_rate, function ($q) use ($request) {
+                $q->whereHas(
+                    'employee',
+                    fn ($e) =>
+                    $e->where('hourly_rate', '>=', $request->min_rate)
+                );
+            })
+            ->when($request->max_rate, function ($q) use ($request) {
+                $q->whereHas(
+                    'employee',
+                    fn ($e) =>
+                    $e->where('hourly_rate', '<=', $request->max_rate)
+                );
             });
-        })
-        ->when(
-            $request->status,
-            fn ($q) =>
-            $q->where('verification_status', $request->status)
-        )
-        ->when($request->availability, function ($q) use ($request) {
-            $q->whereHas(
-                'employee',
-                fn ($e) =>
-                $e->where('availability', $request->availability)
-            );
-        })
-        ->when($request->experience, function ($q) use ($request) {
-            $q->whereHas(
-                'employee',
-                fn ($e) =>
-                $e->where('experience_years', '>=', $request->experience)
-            );
-        })
-        ->when($request->min_rate, function ($q) use ($request) {
-            $q->whereHas(
-                'employee',
-                fn ($e) =>
-                $e->where('hourly_rate', '>=', $request->min_rate)
-            );
-        })
-        ->when($request->max_rate, function ($q) use ($request) {
-            $q->whereHas(
-                'employee',
-                fn ($e) =>
-                $e->where('hourly_rate', '<=', $request->max_rate)
-            );
-        });
 
         $employers = $query->withCount([
             'jobs as pending_jobs_count' => fn ($q) => $q->where('status', 'pending'),
             'jobs as active_jobs_count' => fn ($q) => $q->where('status', 'active'),
             'jobs as completed_jobs_count' => fn ($q) => $q->where('status', 'completed'),
         ])
+        ->latest('id')
         ->paginate(10);
 
         // ✅ If AJAX → return ONLY table HTML, not whole page
-
         if ($request->ajax()) {
             return view('member.employers.index', compact('employers'))
                     ->renderSections()['table'];
         }
-
 
         return view('member.employers.index', compact('employers'));
     }

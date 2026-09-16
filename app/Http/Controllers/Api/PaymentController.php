@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -246,11 +247,11 @@ class PaymentController extends Controller
 
         $user = User::find($request->user_id);
 
-        // ❌ Not a labor
-        if ($user->role !== 'labor') {
+        // ❌ Not a labor or service provider
+        if ($user->role !== 'labor' && $user->role !== 'service_provider') {
             return response()->json([
                 'status' => false,
-                'message' => 'User is not labor',
+                'message' => 'User is not labor or service provider',
             ], 403);
         }
 
@@ -260,30 +261,45 @@ class PaymentController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        // FINAL = current balance
-        $currentBalance = Payment::where('payee_id', $user->id)
+        // Total Final Earned
+        $totalFinalEarned = (float) Payment::where('payee_id', $user->id)
             ->where('payment_type', 'final')
             ->where('status', 'success')
             ->sum('amount');
 
-        // ADVANCE = pending payout
-        $pendingPayout = Payment::where('payee_id', $user->id)
+        // Total already Withdrawn (Completed)
+        $totalWithdrawn = (float) Withdrawal::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        // Total pending / in-process withdrawal requests
+        $pendingWithdrawal = (float) Withdrawal::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->sum('amount');
+
+        // Available balance = Final Earned - (Completed Withdrawn + Pending Withdrawals)
+        $availableBalance = max(0, round($totalFinalEarned - ($totalWithdrawn + $pendingWithdrawal), 2));
+
+        // ADVANCE = pending payout held in admin escrow until job completion
+        $pendingPayout = (float) Payment::where('payee_id', $user->id)
             ->where('payment_type', 'advance')
             ->where('status', 'success')
             ->sum('amount');
 
         /*
         |--------------------------------------------------------------------------
-        | TRANSACTIONS LIST
+        | TRANSACTIONS LIST (Payment History)
         |--------------------------------------------------------------------------
         */
 
         $query = Payment::where('payee_id', $user->id)
             ->where('status', 'success');
 
-        // 🔽 Filter by type
+        // 🔽 Filter by type: Default to 'final' so history shows final payments
         if ($request->filled('payment_type')) {
             $query->where('payment_type', $request->payment_type);
+        } else {
+            $query->where('payment_type', 'final');
         }
 
         // 📅 Filter by date
@@ -299,10 +315,10 @@ class PaymentController extends Controller
                 return [
                     'id' => $payment->id,
                     'title' => 'Payment from ' . ($payment->payer->name ?? 'Client'),
-                    'amount' => '+ ₹' . number_format($payment->amount, 0),
+                    'amount' => '+ ₹' . number_format($payment->amount, 2),
                     'raw_amount' => $payment->amount,
                     'payment_type' => $payment->payment_type,
-                    'date' => $payment->paid_at->format('d M Y'),
+                    'date' => $payment->paid_at ? $payment->paid_at->format('d M Y') : $payment->created_at->format('d M Y'),
                     'paid_at' => $payment->paid_at,
                 ];
             });
@@ -317,7 +333,11 @@ class PaymentController extends Controller
             'status' => true,
             'user_id' => $user->id,
             'summary' => [
-                'current_balance' => $currentBalance,
+                'current_balance' => $availableBalance,
+                'available_balance' => $availableBalance,
+                'total_final_earned' => $totalFinalEarned,
+                'total_withdrawn' => $totalWithdrawn,
+                'pending_withdrawal' => $pendingWithdrawal,
                 'pending_payout' => $pendingPayout,
             ],
             'transactions' => $transactions,

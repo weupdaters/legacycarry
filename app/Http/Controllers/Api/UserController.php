@@ -120,10 +120,10 @@ class UserController extends Controller
 
         // Load role-based details
         if ($user->role === 'labor') {
-            $user->employee_details = Employee::where('user_id', $user->id)->first();
+            $user->employee_details = Employee::with('flat')->where('user_id', $user->id)->first();
             // save employees latitude and longitude if provided
             if ($request->has('latitude') && $request->has('longitude')) {
-                $employee = Employee::where('user_id', $user->id)->first();
+                $employee = $user->employee_details;
                 if ($employee) {
                     $employee->latitude = $request->latitude;
                     $employee->longitude = $request->longitude;
@@ -131,7 +131,12 @@ class UserController extends Controller
                 }
             }
         } else {
-            $user->user_details = UserDetail::where('user_id', $user->id)->first();
+            $user->user_details = UserDetail::with([
+                'society.city',
+                'society.state',
+                'society.country',
+                'flat'
+            ])->where('user_id', $user->id)->first();
         }
 
         // Generate auth token

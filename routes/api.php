@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\UserDocumentController;
 use App\Http\Controllers\Api\UserPayoutMethodController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\VisitorPassController;
+use App\Http\Controllers\Api\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -138,6 +139,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{userId}/payment-methods', [UserPayoutMethodController::class, 'index']);
     Route::post('/users/{userId}/payment-methods', [UserPayoutMethodController::class, 'store']);
     Route::put('/users/{userId}/payment-methods/{id}', [UserPayoutMethodController::class, 'update']);
+
+    // User Withdrawal / Payout routes
+    Route::prefix('withdrawals')->group(function () {
+        Route::get('/summary', [WithdrawalController::class, 'summary']);
+        Route::post('/request', [WithdrawalController::class, 'requestWithdrawal']);
+        Route::get('/history', [WithdrawalController::class, 'history']);
+        Route::get('/{id}', [WithdrawalController::class, 'show']);
+    });
 
     Route::prefix('reports')->group(function () {
         Route::post('/', [ReportController::class, 'store']);      // Create new report

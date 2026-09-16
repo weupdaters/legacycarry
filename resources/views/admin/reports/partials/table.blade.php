@@ -116,15 +116,6 @@
               <a href="{{ route('admin.reports.show', $report->id) }}" class="btn btn-sm btn-outline-primary" title="View Details">
                 <i class="bi bi-eye"></i> View
               </a>
-
-              {{-- Delete --}}
-              <form action="{{ route('admin.reports.destroy', $report->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this report?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Report">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </form>
             </div>
           </td>
         </tr>

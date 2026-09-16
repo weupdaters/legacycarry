@@ -12,13 +12,12 @@ class SocietyNoticeApiController extends Controller
     {
         $user = auth()->user();
 
-        $societyId = $user->user_society_id;
-
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
 
         $notices = SocietyNotice::where('society_id', $societyId)
             ->where('is_published', true)
             ->where(function ($q) use ($user) {
-                $q->where('notice_type', 'all')
+                $q->whereIn('notice_type', ['all', 'society'])
                   ->orWhere(function ($q2) use ($user) {
                       $q2->where('notice_type', 'single')
                          ->where('target_user_id', $user->id);
@@ -53,8 +52,9 @@ class SocietyNoticeApiController extends Controller
     public function show(SocietyNotice $notice)
     {
         $user = auth()->user();
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
 
-        abort_unless($notice->society_id === $user->user_society_id, 403);
+        abort_unless((int) $notice->society_id === (int) $societyId, 403);
 
         if (
             $notice->notice_type === 'single' &&

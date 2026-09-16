@@ -170,7 +170,7 @@
 
 <body class="page-enter">
   <nav>
-    <a class="nav-logo" href="index.html">
+    <a class="nav-logo" href="{{ route('index') }}">
       <div class="nav-logo-img"><img src="{{ asset('frontend/logo.png') }}" alt="Legacy Carry"></div>
       <div class="nav-logo-text">Legacy Carry<span>Smart Society Platform</span></div>
     </a>
@@ -454,7 +454,6 @@
           <li><a href="{{ route('privacy') }}"><i class="fa-solid fa-shield-halved"></i> Privacy Policy</a></li>
           <li><a href="{{ route('refund') }}"><i class="fa-solid fa-rotate-left"></i> Refund Policy</a></li>
           <li><a href="{{ route('terms') }}"><i class="fa-solid fa-file-contract"></i> Terms & Conditions</a></li>
-          </li>
         </ul>
       </div>
       <div class="foot-col">
@@ -477,9 +476,9 @@
     <div class="foot-bottom">
       <p>© 2024 Legacy Carry. All rights reserved. New Delhi, India.</p>
       <div class="foot-links">
-        <a href="privacy.html">Privacy</a>
-        <a href="refund.html">Refund</a>
-        <a href="contact.html">Contact</a>
+        <a href="{{ route('privacy') }}">Privacy</a>
+        <a href="{{ route('refund') }}">Refund</a>
+        <a href="{{ route('contact') }}">Contact</a>
       </div>
     </div>
   </footer>

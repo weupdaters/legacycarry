@@ -40,13 +40,49 @@ class Employee extends Model
         'date_of_birth' => 'date:Y-m-d',
     ];
 
+    protected $appends = [
+        'id_proof_url',
+        'selfie_url',
+    ];
+
     protected function serializeDate(\DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');
     }
 
+    public function getIdProofUrlAttribute()
+    {
+        if (!$this->id_proof_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->id_proof_path, 'http://') || str_starts_with($this->id_proof_path, 'https://')) {
+            return $this->id_proof_path;
+        }
+
+        return asset('storage/' . $this->id_proof_path);
+    }
+
+    public function getSelfieUrlAttribute()
+    {
+        if (!$this->selfie_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->selfie_path, 'http://') || str_starts_with($this->selfie_path, 'https://')) {
+            return $this->selfie_path;
+        }
+
+        return asset('storage/' . $this->selfie_path);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function flat()
+    {
+        return $this->belongsTo(Flat::class, 'flat_id', 'id');
     }
 }

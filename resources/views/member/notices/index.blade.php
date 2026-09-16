@@ -51,28 +51,6 @@
                                 <span class="badge bg-soft-primary text-primary rounded-pill px-3">
                                     {{ $notice->published_at ? $notice->published_at->format('M d, Y') : $notice->created_at->format('M d, Y') }}
                                 </span>
-                                
-                                <div class="dropdown">
-                                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
-                                        <i class="mdi mdi-dots-vertical fs-5"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3">
-                                        <li><a class="dropdown-item py-2" href="{{ route('member.notices.show', $notice->id) }}"><i class="mdi mdi-eye-outline me-2"></i>View Details</a></li>
-                                        @if(has_permission('notice_edit'))
-                                        <li><a class="dropdown-item py-2" href="{{ route('member.notices.edit', $notice->id) }}"><i class="mdi mdi-pencil-outline me-2 text-warning"></i>Edit Notice</a></li>
-                                        @endif
-                                        @if(has_permission('notice_delete'))
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <form action="{{ route('member.notices.destroy', $notice->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this notice?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item py-2 text-danger"><i class="mdi mdi-trash-can-outline me-2"></i>Delete</button>
-                                            </form>
-                                        </li>
-                                        @endif
-                                    </ul>
-                                </div>
                             </div>
                             <h5 class="fw-bold text-dark mb-2">{{ $notice->title }}</h5>
                             <p class="text-muted small mb-4 line-clamp-2">

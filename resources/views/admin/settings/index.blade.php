@@ -41,6 +41,10 @@
             </li>
             @endforeach
         
+            <li class="pro-nav-item {{ $activeTab == 'withdrawal' ? 'active' : '' }}" data-target="#withdrawal">
+                <i class="fas fa-hand-holding-usd me-2"></i>Withdrawal
+            </li>
+
             <li class="pro-nav-item {{ $activeTab == 'admin' ? 'active' : '' }}" data-target="#admin">
                 <i class="fas fa-user-shield me-2"></i>Admin Profile
             </li>
@@ -90,7 +94,7 @@
                  SETTINGS GROUPS (AUTO-GENERATED)
                  ========================================= -->
             @foreach($settings as $group => $groupSettings)
-            @if($group === 'payment')
+            @if($group === 'payment' || $group === 'withdrawal')
                 @continue
             @endif
             <div class="pro-section {{ $activeTab == Str::slug($group) ? 'active' : ($loop->first && !$activeTab ? 'active' : '') }}"
@@ -467,6 +471,314 @@
                 </form>
             </div>
 
+            <!-- =========================================
+                 WITHDRAWAL SETTINGS CUSTOM SECTION
+                 ========================================= -->
+            <div id="withdrawal" class="pro-section {{ $activeTab == 'withdrawal' ? 'active' : '' }}">
+                <h4 class="fw-bold mb-3 text-primary">
+                    <i class="fas fa-hand-holding-usd me-2"></i>Withdrawal & Payout Settings
+                </h4>
+
+                <div class="alert alert-info shadow-sm mb-4">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fas fa-info-circle fs-5 mt-1 text-primary"></i>
+                        <div>
+                            <strong>Payout Logic & Cashfree Credentials:</strong>
+                            <ul class="mb-0 ps-3 mt-1 small">
+                                <li><strong>Auto-Payout:</strong> Automatically initiates instant bank/UPI transfer via Cashfree Payout API if the withdrawal amount is <strong>&le; Max Auto Limit</strong> (e.g. ₹1,000).</li>
+                                <li><strong>Manual Approval:</strong> If the requested amount exceeds the Auto Limit (e.g. &gt; ₹1,000) or Auto-Payout is disabled, requests remain in <strong>Pending</strong> state for Admin to approve via Cashfree API or mark as Paid with bank UTR.</li>
+                                <li><strong>Cashfree Credentials:</strong> As per security requirements, credentials are maintained securely in your <code>.env</code> file (<code>CASHFREE_PAYOUT_CLIENT_ID</code>, <code>CASHFREE_PAYOUT_CLIENT_SECRET</code>, <code>CASHFREE_PAYOUT_ENV</code>).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                @php
+                    $payoutEnv = \App\Models\Setting::getValue('cashfree_payout_environment', env('CASHFREE_PAYOUT_ENV', 'production'));
+                    $isPayoutLive = in_array(strtolower($payoutEnv), ['production', 'live']);
+                    $serverIp = '49.43.109.122';
+                @endphp
+
+                <form class="settings-form" data-group="withdrawal">
+
+                    <!-- Cashfree Payout API Credentials Card -->
+                    <div class="pro-card shadow-sm p-4 mb-4 border-start border-4 border-primary">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-key text-primary me-2"></i>Cashfree Payout API Credentials
+                            </h5>
+                            <span class="badge {{ $isPayoutLive ? 'bg-success' : 'bg-warning text-dark' }} fs-6">
+                                <i class="fas {{ $isPayoutLive ? 'fa-rocket' : 'fa-flask' }} me-1"></i>
+                                {{ $isPayoutLive ? 'Live (Production) Payout' : 'Sandbox (Testing) Payout' }}
+                            </span>
+                        </div>
+
+                        <!-- 2FA IP Whitelist notice -->
+                        <div class="alert alert-warning border shadow-sm mb-3">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="fas fa-shield-alt fs-4 text-danger mt-1"></i>
+                                <div>
+                                    <strong class="text-dark">Cashfree Two-Factor Authentication (2FA) Requirement:</strong>
+                                    <p class="mb-1 small">Cashfree enforces IP whitelisting for all Payout API calls. Ensure your server IP is added in your Cashfree Payouts dashboard:</p>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge bg-dark fs-6 py-2 px-3">Current IP: <strong>{{ $serverIp }}</strong></span>
+                                        <a href="https://merchant.cashfree.com" target="_blank" class="btn btn-sm btn-outline-dark">
+                                            <i class="fas fa-external-link-alt me-1"></i> Open Cashfree Dashboard &rarr; Payouts &rarr; Developers &rarr; 2FA
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Environment Mode Select -->
+                        <div class="mb-3 p-3 bg-light rounded border">
+                            <label class="fw-semibold mb-1 text-dark">Payout Environment Mode</label>
+                            <select name="cashfree_payout_environment" id="cashfree_payout_env_select" class="form-select pro-input fw-bold">
+                                <option value="production" {{ $isPayoutLive ? 'selected' : '' }}>🚀 Production (Live Mode)</option>
+                                <option value="sandbox" {{ !$isPayoutLive ? 'selected' : '' }}>🧪 Sandbox (Testing Mode)</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <!-- Production Live Credentials -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 border-success shadow-none bg-light">
+                                    <div class="card-header bg-success bg-opacity-25 fw-bold text-dark">
+                                        <i class="fas fa-check-circle text-success me-1"></i>Live (Production) Keys
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="fw-semibold mb-1 small">Live Client ID</label>
+                                            <input type="text" 
+                                                   class="form-control pro-input" 
+                                                   name="cashfree_payout_live_client_id"
+                                                   value="{{ \App\Models\Setting::getValue('cashfree_payout_live_client_id', env('CASHFREE_PAYOUT_CLIENT_ID', '')) }}"
+                                                   placeholder="Enter Live Client ID">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="fw-semibold mb-1 small">Live Client Secret</label>
+                                            <input type="password" 
+                                                   class="form-control pro-input" 
+                                                   name="cashfree_payout_live_client_secret"
+                                                   value="{{ \App\Models\Setting::getValue('cashfree_payout_live_client_secret', env('CASHFREE_PAYOUT_CLIENT_SECRET', '')) }}"
+                                                   placeholder="Enter Live Client Secret">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sandbox Testing Credentials -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 border-warning shadow-none bg-light">
+                                    <div class="card-header bg-warning bg-opacity-25 fw-bold text-dark">
+                                        <i class="fas fa-vial text-warning me-1"></i>Sandbox (Testing) Keys
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="fw-semibold mb-1 small">Sandbox Client ID</label>
+                                            <input type="text" 
+                                                   class="form-control pro-input" 
+                                                   name="cashfree_payout_sandbox_client_id"
+                                                   value="{{ \App\Models\Setting::getValue('cashfree_payout_sandbox_client_id', env('CASHFREE_PAYOUT_SANDBOX_CLIENT_ID', '')) }}"
+                                                   placeholder="Enter Sandbox Client ID">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="fw-semibold mb-1 small">Sandbox Client Secret</label>
+                                            <input type="password" 
+                                                   class="form-control pro-input" 
+                                                   name="cashfree_payout_sandbox_client_secret"
+                                                   value="{{ \App\Models\Setting::getValue('cashfree_payout_sandbox_client_secret', env('CASHFREE_PAYOUT_SANDBOX_CLIENT_SECRET', '')) }}"
+                                                   placeholder="Enter Sandbox Client Secret">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fund Source ID Config -->
+                        <div class="mt-3 p-3 bg-white rounded border">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <label class="fw-semibold mb-1 small text-dark"><i class="fas fa-wallet me-1 text-primary"></i>Cashfree Fund Source ID / Wallet Name</label>
+                                    <div class="text-muted small">Must match the active fund source name in your Cashfree Payout dashboard.</div>
+                                </div>
+                                <div class="col-md-7">
+                                    <input type="text" 
+                                           class="form-control pro-input font-monospace fw-bold" 
+                                           name="cashfree_payout_fundsource_id"
+                                           value="{{ \App\Models\Setting::getValue('cashfree_payout_fundsource_id', env('CASHFREE_PAYOUT_FUNDSOURCE_ID', 'LEGACY CARRY PRIVATE LIMITED')) }}"
+                                           placeholder="LEGACY CARRY PRIVATE LIMITED">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Connection Action -->
+                        <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="test-payout-btn">
+                                <i class="fas fa-plug me-1"></i> Test Live Payout Connection
+                            </button>
+                            <span id="test-payout-result" class="small"></span>
+                        </div>
+
+                        <!-- Sync fallback inputs -->
+                        <input type="hidden" name="cashfree_payout_client_id" value="{{ \App\Models\Setting::getValue('cashfree_payout_live_client_id', env('CASHFREE_PAYOUT_CLIENT_ID', '')) }}">
+                        <input type="hidden" name="cashfree_payout_client_secret" value="{{ \App\Models\Setting::getValue('cashfree_payout_live_client_secret', env('CASHFREE_PAYOUT_CLIENT_SECRET', '')) }}">
+                    </div>
+
+                    <!-- Direct Send Money Payout Tool Card -->
+                    <div class="pro-card shadow-sm p-4 mb-4 border-start border-4 border-success bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-paper-plane text-success me-2"></i>Send Direct Money Payout
+                            </h5>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="fas fa-bolt me-1"></i>Live Cashfree Transfer
+                            </span>
+                        </div>
+                        <div class="text-muted small mb-3">
+                            Transfer money directly to any beneficiary bank account or UPI ID instantly using Cashfree Payout API.
+                        </div>
+
+                        <div id="direct-payout-box" class="p-3 bg-light rounded border">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="fw-semibold mb-1 small">Payout Rail / Type</label>
+                                    <select class="form-select pro-input" id="direct_payout_type">
+                                        <option value="bank" selected>🏦 Bank Account (IMPS - Instant)</option>
+                                        <option value="upi">📱 UPI ID (VPA)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="fw-semibold mb-1 small">Recipient Full Name</label>
+                                    <input type="text" class="form-control pro-input" id="direct_payout_name" placeholder="e.g. RANJIT SINGH" value="RANJIT SINGH">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="fw-semibold mb-1 small">Recipient Phone Number</label>
+                                    <input type="text" class="form-control pro-input" id="direct_payout_phone" placeholder="e.g. 9915041743" value="9915041743">
+                                </div>
+
+                                <!-- Bank Account Fields -->
+                                <div class="col-md-6 direct-bank-field">
+                                    <label class="fw-semibold mb-1 small">Bank Account Number</label>
+                                    <input type="text" class="form-control pro-input" id="direct_payout_account" placeholder="Enter bank account number" value="50100474836561">
+                                </div>
+                                <div class="col-md-6 direct-bank-field">
+                                    <label class="fw-semibold mb-1 small">Bank IFSC Code</label>
+                                    <input type="text" class="form-control pro-input text-uppercase" id="direct_payout_ifsc" placeholder="e.g. HDFC0001583" value="HDFC0001583">
+                                </div>
+
+                                <!-- UPI Field -->
+                                <div class="col-md-12 direct-upi-field" style="display: none;">
+                                    <label class="fw-semibold mb-1 small">UPI VPA Handle</label>
+                                    <input type="text" class="form-control pro-input" id="direct_payout_upi" placeholder="e.g. 9915041743@ptsbi" value="9915041743@ptsbi">
+                                    <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>Note: UPI mode must be enabled on your Cashfree wallet.</div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="fw-semibold mb-1 small">Payout Amount (₹)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white fw-bold">₹</span>
+                                        <input type="number" step="0.01" min="1" class="form-control pro-input fw-bold" id="direct_payout_amount" value="1.00">
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="fw-semibold mb-1 small">Remarks / Purpose</label>
+                                    <input type="text" class="form-control pro-input" id="direct_payout_remarks" placeholder="e.g. Admin Payout Transfer" value="Admin Payout Transfer">
+                                </div>
+
+                                <div class="col-12 mt-3">
+                                    <button type="button" class="btn btn-success px-4" id="send-direct-payout-btn">
+                                        <i class="fas fa-paper-plane me-1"></i> ⚡ Send Money Payout Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Result Banner -->
+                            <div id="direct-payout-result" class="mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Enable Withdrawals Toggle -->
+                    <div class="pro-card shadow-sm p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <label class="fw-semibold mb-1 fs-6">Enable User Withdrawals</label>
+                                <div class="text-muted small">Allow service providers and users to request withdrawals from their earned balance</div>
+                            </div>
+                            <div class="form-check form-switch fs-4">
+                                <input type="hidden" name="withdrawal_enabled" value="0">
+                                <input class="form-check-input" type="checkbox" name="withdrawal_enabled" value="1" id="withdrawal_enabled"
+                                    {{ \App\Models\Setting::getValue('withdrawal_enabled', '1') == '1' ? 'checked' : '' }}>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Withdrawal Toggle -->
+                    <div class="pro-card shadow-sm p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <label class="fw-semibold mb-1 fs-6">Enable Auto Cashfree Payout</label>
+                                <div class="text-muted small">Automatically trigger Cashfree API transfers for small withdrawal amounts below the auto-limit threshold</div>
+                            </div>
+                            <div class="form-check form-switch fs-4">
+                                <input type="hidden" name="auto_withdrawal_enabled" value="0">
+                                <input class="form-check-input" type="checkbox" name="auto_withdrawal_enabled" value="1" id="auto_withdrawal_enabled"
+                                    {{ \App\Models\Setting::getValue('auto_withdrawal_enabled', '1') == '1' ? 'checked' : '' }}>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Withdrawal Max Limit -->
+                    <div class="pro-card shadow-sm p-4 mb-4">
+                        <label class="fw-semibold mb-1">Max Auto-Withdrawal Limit (₹)</label>
+                        <div class="text-muted small mb-2">Amounts up to this threshold will be transferred automatically. Any withdrawal request ABOVE this amount will require manual Admin approval.</div>
+                        <div class="input-group" style="max-width: 300px;">
+                            <span class="input-group-text bg-light fw-bold">₹</span>
+                            <input type="number" step="1" min="1" class="form-control pro-input" name="auto_withdrawal_max_limit"
+                                value="{{ \App\Models\Setting::getValue('auto_withdrawal_max_limit', '1000') }}">
+                        </div>
+                        <div class="form-text mt-1 text-primary"><i class="fas fa-shield-alt me-1"></i>Default: ₹1,000. Requests &gt; ₹1,000 stay in pending for manual verification.</div>
+                    </div>
+
+                    <!-- Min & Max Withdrawal Limits -->
+                    <div class="pro-card shadow-sm p-4 mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fw-semibold mb-1">Minimum Withdrawal Amount (₹)</label>
+                                <div class="text-muted small mb-2">Minimum balance user must request to withdraw</div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold">₹</span>
+                                    <input type="number" step="1" min="1" class="form-control pro-input" name="min_withdrawal_amount"
+                                        value="{{ \App\Models\Setting::getValue('min_withdrawal_amount', '100') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-semibold mb-1">Maximum Withdrawal Amount Per Request (₹)</label>
+                                <div class="text-muted small mb-2">Maximum allowed amount in a single withdrawal request</div>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light fw-bold">₹</span>
+                                    <input type="number" step="1" min="1" class="form-control pro-input" name="max_withdrawal_amount"
+                                        value="{{ \App\Models\Setting::getValue('max_withdrawal_amount', '50000') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Navigation to Withdrawals List -->
+                    <div class="pro-card shadow-sm p-4 mb-4 bg-light border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1"><i class="fas fa-list-alt me-2 text-primary"></i>Withdrawal Requests Dashboard</h6>
+                                <div class="text-muted small">View, approve, or mark manual payouts for all user withdrawal requests.</div>
+                            </div>
+                            <a href="{{ route('admin.withdrawals.index') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i> Open Withdrawals Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
 
             <!-- =========================================
                  ADMIN PROFILE
@@ -1019,6 +1331,144 @@ $(function () {
         } else {
             badge.removeClass('bg-success').addClass('bg-warning text-dark').html('<i class="fas fa-flask me-1"></i>Testing (Sandbox) Active');
         }
+    });
+
+    // Cashfree Payout Environment select live change feedback
+    $('#cashfree_payout_env_select').on('change', function() {
+        const isLive = $(this).val() === 'production';
+        const badge = $(this).closest('.pro-card').find('.badge');
+        if (isLive) {
+            badge.removeClass('bg-warning text-dark').addClass('bg-success').html('<i class="fas fa-rocket me-1"></i>Live (Production) Payout');
+        } else {
+            badge.removeClass('bg-success').addClass('bg-warning text-dark').html('<i class="fas fa-flask me-1"></i>Sandbox (Testing) Payout');
+        }
+    });
+
+    // Test Live Payout Connection Button
+    $('#test-payout-btn').on('click', function() {
+        const $btn = $(this);
+        const $res = $('#test-payout-result');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Connecting to Cashfree...');
+        $res.html('');
+
+        $.ajax({
+            url: "{{ route('admin.withdrawals.testConnection') }}",
+            method: "POST",
+            data: { _token: "{{ csrf_token() }}" },
+            success: function(resp) {
+                $btn.prop('disabled', false).html('<i class="fas fa-plug me-1"></i> Test Live Payout Connection');
+                if (resp.success) {
+                    $res.html('<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>' + resp.message + '</span>');
+                } else {
+                    $res.html('<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>' + (resp.message || 'Authorization failed') + '</span>');
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html('<i class="fas fa-plug me-1"></i> Test Live Payout Connection');
+                $res.html('<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Server communication error</span>');
+            }
+        });
+    });
+
+    // Toggle Bank vs UPI fields in Direct Payout Tool
+    $('#direct_payout_type').on('change', function() {
+        if ($(this).val() === 'upi') {
+            $('.direct-bank-field').hide();
+            $('.direct-upi-field').show();
+        } else {
+            $('.direct-bank-field').show();
+            $('.direct-upi-field').hide();
+        }
+    });
+
+    // Send Direct Money Payout Button
+    $('#send-direct-payout-btn').on('click', function() {
+        const $btn = $(this);
+        const $res = $('#direct-payout-result');
+        const payoutType = $('#direct_payout_type').val();
+        const amount = parseFloat($('#direct_payout_amount').val());
+
+        if (!amount || amount < 1) {
+            alert('Please enter a valid payout amount (min ₹1.00)');
+            return;
+        }
+
+        const data = {
+            _token: "{{ csrf_token() }}",
+            payout_type: payoutType,
+            name: $('#direct_payout_name').val(),
+            phone: $('#direct_payout_phone').val(),
+            amount: amount,
+            remarks: $('#direct_payout_remarks').val(),
+            account_number: $('#direct_payout_account').val(),
+            ifsc: $('#direct_payout_ifsc').val(),
+            upi_id: $('#direct_payout_upi').val()
+        };
+
+        if (payoutType === 'bank' && (!data.account_number || !data.ifsc)) {
+            alert('Please enter Bank Account Number and IFSC Code.');
+            return;
+        }
+
+        if (payoutType === 'upi' && !data.upi_id) {
+            alert('Please enter UPI VPA ID.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to send ₹' + amount.toFixed(2) + ' directly via Cashfree Payout now?')) {
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing Transfer via Cashfree API...');
+        $res.show().html('<div class="alert alert-info mb-0 py-2"><i class="fas fa-spinner fa-spin me-2"></i>Connecting to Cashfree Payout Gateway...</div>');
+
+        $.ajax({
+            url: "{{ route('admin.withdrawals.testPayoutTransfer') }}",
+            method: "POST",
+            data: data,
+            success: function(resp) {
+                $btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> ⚡ Send Money Payout Now');
+                if (resp.success) {
+                    const st = (resp.status || 'SUCCESS').toUpperCase();
+                    const badgeClass = st === 'SUCCESS' ? 'bg-success' : 'bg-warning text-dark';
+                    $res.html(`
+                        <div class="alert alert-success border shadow-sm mb-0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong class="text-success"><i class="fas fa-check-circle me-1"></i>Payout Dispatched Successfully!</strong>
+                                <span class="badge ${badgeClass}">${st}</span>
+                            </div>
+                            <div class="small">
+                                <div><strong>Transfer ID:</strong> <code>${resp.transfer_id || 'N/A'}</code></div>
+                                <div><strong>Cashfree Reference ID:</strong> <code>${resp.reference_id || 'N/A'}</code></div>
+                                <div><strong>Message:</strong> ${resp.message || 'Payment initiated'}</div>
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    $res.html(`
+                        <div class="alert alert-danger border shadow-sm mb-0">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="text-danger"><i class="fas fa-times-circle me-1"></i>Transfer Rejected / Failed</strong>
+                                <span class="badge bg-danger">${resp.status || 'FAILED'}</span>
+                            </div>
+                            <div class="small">${resp.message || 'Transfer could not be processed.'}</div>
+                        </div>
+                    `);
+                }
+            },
+            error: function(xhr) {
+                $btn.prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> ⚡ Send Money Payout Now');
+                let err = 'Server communication error';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    err = xhr.responseJSON.message;
+                }
+                $res.html(`
+                    <div class="alert alert-danger border shadow-sm mb-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i> <strong>Error:</strong> ${err}
+                    </div>
+                `);
+            }
+        });
     });
 
     // Save All Settings

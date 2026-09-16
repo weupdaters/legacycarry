@@ -20,54 +20,53 @@ class IndexController extends Controller
     public function index()
     {
         $userId = auth()->id();
+        $user = auth()->user();
 
         /**
-         * 1. Find UserDetail using user_id
+         * 1. Get society_id for logged in member admin
          */
-        $userDetail = ResidentAssignment::where('user_id', $userId)->first();
+        $societyId = getSocietyId();
 
-        if (!$userDetail || !$userDetail->society_id) {
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $userId)->first();
+            $societyId = $assignment?->society_id ?? $user?->user_society_id ?? optional($user?->details)->society_id;
+        }
+
+        if (!$societyId) {
             return redirect()->route('login')->withErrors([
                 'error' => 'You are not assigned to any society.',
             ]);
         }
 
         /**
-         * 2. Get society_id
+         * 2. RESIDENTS QUERY (role = customer)
          */
-        $societyId = $userDetail->society_id;
+        $residentsQuery = User::where('role', 'customer')
+            ->where(function ($q) use ($societyId) {
+                $q->where('user_society_id', $societyId)
+                  ->orWhereHas('details', function ($dq) use ($societyId) {
+                      $dq->where('society_id', $societyId);
+                  })
+                  ->orWhereHas('residentAssignment', function ($rq) use ($societyId) {
+                      $rq->where('society_id', $societyId);
+                  });
+            });
+
+        $totalEmployees = (clone $residentsQuery)->count();
+        $employees = $residentsQuery->with(['details.flat', 'details.society', 'residentAssignment.flat'])->latest('id')->paginate(10);
 
         /**
-         * 3. EMPLOYEES LIST (role = customer)
-         */
-        $employees = UserDetail::where('society_id', $societyId)
-            ->whereHas('user', function ($q) {
-                $q->where('role', 'customer');
-            })
-            ->with('user')
-            ->paginate(10);
-
-        /**
-         * 4. JOB COUNTS
+         * 3. JOB COUNTS
          */
         $activeJobs = JobPost::where('society_id', $societyId)->where('status', 'active')->count();
         $inactiveJobs = JobPost::where('society_id', $societyId)->where('status', 'inactive')->count();
         $closedJobs = JobPost::where('society_id', $societyId)->where('status', 'closed')->count();
         $onHoldJobs = JobPost::where('society_id', $societyId)->where('status', 'on_hold')->count();
 
-        /**
-         * 5. TOTAL EMPLOYEES COUNT
-         */
-        $totalEmployees = UserDetail::where('society_id', $societyId)
-            ->whereHas('user', function ($q) {
-                $q->where('role', 'customer');
-            })
-            ->count();
-
         $society = Society::find($societyId);
 
         /**
-         * 6. Load dashboard
+         * 4. Load dashboard
          */
         return view('member.dashboard', compact(
             'totalEmployees',
@@ -81,38 +80,51 @@ class IndexController extends Controller
     }
 
 
-    public function Residents()
+    public function Residents(Request $request)
     {
         if (!has_permission('resident_index')) {
             abort(403, 'Permission denied');
         }
 
         $userId = auth()->id();
+        $user = auth()->user();
 
-        // Find UserDetail using user_id
-        $userDetail = ResidentAssignment::where('user_id', $userId)->first();
+        $societyId = getSocietyId();
 
-        if (!$userDetail || !$userDetail->society_id) {
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $userId)->first();
+            $societyId = $assignment?->society_id ?? $user?->user_society_id ?? optional($user?->details)->society_id;
+        }
+
+        if (!$societyId) {
             return redirect()->route('login')->withErrors([
                 'error' => 'You are not assigned to any society.',
             ]);
         }
 
-        // Get society_id
-        $societyId = $userDetail->society_id;
-
         // Fetch residents belonging to the same society
-        $residents = UserDetail::where('society_id', $societyId)
-            ->whereHas('user', function ($q) {
-                $q->where('role', 'customer');
+        $residents = User::where('role', 'customer')
+            ->where(function ($q) use ($societyId) {
+                $q->where('user_society_id', $societyId)
+                  ->orWhereHas('details', function ($dq) use ($societyId) {
+                      $dq->where('society_id', $societyId);
+                  })
+                  ->orWhereHas('residentAssignment', function ($rq) use ($societyId) {
+                      $rq->where('society_id', $societyId);
+                  });
             })
-            ->with('user')
+            ->with(['details.flat', 'details.society', 'residentAssignment.flat'])
+            ->when($request->search, function ($q) use ($request) {
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('name', 'like', "%{$request->search}%")
+                        ->orWhere('phone', 'like', "%{$request->search}%")
+                        ->orWhere('email', 'like', "%{$request->search}%");
+                });
+            })
+            ->latest('id')
             ->paginate(100);
 
-
-
         return view('member.residents.index', compact('residents'));
-
     }
 
 

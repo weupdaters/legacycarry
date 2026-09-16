@@ -167,7 +167,7 @@ class JobPostController extends Controller
      */
     public function index(Request $request, $user_id = null)
     {
-        $userId = $user_id ?? $request->query('user_id') ?? Auth::id();
+        $userId = $user_id ?? $request->query('user_id') ?? $request->user()?->id ?? Auth::id();
 
         $matchSkill = $request->query('match_skill');
 
@@ -189,9 +189,10 @@ class JobPostController extends Controller
             }
         }
 
-        // Jobs
+        // Jobs (Newest First)
         $jobsQuery = JobPost::with('user')
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->latest('id');
 
         $jobs = $jobsQuery->get();
 
@@ -265,7 +266,7 @@ class JobPostController extends Controller
                 }
             }
 
-            $jobTitle = (string) $job->job_title;
+            $jobTitle = (string) ($job->job_title ?? '');
 
             $matched = false;
             if (!empty($employeeServices)) {
@@ -303,6 +304,10 @@ class JobPostController extends Controller
             unset($job->user);
 
             if ($matchSkill === '1' || $matchSkill === 1 || $matchSkill === true) {
+                // If worker has no services configured, don't hide all jobs
+                if (empty($employeeServices)) {
+                    return true;
+                }
                 return $job->skill_matched === 1;
             }
 
@@ -466,6 +471,7 @@ class JobPostController extends Controller
 
         $validated = $validator->validated();
         $validated['society_id'] = $societyId;
+        $validated['status'] = $validated['status'] ?? 'active';
 
         // ✅ Convert arrays to JSON if necessary
         if (isset($validated['skills_required'])) {

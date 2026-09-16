@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\User;
 use App\Models\UserCode;
 use App\Models\UserDetail;
+use App\Models\UserDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -51,6 +52,29 @@ class AuthController extends Controller
             if ($deviceToken) {
                 $user->fcm_token = trim($deviceToken);
                 $user->save();
+            }
+
+            // Make avatar full URL
+            $user->avatar = $user->avatar
+                ? (str_starts_with($user->avatar, 'http://') || str_starts_with($user->avatar, 'https://')
+                    ? $user->avatar
+                    : asset('storage/' . $user->avatar))
+                : null;
+
+            if ($user->user_society_id) {
+                $user->loadMissing(['society.city', 'society.state', 'society.country']);
+            }
+
+            if ($user->role === 'labor') {
+                $user->employee_details = Employee::with('flat')->where('user_id', $user->id)->first();
+                $user->documents = UserDocument::where('user_id', $user->id)->get();
+            } else {
+                $user->user_details = UserDetail::with([
+                    'society.city',
+                    'society.state',
+                    'society.country',
+                    'flat'
+                ])->where('user_id', $user->id)->first();
             }
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -107,12 +131,36 @@ class AuthController extends Controller
                 $user->save();
             }
 
+            // Make avatar full URL
+            $user->avatar = $user->avatar
+                ? (str_starts_with($user->avatar, 'http://') || str_starts_with($user->avatar, 'https://')
+                    ? $user->avatar
+                    : asset('storage/' . $user->avatar))
+                : null;
+
+            if ($user->user_society_id) {
+                $user->loadMissing(['society.city', 'society.state', 'society.country']);
+            }
+
+            if ($user->role === 'labor') {
+                $user->employee_details = Employee::with('flat')->where('user_id', $user->id)->first();
+                $user->documents = UserDocument::where('user_id', $user->id)->get();
+            } else {
+                $user->user_details = UserDetail::with([
+                    'society.city',
+                    'society.state',
+                    'society.country',
+                    'flat'
+                ])->where('user_id', $user->id)->first();
+            }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'status' => true,
                 'message' => 'Login successful',
                 'user' => $user,
+                'fcm_token' => $user->fcm_token,
                 'token' => $token,
             ]);
         }
@@ -152,15 +200,28 @@ class AuthController extends Controller
 
         // Make avatar full URL
         $user->avatar = $user->avatar
-            ? asset('storage/' . $user->avatar)
+            ? (str_starts_with($user->avatar, 'http://') || str_starts_with($user->avatar, 'https://')
+                ? $user->avatar
+                : asset('storage/' . $user->avatar))
             : null;
+
+        // Load society on user if user_society_id is set
+        if ($user->user_society_id) {
+            $user->loadMissing(['society.city', 'society.state', 'society.country']);
+        }
 
         // Role-based extra data
         if ($user->role === 'labor') {
-            $employee = Employee::where('user_id', $user->id)->first();
+            $employee = Employee::with('flat')->where('user_id', $user->id)->first();
             $user->employee_details = $employee;
+            $user->documents = UserDocument::where('user_id', $user->id)->get();
         } else {
-            $userDetail = UserDetail::where('user_id', $user->id)->first();
+            $userDetail = UserDetail::with([
+                'society.city',
+                'society.state',
+                'society.country',
+                'flat'
+            ])->where('user_id', $user->id)->first();
             $user->user_details = $userDetail;
         }
 

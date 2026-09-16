@@ -25,6 +25,17 @@ class UserPaymentMethod extends Model
         'is_primary' => 'boolean',
     ];
 
+    // Accessors & Mutators to support both 'type' and 'method_type'
+    public function getTypeAttribute()
+    {
+        return $this->attributes['method_type'] ?? null;
+    }
+
+    public function setTypeAttribute($value)
+    {
+        $this->attributes['method_type'] = $value;
+    }
+
     // Relationship
     public function user()
     {

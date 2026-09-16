@@ -12,17 +12,6 @@
       <h4 class="fw-semibold m-0 ms-2">
         Report Details <span class="text-muted fs-6">({{ $report->reference ?? 'RPT-'.$report->id }})</span>
       </h4>
-    </div>
-
-    <div>
-      <form action="{{ route('admin.reports.destroy', $report->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this report?');">
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="btn btn-outline-danger btn-sm">
-          <i class="bi bi-trash me-1"></i> Delete Report
-        </button>
-      </form>
-    </div>
   </div>
 
   @if(session('success'))

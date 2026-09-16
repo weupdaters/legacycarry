@@ -87,7 +87,7 @@ class DashboarsController extends Controller
 
         if ($status === 'upcoming') {
             $query->whereNull('scanned_in_at')
-                ->where('valid_from', '>', now());
+                ->where('valid_until', '>=', now());
         }
 
         if ($status === 'expired') {

@@ -17,6 +17,23 @@ class UserDocument extends Model
         'remarks'
     ];
 
+    protected $appends = [
+        'file_url',
+    ];
+
+    public function getFileUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        if (str_starts_with($this->file_path, 'http://') || str_starts_with($this->file_path, 'https://')) {
+            return $this->file_path;
+        }
+
+        return asset('storage/' . $this->file_path);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

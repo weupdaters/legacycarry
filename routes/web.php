@@ -180,3 +180,9 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
 
 Route::get('/page/{slug}', [IndexController::class, 'singlePage'])
     ->where('slug', 'privacy_policy|terms_and_conditions|return_refund_policy');
+
+// Cashfree Hosted Web Checkout & Callback
+Route::get('/cashfree-checkout/{paymentSessionId}', [\App\Http\Controllers\CashfreeCheckoutController::class, 'checkout'])->name('cashfree.checkout');
+Route::get('/cashfree-return', [\App\Http\Controllers\CashfreeCheckoutController::class, 'callback'])->name('cashfree.return');
+Route::get('/cashfree-tester', [\App\Http\Controllers\CashfreeCheckoutController::class, 'tester'])->name('cashfree.tester');
+Route::post('/cashfree-tester/create-order', [\App\Http\Controllers\CashfreeCheckoutController::class, 'createTestOrder'])->name('cashfree.tester.create');

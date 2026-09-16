@@ -93,6 +93,7 @@ class GuardController extends Controller
             ->whereNull('scanned_in_at')
             ->whereDate('valid_from', '<=', $today)
             ->whereDate('valid_until', '>=', $today)
+            ->where('valid_until', '>=', now())
             ->count();
 
         return response()->json([
@@ -1388,13 +1389,14 @@ class GuardController extends Controller
         }
 
         if ($status === 'upcoming') {
-            $query->whereNull('scanned_in_at');
+            $query->whereNull('scanned_in_at')
+                  ->where('valid_until', '>=', now());
         }
 
         if ($status === 'expired') {
-            $query->where(function ($q) use ($today) {
-                $q->whereDate('valid_until', '<', $today)
-                ->orWhereNotNull('scanned_out_at');
+            $query->where(function ($q) {
+                $q->where('valid_until', '<', now())
+                  ->orWhereNotNull('scanned_out_at');
             });
         }
 

@@ -8,6 +8,7 @@ use App\Models\JobPost;
 use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\Withdrawal;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -294,17 +295,33 @@ class JobPaymentController extends Controller
     {
         $user = $request->user();
 
-        $payments = Payment::with(['job', 'payer'])
+        $query = Payment::with(['job', 'payer'])
                           ->where('payee_id', $user->id)
-                          ->orderBy('created_at', 'desc')
+                          ->where('payment_type', 'final');
+
+        $payments = $query->orderBy('created_at', 'desc')
                           ->paginate(10);
+
+        $totalFinalEarned = Payment::where('payee_id', $user->id)
+                                     ->where('payment_type', 'final')
+                                     ->where('status', 'success')
+                                     ->sum('amount');
+
+        $totalWithdrawn = Withdrawal::where('user_id', $user->id)
+                                     ->where('status', 'completed')
+                                     ->sum('amount');
+
+        $pendingWithdrawal = Withdrawal::where('user_id', $user->id)
+                                     ->whereIn('status', ['pending', 'processing'])
+                                     ->sum('amount');
+
+        $availableBalance = max(0, round($totalFinalEarned - ($totalWithdrawn + $pendingWithdrawal), 2));
 
         return response()->json([
             'status' => true,
             'payments' => $payments,
-            'total_earnings' => Payment::where('payee_id', $user->id)
-                                     ->where('status', 'success')
-                                     ->sum('amount'),
+            'total_earnings' => $totalFinalEarned,
+            'available_balance' => $availableBalance,
         ], 200);
     }
 }

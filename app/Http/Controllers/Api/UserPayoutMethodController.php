@@ -11,8 +11,13 @@ use Illuminate\Support\Facades\Validator;
 class UserPayoutMethodController extends Controller
 {
     // GET /api/users/{userId}/payment-methods
-    public function index($userId)
+    public function index(Request $request, $userId)
     {
+        $user = $request->user();
+        if (!$user || ($user->id != $userId && $user->role !== 'admin')) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized access'], 403);
+        }
+
         $methods = UserPaymentMethod::where('user_id', $userId)
                     ->orderByDesc('is_primary')
                     ->get();
@@ -23,6 +28,11 @@ class UserPayoutMethodController extends Controller
     // POST /api/users/{userId}/payment-methods
     public function store(Request $request, $userId)
     {
+        $user = $request->user();
+        if (!$user || ($user->id != $userId && $user->role !== 'admin')) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized access'], 403);
+        }
+
         // base rules
         $rules = [
             'type' => 'required|in:upi,bank,wallet,card',
@@ -79,6 +89,11 @@ class UserPayoutMethodController extends Controller
     // PUT /api/users/{userId}/payment-methods/{id}
     public function update(Request $request, $userId, $id)
     {
+        $user = $request->user();
+        if (!$user || ($user->id != $userId && $user->role !== 'admin')) {
+            return response()->json(['status' => false, 'message' => 'Unauthorized access'], 403);
+        }
+
         $method = UserPaymentMethod::where('user_id', $userId)->where('id', $id)->first();
         if (! $method) {
             return response()->json(['message' => 'Not found'], 404);

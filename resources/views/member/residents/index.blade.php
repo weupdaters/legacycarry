@@ -51,21 +51,23 @@
                 <tbody>
                   @foreach ($residents as $resident)
                     @php
-                      $detail = $resident->details ?? null;
+                      $user = $resident instanceof \App\Models\User ? $resident : ($resident->user ?? $resident);
+                      $detail = $user->details ?? ($resident->details ?? null);
+                      $flat = $detail->flat ?? ($user->residentAssignment?->flat ?? ($resident->flat ?? null));
                     @endphp
 
                     <tr>
-                      <td>{{ $resident->id }}</td>
-                      <td>{{ $resident->user->name }}</td>
-                      <td>{{ $resident->user->phone }}</td>
-                      <td>{{ $resident->user->email }}</td>
+                      <td>{{ $user->id }}</td>
+                      <td>{{ $user->name }}</td>
+                      <td>{{ $user->phone ?? '-' }}</td>
+                      <td>{{ $user->email ?? '-' }}</td>
 
-                      {{-- New fields from user_details table --}}
-                      <td>{{ $resident->flat->building_no ?? '-' }}</td>
-                      <td>{{ $resident->address ?? '-' }}</td>
+                      {{-- New fields from user_details / flat table --}}
+                      <td>{{ $flat->building_no ?? ($flat->flat_no ?? '-') }}</td>
+                      <td>{{ $detail->address ?? ($user->address ?? '-') }}</td>
 
                       <td>
-                        @if ($resident->user->is_active)
+                        @if ($user->is_active)
                           <span class="badge bg-success">Active</span>
                         @else
                           <span class="badge bg-danger">Banned</span>
@@ -74,13 +76,10 @@
 
                       <td>
                         @if (has_permission('resident_show'))
-                          <a href="{{ route('member.residents.view', $resident->user->id) }}" class="btn btn-info btn-sm">
+                          <a href="{{ route('member.residents.view', $user->id) }}" class="btn btn-info btn-sm">
                             View
                           </a>
                         @endif
-
-
-
                       </td>
                     </tr>
                   @endforeach

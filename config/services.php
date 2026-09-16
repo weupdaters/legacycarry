@@ -42,4 +42,11 @@ return [
         'base_url' => env('CASHFREE_BASE_URL', (env('CASHFREE_ENV') === 'production' || env('CASHFREE_ENV') === 'live') ? 'https://api.cashfree.com/pg/orders' : 'https://sandbox.cashfree.com/pg/orders'),
     ],
 
+    'cashfree_payout' => [
+        'client_id' => env('CASHFREE_PAYOUT_CLIENT_ID', env('CASHFREE_APP_ID')),
+        'client_secret' => env('CASHFREE_PAYOUT_CLIENT_SECRET', env('CASHFREE_SECRET_KEY')),
+        'environment' => env('CASHFREE_PAYOUT_ENV', env('CASHFREE_ENV', 'sandbox')),
+        'base_url' => env('CASHFREE_PAYOUT_BASE_URL', (in_array(strtolower(env('CASHFREE_PAYOUT_ENV', env('CASHFREE_ENV', 'sandbox'))), ['production', 'live']) ? 'https://payout-api.cashfree.com' : 'https://payout-gamma.cashfree.com')),
+    ],
+
 ];

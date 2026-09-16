@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserDetailController;
 use App\Http\Controllers\Admin\UserPayoutMethodController;
 use App\Http\Controllers\Admin\UserPermissionController;
+use App\Http\Controllers\Admin\WithdrawalController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -227,6 +228,19 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/payments', [PaymentsController::class, 'adminIndex'])->name('admin.payments.index');
     Route::get('/payments/export', [PaymentsController::class, 'adminExport'])->name('admin.payments.export');
     Route::get('/payments/{payment}', [PaymentsController::class, 'adminShow'])->name('admin.payments.show');
+
+    // Withdrawal / Payout Management routes
+    Route::get('/withdrawals', [WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
+    Route::get('/withdrawals/export', [WithdrawalController::class, 'export'])->name('admin.withdrawals.export');
+    Route::get('/withdrawals/{id}', [WithdrawalController::class, 'show'])->name('admin.withdrawals.show');
+    Route::post('/withdrawals/batch-auto-process', [WithdrawalController::class, 'processBatchAuto'])->name('admin.withdrawals.processBatchAuto');
+    Route::post('/withdrawals/{id}/process-payout', [WithdrawalController::class, 'processPayout'])->name('admin.withdrawals.processPayout');
+    Route::post('/withdrawals/{id}/mark-manual-paid', [WithdrawalController::class, 'markManualPaid'])->name('admin.withdrawals.markManualPaid');
+    Route::post('/withdrawals/{id}/hold', [WithdrawalController::class, 'hold'])->name('admin.withdrawals.hold');
+    Route::post('/withdrawals/{id}/unhold', [WithdrawalController::class, 'unhold'])->name('admin.withdrawals.unhold');
+    Route::post('/withdrawals/{id}/reject', [WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
+    Route::post('/withdrawals/test-connection', [WithdrawalController::class, 'testConnection'])->name('admin.withdrawals.testConnection');
+    Route::post('/withdrawals/test-payout', [WithdrawalController::class, 'testPayoutTransfer'])->name('admin.withdrawals.testPayoutTransfer');
 
 
     Route::get('/chat/sync', [AdminChatController::class, 'syncFirestoreChats']);

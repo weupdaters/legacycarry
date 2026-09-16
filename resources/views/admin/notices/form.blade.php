@@ -61,10 +61,14 @@
         <select name="target_user_id" class="form-select" id="target_user_id">
           <option value="">-- Select User --</option>
           @foreach ($users as $user)
+            @php
+              $userSocId = $user->user_society_id ?? $user->details->society_id ?? $user->residentAssignment->society_id ?? '';
+              $flatNo = $user->details->flat_number ?? $user->residentAssignment->flat->flat_number ?? '';
+            @endphp
             <option value="{{ $user->id }}"
-              data-society="{{ $user->details->society_id ?? '' }}"
+              data-society="{{ $userSocId }}"
               {{ old('target_user_id', $isEdit ? $notice->target_user_id : '') == $user->id ? 'selected' : '' }}>
-              {{ $user->name }} {{ $user->details->flat_number ? '(' . $user->details->flat_number . ')' : '' }}
+              {{ $user->name }} {{ $flatNo ? '(' . $flatNo . ')' : '' }}
             </option>
           @endforeach
         </select>

@@ -221,9 +221,23 @@
         {{-- ─── PAYMENT ─── --}}
         <li class="menu-title mt-2">Payment</li>
         <li>
-          <a href="{{ route('admin.payments.index') }}" class="tp-link">
+          <a href="{{ route('admin.payments.index') }}" class="tp-link {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
             <i data-feather="credit-card"></i>
             <span>Payment Logs</span>
+          </a>
+        </li>
+        <li>
+          @php
+            $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
+          @endphp
+          <a href="{{ route('admin.withdrawals.index') }}" class="tp-link {{ request()->routeIs('admin.withdrawals.*') ? 'active' : '' }} d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+              <i data-feather="dollar-sign"></i>
+              <span>Withdrawals</span>
+            </div>
+            @if($pendingWithdrawalsCount > 0)
+              <span class="badge bg-warning text-dark rounded-pill px-2" style="font-size: 11px;">{{ $pendingWithdrawalsCount }}</span>
+            @endif
           </a>
         </li>
 

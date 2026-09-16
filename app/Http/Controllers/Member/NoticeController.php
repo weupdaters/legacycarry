@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\ResidentAssignment;
 use App\Models\Society;
 use App\Models\SocietyNotice;
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -20,8 +22,12 @@ class NoticeController extends Controller
         $user = auth()->user();
         
         // Get user's society_id
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        $societyId = $assignment ? $assignment->society_id : null;
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $user->id)->first();
+            $societyId = $assignment ? $assignment->society_id : null;
+        }
 
         if (!$societyId) {
             return view('member.notices.index', ['notices' => collect()]);
@@ -30,7 +36,7 @@ class NoticeController extends Controller
         // Fetch notices for this society or specifically for this user
         $notices = SocietyNotice::where('society_id', $societyId)
             ->where(function ($query) use ($user) {
-                $query->where('notice_type', 'all')
+                $query->whereIn('notice_type', ['all', 'society'])
                       ->orWhere(function ($q) use ($user) {
                           $q->where('notice_type', 'single')
                             ->where('target_user_id', $user->id);
@@ -48,17 +54,20 @@ class NoticeController extends Controller
         abort_unless(has_permission('notice_show'), 403);
 
         $user = auth()->user();
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        $societyId = $assignment ? $assignment->society_id : null;
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $user->id)->first();
+            $societyId = $assignment ? $assignment->society_id : null;
+        }
 
         $notice = SocietyNotice::where('id', $id)->firstOrFail();
 
         // Security check
-        if ($notice->society_id != $societyId) {
+        if ((int) $notice->society_id !== (int) $societyId) {
             abort(403);
         }
 
-        if ($notice->notice_type == 'single' && $notice->target_user_id != $user->id && !has_permission('notice_index')) {
+        if ($notice->notice_type == 'single' && (int) $notice->target_user_id !== (int) $user->id && !has_permission('notice_index')) {
             abort(403);
         }
 
@@ -70,8 +79,11 @@ class NoticeController extends Controller
         abort_unless(has_permission('notice_create'), 403);
 
         $user = auth()->user();
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        $societyId = $assignment ? $assignment->society_id : null;
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $user->id)->first();
+            $societyId = $assignment ? $assignment->society_id : null;
+        }
 
         if (!$societyId) {
             return back()->with('error', 'You are not assigned to any society.');
@@ -80,8 +92,14 @@ class NoticeController extends Controller
         $society = Society::findOrFail($societyId);
         
         // Only residents of the same society
-        $users = User::whereHas('details', function($q) use ($societyId) {
-            $q->where('society_id', $societyId);
+        $users = User::where(function($q) use ($societyId) {
+            $q->where('user_society_id', $societyId)
+              ->orWhereHas('details', function ($dq) use ($societyId) {
+                  $dq->where('society_id', $societyId);
+              })
+              ->orWhereHas('residentAssignment', function ($rq) use ($societyId) {
+                  $rq->where('society_id', $societyId);
+              });
         })->where('role', 'customer')->orderBy('name')->get();
 
         return view('member.notices.form', compact('society', 'users'));
@@ -92,8 +110,11 @@ class NoticeController extends Controller
         abort_unless(has_permission('notice_create'), 403);
 
         $user = auth()->user();
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        $societyId = $assignment ? $assignment->society_id : null;
+        $societyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $user->id)->first();
+            $societyId = $assignment ? $assignment->society_id : null;
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -116,7 +137,7 @@ class NoticeController extends Controller
 
         $notice = SocietyNotice::create($data);
 
-        // Firebase Notification
+        // Firebase Notification & DB Notification
         $this->sendNoticeNotification($notice);
 
         return redirect()->route('member.notices.index')->with('success', 'Notice published successfully.');
@@ -129,15 +150,22 @@ class NoticeController extends Controller
         $user = auth()->user();
         $notice = SocietyNotice::findOrFail($id);
 
+        $userSocietyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+
         // Security: Can only edit their own society's notices
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        if ($notice->society_id != ($assignment->society_id ?? null)) {
+        if ((int) $notice->society_id !== (int) $userSocietyId) {
             abort(403);
         }
 
         $society = Society::findOrFail($notice->society_id);
-        $users = User::whereHas('details', function($q) use ($notice) {
-            $q->where('society_id', $notice->society_id);
+        $users = User::where(function($q) use ($notice) {
+            $q->where('user_society_id', $notice->society_id)
+              ->orWhereHas('details', function ($dq) use ($notice) {
+                  $dq->where('society_id', $notice->society_id);
+              })
+              ->orWhereHas('residentAssignment', function ($rq) use ($notice) {
+                  $rq->where('society_id', $notice->society_id);
+              });
         })->where('role', 'customer')->orderBy('name')->get();
 
         return view('member.notices.form', compact('notice', 'society', 'users'));
@@ -150,8 +178,9 @@ class NoticeController extends Controller
         $user = auth()->user();
         $notice = SocietyNotice::findOrFail($id);
         
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        if ($notice->society_id != ($assignment->society_id ?? null)) {
+        $userSocietyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+
+        if ((int) $notice->society_id !== (int) $userSocietyId) {
             abort(403);
         }
 
@@ -184,8 +213,9 @@ class NoticeController extends Controller
         $user = auth()->user();
         $notice = SocietyNotice::findOrFail($id);
 
-        $assignment = ResidentAssignment::where('user_id', $user->id)->first();
-        if ($notice->society_id != ($assignment->society_id ?? null)) {
+        $userSocietyId = $user->user_society_id ?? $user->details?->society_id ?? $user->residentAssignment?->society_id ?? $user->society_id;
+
+        if ((int) $notice->society_id !== (int) $userSocietyId) {
             abort(403);
         }
 
@@ -200,27 +230,90 @@ class NoticeController extends Controller
 
     private function sendNoticeNotification(SocietyNotice $notice)
     {
-        $tokens = [];
-        if ($notice->notice_type === 'all') {
-            $tokens = User::whereHas('details', function ($q) use ($notice) {
-                $q->where('society_id', $notice->society_id);
-            })
-            ->whereNotNull('fcm_token')
-            ->pluck('fcm_token')
-            ->toArray();
-        } elseif ($notice->target_user_id) {
-            $user = User::find($notice->target_user_id);
-            if ($user && $user->fcm_token) {
-                $tokens = [$user->fcm_token];
+        $targetUsers = collect();
+
+        if ($notice->notice_type === 'single' && $notice->target_user_id) {
+            $singleUser = User::find($notice->target_user_id);
+            if ($singleUser) {
+                $targetUsers = collect([$singleUser]);
+            }
+        } else {
+            $targetUsers = User::where(function ($q) use ($notice) {
+                $q->where('user_society_id', $notice->society_id)
+                  ->orWhereHas('details', function ($dq) use ($notice) {
+                      $dq->where('society_id', $notice->society_id);
+                  })
+                  ->orWhereHas('residentAssignment', function ($rq) use ($notice) {
+                      $rq->where('society_id', $notice->society_id);
+                  });
+            })->get();
+        }
+
+        if ($targetUsers->isEmpty()) {
+            return;
+        }
+
+        $imageUrl = $notice->image ? asset('storage/' . $notice->image) : null;
+        $title = "New Society Notice: " . $notice->title;
+        $description = Str::limit(strip_tags($notice->description), 200);
+
+        // 1. SAVE TO DATABASE (AppNotification & UserNotification)
+        foreach ($targetUsers as $targetUser) {
+            try {
+                AppNotification::create([
+                    'title' => $title,
+                    'description' => $description,
+                    'image' => $imageUrl,
+                    'sent_to' => $targetUser->id,
+                    'meta' => [
+                        'sent_by' => $notice->created_by ?? auth()->id(),
+                        'notice_id' => (string) $notice->id,
+                        'type' => 'society_notice',
+                        'image_url' => $imageUrl,
+                        'data' => [
+                            'notice_id' => (string) $notice->id,
+                            'type' => 'society_notice',
+                        ],
+                    ],
+                ]);
+            } catch (\Throwable $e) {
+                \Log::error('Failed to create AppNotification: ' . $e->getMessage());
+            }
+
+            try {
+                UserNotification::create([
+                    'user_id' => $targetUser->id,
+                    'title' => $title,
+                    'message' => $description,
+                    'image' => $imageUrl,
+                    'type' => 'society_notice',
+                    'pass_id' => null,
+                ]);
+            } catch (\Throwable $e) {
+                // Ignore optional UserNotification table error
             }
         }
+
+        // 2. SEND PUSH NOTIFICATION VIA FCM
+        $tokens = $targetUsers->whereNotNull('fcm_token')
+            ->pluck('fcm_token')
+            ->map(fn($t) => trim($t))
+            ->filter(fn($t) => !empty($t))
+            ->unique()
+            ->values()
+            ->toArray();
 
         if (!empty($tokens)) {
             send_push_notification(
                 $tokens,
-                "New Society Notice: " . $notice->title,
+                $title,
                 Str::limit(strip_tags($notice->description), 100),
-                ['notice_id' => (string) $notice->id, 'type' => 'society_notice']
+                [
+                    'notice_id' => (string) $notice->id,
+                    'type' => 'society_notice',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                $imageUrl
             );
         }
     }

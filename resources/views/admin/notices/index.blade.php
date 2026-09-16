@@ -33,7 +33,6 @@
                 <th>Type</th>
                 <th>Status</th>
                 <th>Published</th>
-                <th width="180">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -59,25 +58,10 @@
                     </span>
                   </td>
                   <td>{{ optional($notice->published_at)->format('d M, Y h:i A') ?? '-' }}</td>
-                  <td>
-                    @if (has_permission('notice_edit'))
-                    <a href="{{ route('admin.notices.edit', $notice->id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    @endif
-
-                    @if (has_permission('notice_delete'))
-                    <form action="{{ route('admin.notices.destroy', $notice->id) }}" method="POST" class="d-inline">
-                      @csrf
-                      @method('DELETE')
-                      <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this notice?')">
-                        Delete
-                      </button>
-                    </form>
-                    @endif
-                  </td>
                 </tr>
               @empty
                 <tr>
-                  <td colspan="6" class="text-center">No notices found.</td>
+                  <td colspan="5" class="text-center">No notices found.</td>
                 </tr>
               @endforelse
             </tbody>

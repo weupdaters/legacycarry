@@ -90,8 +90,16 @@ if (!function_exists('getSocietyId')) {
         }
 
         $userDetail = UserDetail::where('user_id', $userId)->first();
+        if (!empty($userDetail?->society_id)) {
+            return $userDetail->society_id;
+        }
 
-        return $userDetail?->society_id;
+        $assignment = ResidentAssignment::where('user_id', $userId)->first();
+        if (!empty($assignment?->society_id)) {
+            return $assignment->society_id;
+        }
+
+        return auth()->user()?->user_society_id ?? auth()->user()?->society_id;
     }
 }
 

@@ -224,27 +224,29 @@
               </thead>
               <tbody>
                 @forelse ($employees as $emp)
+                  @php
+                    $u = $emp instanceof \App\Models\User ? $emp : ($emp->user ?? $emp);
+                  @endphp
                   <tr>
                     <td>
                       <div class="d-flex align-items-center">
                         <div class="avatar-ring me-3">
-                          <img src="{{ $emp->user->avatar_url ?? asset('assets/images/users/default.png') }}"
+                          <img src="{{ $u->avatar_url ?? asset('assets/images/users/default.png') }}"
                                class="rounded-circle" width="45" height="45" style="object-fit: cover; border: 2px solid white;">
                         </div>
                         <div>
-                          <h6 class="mb-0 fw-bold">{{ $emp->user->name }}</h6>
-
+                          <h6 class="mb-0 fw-bold">{{ $u->name }}</h6>
                         </div>
                       </div>
                     </td>
                     <td>
                       <div class="d-flex flex-column">
-                        <span class="font-13"><i class="mdi mdi-email-outline me-1"></i> {{ $emp->user->email }}</span>
-                        <span class="font-13 text-muted"><i class="mdi mdi-phone-outline me-1"></i> {{ $emp->user->phone ?? 'No Phone' }}</span>
+                        <span class="font-13"><i class="mdi mdi-email-outline me-1"></i> {{ $u->email }}</span>
+                        <span class="font-13 text-muted"><i class="mdi mdi-phone-outline me-1"></i> {{ $u->phone ?? 'No Phone' }}</span>
                       </div>
                     </td>
                     <td>
-                      <span class="text-slate-500 font-13">{{ $emp->user->created_at->format('M d, Y') }}</span>
+                      <span class="text-slate-500 font-13">{{ $u->created_at?->format('M d, Y') ?? 'N/A' }}</span>
                     </td>
                   </tr>
                 @empty
