@@ -124,7 +124,7 @@
       <h1
         style="font-family:var(--fd);font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-0.03em;color:var(--navy);margin-bottom:12px">
         Privacy <em style="font-style:italic;color:var(--blue)">Policy</em></h1>
-      <p style="color:var(--sub);font-size:0.875rem">Last updated: December 2024 &nbsp;·&nbsp; Effective for all Legacy
+      <p style="color:var(--sub);font-size:0.875rem">Last updated: March 2025 &nbsp;·&nbsp; Effective for all Legacy
         Carry users</p>
     </div>
   </div>
@@ -138,19 +138,20 @@
         <li><a href="#pp2">How We Use Your Information</a></li>
         <li><a href="#pp3">Information Sharing &amp; Disclosure</a></li>
         <li><a href="#pp4">Data Storage &amp; Security</a></li>
-        <li><a href="#pp5">Your Rights &amp; Choices</a></li>
+        <li><a href="#pp5">Your Rights &amp; Choices (Including In-App Account Deletion)</a></li>
         <li><a href="#pp6">Cookies &amp; Tracking</a></li>
-        <li><a href="#pp7">Children's Privacy</a></li>
-        <li><a href="#pp8">Changes to This Policy</a></li>
-        <li><a href="#pp9">Contact Us</a></li>
+        <li><a href="#pp7">User Photos, Identity Verification &amp; Face Data Policy</a></li>
+        <li><a href="#pp8">Children's Privacy</a></li>
+        <li><a href="#pp9">Changes to This Policy</a></li>
+        <li><a href="#pp10">Contact Us</a></li>
       </ol>
     </div>
 
     <div class="pol-note">
       <p><i class="fa-solid fa-circle-info" style="margin-right:6px;color:var(--blue)"></i>
         <strong>Summary:</strong> Legacy Carry collects only data necessary to operate the platform. We do not sell your
-        personal information to third parties. Your data is stored securely and you may request its deletion at any
-        time.
+        personal information or photos to third parties. We do not collect biometric face data. Your data is stored securely and you may delete your account and personal data at any
+        time directly within the mobile app.
       </p>
     </div>
 
@@ -163,7 +164,7 @@
         <li>Residential address and flat/unit number for resident profiles</li>
         <li>Vehicle registration numbers added to your profile</li>
         <li>Identity documents submitted for verification (guards and service providers)</li>
-        <li>Profile photos, where voluntarily uploaded</li>
+        <li>Profile photos and selfie images, where voluntarily uploaded or captured via device camera for manual identity verification (see Section 7)</li>
       </ul>
       <p><strong>Usage &amp; Operational Data:</strong></p>
       <ul>
@@ -218,18 +219,27 @@
         <li>Role-based access controls limiting data access</li>
         <li>Regular security audits and vulnerability assessments</li>
       </ul>
-      <p>Personal data will be erased within 30 days of account deletion, except where legally required.</p>
+      <p>Personal data and user photos will be permanently purged upon account deletion via the app or within 30 days of a manual deletion request, except where legally required.</p>
     </div>
 
     <div class="pol-sec" id="pp5">
-      <h2><i class="fa-solid fa-user-check"></i> 5. Your Rights &amp; Choices</h2>
+      <h2><i class="fa-solid fa-user-check"></i> 5. Your Rights &amp; Choices (Including In-App Account Deletion)</h2>
       <ul>
         <li><strong>Right to Access:</strong> Request a copy of personal data we hold about you</li>
         <li><strong>Right to Correction:</strong> Request correction of inaccurate data</li>
-        <li><strong>Right to Deletion:</strong> Request deletion of your personal data</li>
+        <li><strong>Right to Deletion:</strong> Request deletion of your personal data or delete your account directly within the app</li>
         <li><strong>Right to Withdraw Consent:</strong> Withdraw consent for specific data processing</li>
       </ul>
-      <p>To exercise any right, contact us at <strong>info@legacycarry.com</strong>. We will respond within 30 days.</p>
+      <p><strong>In-App Account Deletion (Apple Guideline 5.1.1(v)):</strong></p>
+      <p>Our app supports complete self-service account deletion directly within the mobile application. You can initiate this at any time by navigating to:</p>
+      <div class="pol-note" style="margin-bottom:14px;background:#f8fafc;border-left:4px solid var(--navy);">
+        <p style="margin:0;font-weight:600;color:var(--navy);">
+          <i class="fa-solid fa-gear" style="margin-right:6px;color:var(--blue)"></i>
+          Settings &gt; Delete Account &gt; Confirmation Dialog ("Are you sure you want to delete this account?")
+        </p>
+      </div>
+      <p>Upon confirming account deletion, your session is terminated, your account is immediately deactivated, and your profile photos, credentials, and personal records are permanently and irreversibly purged from our active databases.</p>
+      <p>To exercise any other rights or request manual deletion assistance, contact us at <strong>info@legacycarry.com</strong>. We will respond within 30 days.</p>
     </div>
 
     <div class="pol-sec" id="pp6">
@@ -239,19 +249,42 @@
     </div>
 
     <div class="pol-sec" id="pp7">
-      <h2><i class="fa-solid fa-child"></i> 7. Children's Privacy</h2>
+      <h2><i class="fa-solid fa-camera"></i> 7. User Photos, Identity Verification &amp; Face Data Policy</h2>
+      <p>Legacy Carry allows users to upload a photograph or take a selfie using the device's camera for the sole purpose of profile picture creation and manual identity verification.</p>
+      
+      <p><strong>Collection &amp; Biometric Data Clarification:</strong></p>
+      <p>We do <strong>NOT</strong> collect, extract, scan, or process biometric facial data, facial geometry, facial landmarks, or TrueDepth depth-maps. The app only collects a standard 2D photograph (selfie) captured via the camera or selected from the photo gallery solely for the purpose of setting up a user profile picture and allowing manual identity verification.</p>
+
+      <p><strong>Use, Sharing, Storage, Retention &amp; Deletion Practices:</strong></p>
+      <ul>
+        <li><strong>Planned Use:</strong> Used solely for profile identification, user authentication, and safety within the community. Photos are used exclusively for visual identification (such as resident directory profiles and gate pass verification by security guards). We do not use photographs for automated facial recognition, surveillance, or AI model training.</li>
+        <li><strong>No Third-Party Sharing:</strong> We do <strong>NOT</strong> sell, rent, disclose, or share user photographs with any third parties, advertisers, or external commercial entities.</li>
+        <li><strong>Secure Storage:</strong> Stored securely in our encrypted cloud storage database with restricted, role-based administrative access controls and TLS/SSL encryption.</li>
+        <li><strong>Retention:</strong> Retained only while the user's account remains active. We do not retain photos beyond the active lifecycle of your account.</li>
+        <li><strong>Account Deletion:</strong> Users can delete their account and associated data at any time directly within the app by navigating to <strong>Settings &gt; Delete Account</strong>. Upon account deletion, the user's photos, profile data, and personal records are permanently and irreversibly purged.</li>
+      </ul>
+
+      <div class="pol-hl">
+        <p><i class="fa-solid fa-shield-halved" style="margin-right:6px;color:var(--accent)"></i>
+          <strong>Privacy Policy Guarantee:</strong> Legacy Carry never shares or monetizes your photo data and does not employ facial recognition or biometric scanning technologies.
+        </p>
+      </div>
+    </div>
+
+    <div class="pol-sec" id="pp8">
+      <h2><i class="fa-solid fa-child"></i> 8. Children's Privacy</h2>
       <p>Legacy Carry is not intended for users under 18. We do not knowingly collect personal information from minors.
         Contact us immediately if you believe a minor has provided personal information.</p>
     </div>
 
-    <div class="pol-sec" id="pp8">
-      <h2><i class="fa-solid fa-arrows-rotate"></i> 8. Changes to This Policy</h2>
+    <div class="pol-sec" id="pp9">
+      <h2><i class="fa-solid fa-arrows-rotate"></i> 9. Changes to This Policy</h2>
       <p>We may update this Privacy Policy from time to time. We will notify users of significant changes through in-app
         notifications or email. Continued use after changes are posted constitutes your acceptance.</p>
     </div>
 
-    <div class="pol-sec" id="pp9">
-      <h2><i class="fa-solid fa-headset"></i> 9. Contact Us</h2>
+    <div class="pol-sec" id="pp10">
+      <h2><i class="fa-solid fa-headset"></i> 10. Contact Us</h2>
       <p>For questions, concerns, or data requests, please contact:</p>
       <div class="info-card" style="margin-top:18px">
         <h3>Legacy Carry</h3>
