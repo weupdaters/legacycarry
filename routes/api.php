@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\AmenityApiController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PollApiController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GuardController;
 use App\Http\Controllers\Api\GuardShiftController;
@@ -421,6 +423,47 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notices', [SocietyNoticeApiController::class, 'index']);
     Route::get('/notices/{notice}', [SocietyNoticeApiController::class, 'show']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMENITY & POLL APIs (v1 & unversioned)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('v1')->group(function () {
+        // Amenity Endpoints
+        Route::get('/amenities', [AmenityApiController::class, 'index']);
+        Route::get('/amenities/{id}', [AmenityApiController::class, 'show']);
+        Route::get('/amenities/{id}/availability', [AmenityApiController::class, 'availability']);
+        Route::post('/amenity-bookings', [AmenityApiController::class, 'book']);
+        Route::get('/amenity-bookings', [AmenityApiController::class, 'myBookings']);
+        Route::get('/amenity-bookings/{id}', [AmenityApiController::class, 'bookingDetails']);
+        Route::post('/amenity-bookings/{id}/cancel', [AmenityApiController::class, 'cancelBooking']);
+
+        // Admin Amenity Approvals
+        Route::post('/admin/amenity-bookings/{id}/approve', [AmenityApiController::class, 'approveBooking']);
+        Route::post('/admin/amenity-bookings/{id}/reject', [AmenityApiController::class, 'rejectBooking']);
+
+        // Poll Endpoints
+        Route::get('/polls', [PollApiController::class, 'index']);
+        Route::get('/polls/{id}', [PollApiController::class, 'show']);
+        Route::post('/polls/{id}/vote', [PollApiController::class, 'vote']);
+        Route::get('/polls/{id}/results', [PollApiController::class, 'results']);
+        Route::get('/my-polls', [PollApiController::class, 'myPolls']);
+    });
+
+    // Unversioned aliases
+    Route::get('/amenities', [AmenityApiController::class, 'index']);
+    Route::get('/amenities/{id}', [AmenityApiController::class, 'show']);
+    Route::get('/amenities/{id}/availability', [AmenityApiController::class, 'availability']);
+    Route::post('/amenity-bookings', [AmenityApiController::class, 'book']);
+    Route::get('/amenity-bookings', [AmenityApiController::class, 'myBookings']);
+    Route::get('/amenity-bookings/{id}', [AmenityApiController::class, 'bookingDetails']);
+    Route::post('/amenity-bookings/{id}/cancel', [AmenityApiController::class, 'cancelBooking']);
+    Route::get('/polls', [PollApiController::class, 'index']);
+    Route::get('/polls/{id}', [PollApiController::class, 'show']);
+    Route::post('/polls/{id}/vote', [PollApiController::class, 'vote']);
+    Route::get('/polls/{id}/results', [PollApiController::class, 'results']);
+    Route::get('/my-polls', [PollApiController::class, 'myPolls']);
 
 });
 

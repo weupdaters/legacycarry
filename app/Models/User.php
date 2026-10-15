@@ -161,6 +161,16 @@ class User extends Authenticatable
         return $this->hasOne(UserDetail::class, 'user_id', 'id');
     }
 
+    public function amenityBookings()
+    {
+        return $this->hasMany(AmenityBooking::class);
+    }
+
+    public function pollVotes()
+    {
+        return $this->hasMany(PollVote::class);
+    }
+
     public function getAvatarUrlAttribute()
     {
         if (!$this->avatar) {

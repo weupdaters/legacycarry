@@ -155,9 +155,21 @@
           </a>
         </li>
         <li>
-          <a href="{{ route('admin.notices.index') }}" class="tp-link">
+          <a href="{{ route('admin.notices.index') }}" class="tp-link {{ Request::routeIs('admin.notices.*') ? 'active' : '' }}">
             <i data-feather="bell"></i>
             <span>Notices</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ route('admin.amenities.index') }}" class="tp-link {{ Request::routeIs('admin.amenities.*') ? 'active' : '' }}">
+            <i data-feather="grid"></i>
+            <span>Amenities & Bookings</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ route('admin.polls.index') }}" class="tp-link {{ Request::routeIs('admin.polls.*') ? 'active' : '' }}">
+            <i data-feather="pie-chart"></i>
+            <span>Polls & Voting</span>
           </a>
         </li>
 

@@ -293,6 +293,34 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
 
     });
 
+    // Amenity management routes
+    Route::prefix('amenities')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AmenityController::class, 'index'])->name('admin.amenities.index');
+        Route::get('/create', [\App\Http\Controllers\Admin\AmenityController::class, 'create'])->name('admin.amenities.create');
+        Route::post('/', [\App\Http\Controllers\Admin\AmenityController::class, 'store'])->name('admin.amenities.store');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\AmenityController::class, 'edit'])->name('admin.amenities.edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'update'])->name('admin.amenities.update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'destroy'])->name('admin.amenities.destroy');
+
+        // Bookings
+        Route::get('/bookings/list', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings'])->name('admin.amenities.bookings');
+        Route::post('/bookings/{id}/approve', [\App\Http\Controllers\Admin\AmenityController::class, 'approveBooking'])->name('admin.amenities.bookings.approve');
+        Route::post('/bookings/{id}/reject', [\App\Http\Controllers\Admin\AmenityController::class, 'rejectBooking'])->name('admin.amenities.bookings.reject');
+        Route::post('/bookings/{id}/cancel', [\App\Http\Controllers\Admin\AmenityController::class, 'cancelBooking'])->name('admin.amenities.bookings.cancel');
+    });
+
+    // Poll management routes
+    Route::prefix('polls')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PollController::class, 'index'])->name('admin.polls.index');
+        Route::get('/create', [\App\Http\Controllers\Admin\PollController::class, 'create'])->name('admin.polls.create');
+        Route::post('/', [\App\Http\Controllers\Admin\PollController::class, 'store'])->name('admin.polls.store');
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\PollController::class, 'edit'])->name('admin.polls.edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\PollController::class, 'update'])->name('admin.polls.update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\PollController::class, 'destroy'])->name('admin.polls.destroy');
+        Route::post('/{id}/close', [\App\Http\Controllers\Admin\PollController::class, 'close'])->name('admin.polls.close');
+        Route::get('/{id}/results', [\App\Http\Controllers\Admin\PollController::class, 'results'])->name('admin.polls.results');
+    });
+
     // Route::get('/chat/{user?}', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
 
 

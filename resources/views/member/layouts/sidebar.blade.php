@@ -220,16 +220,16 @@
         </li>
 
         <li>
-          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+          <a href="{{ route('member.amenities.index') }}" class="tp-link {{ Request::routeIs('member.amenities.*') ? 'active' : '' }}">
             <i data-feather="calendar"></i>
-            <span> Amenity Booking <small class="badge bg-soft-warning font-10">Soon</small> </span>
+            <span> Amenity Booking </span>
           </a>
         </li>
 
         <li>
-          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+          <a href="{{ route('member.polls.index') }}" class="tp-link {{ Request::routeIs('member.polls.*') ? 'active' : '' }}">
             <i data-feather="pie-chart"></i>
-            <span> Polls & Surveys <small class="badge bg-soft-warning font-10">Soon</small> </span>
+            <span> Polls & Surveys </span>
           </a>
         </li>
 

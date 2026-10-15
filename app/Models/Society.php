@@ -48,7 +48,23 @@ class Society extends Model
         return $this->hasMany(JobPost::class);
     }
 
+    public function amenities()
+    {
+        return $this->hasMany(Amenity::class);
+    }
 
+    public function amenityBookings()
+    {
+        return $this->hasMany(AmenityBooking::class);
+    }
 
+    public function polls()
+    {
+        return $this->hasMany(Poll::class);
+    }
 
+    public function pollVotes()
+    {
+        return $this->hasMany(PollVote::class);
+    }
 }
