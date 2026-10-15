@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('job_applications', function (Blueprint $table) {
-            $table->id();
-            $table->dateTime('start_datetime');
-            $table->decimal('expected_cost', 8, 2);
-            $table->text('message_to_employer');
-            $table->string('certificate_photo')->nullable();
-            $table->timestamps();
-        });
-
+        if (!Schema::hasTable('job_applications')) {
+            Schema::create('job_applications', function (Blueprint $table) {
+                $table->id();
+                $table->dateTime('start_datetime');
+                $table->decimal('expected_cost', 8, 2);
+                $table->text('message_to_employer');
+                $table->string('certificate_photo')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
