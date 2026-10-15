@@ -321,6 +321,15 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
         Route::get('/{id}/results', [\App\Http\Controllers\Admin\PollController::class, 'results'])->name('admin.polls.results');
     });
 
+    // Ticket / Complaint Management routes
+    Route::prefix('tickets')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\TicketController::class, 'index'])->name('admin.tickets.index');
+        Route::get('/{id}', [\App\Http\Controllers\Admin\TicketController::class, 'show'])->name('admin.tickets.show');
+        Route::post('/{id}/reply', [\App\Http\Controllers\Admin\TicketController::class, 'reply'])->name('admin.tickets.reply');
+        Route::patch('/{id}/status', [\App\Http\Controllers\Admin\TicketController::class, 'updateStatus'])->name('admin.tickets.status');
+        Route::post('/{id}/assign', [\App\Http\Controllers\Admin\TicketController::class, 'assign'])->name('admin.tickets.assign');
+    });
+
     // Route::get('/chat/{user?}', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
 
 

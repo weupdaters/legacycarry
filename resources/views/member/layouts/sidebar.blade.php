@@ -210,12 +210,12 @@
           </li>
         @endif
 
-        <li class="menu-title mt-2">Society Services (Coming Soon)</li>
+        <li class="menu-title mt-2">Society Services</li>
 
         <li>
-          <a href="javascript:void(0);" class="tp-link" style="opacity: 0.6; cursor: not-allowed;">
+          <a href="{{ route('member.tickets.index') }}" class="tp-link {{ Request::routeIs('member.tickets.*') ? 'active' : '' }}">
             <i data-feather="message-square"></i>
-            <span> Complaint management <small class="badge bg-soft-warning font-10">Soon</small> </span>
+            <span> Complaints & Helpdesk </span>
           </a>
         </li>
 

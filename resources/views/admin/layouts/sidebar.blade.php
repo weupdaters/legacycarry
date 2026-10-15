@@ -172,6 +172,12 @@
             <span>Polls & Voting</span>
           </a>
         </li>
+        <li>
+          <a href="{{ route('admin.tickets.index') }}" class="tp-link {{ Request::routeIs('admin.tickets.*') ? 'active' : '' }}">
+            <i data-feather="message-square"></i>
+            <span>Complaints & Helpdesk</span>
+          </a>
+        </li>
 
         {{-- ─── JOB SYSTEM ─── --}}
         <li class="menu-title mt-2">Job System</li>

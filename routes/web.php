@@ -187,6 +187,14 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::get('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'show'])->name('polls.show');
     Route::post('/polls/{id}/vote', [\App\Http\Controllers\Member\PollController::class, 'vote'])->name('polls.vote');
 
+    // Tickets & Complaints
+    Route::get('/tickets', [\App\Http\Controllers\Member\TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/create', [\App\Http\Controllers\Member\TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets', [\App\Http\Controllers\Member\TicketController::class, 'store'])->name('tickets.store');
+    Route::get('/tickets/{id}', [\App\Http\Controllers\Member\TicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{id}/reply', [\App\Http\Controllers\Member\TicketController::class, 'reply'])->name('tickets.reply');
+    Route::post('/tickets/{id}/close', [\App\Http\Controllers\Member\TicketController::class, 'close'])->name('tickets.close');
+
 });
 
 

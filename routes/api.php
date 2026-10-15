@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\ShiftController;
 use App\Http\Controllers\Api\SocietyController;
 use App\Http\Controllers\Api\SocietyNoticeApiController;
+use App\Http\Controllers\Api\TicketApiController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserDocumentController;
 use App\Http\Controllers\Api\UserPayoutMethodController;
@@ -449,6 +450,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/polls/{id}/vote', [PollApiController::class, 'vote']);
         Route::get('/polls/{id}/results', [PollApiController::class, 'results']);
         Route::get('/my-polls', [PollApiController::class, 'myPolls']);
+
+        // Ticket / Complaint Endpoints (Resident & Society Admin)
+        Route::get('/tickets', [TicketApiController::class, 'index']);
+        Route::post('/tickets', [TicketApiController::class, 'store']);
+        Route::get('/tickets/{id}', [TicketApiController::class, 'show']);
+        Route::post('/tickets/{id}/reply', [TicketApiController::class, 'reply']);
+        Route::post('/tickets/{id}/close', [TicketApiController::class, 'close']);
+        Route::get('/admin/tickets', [TicketApiController::class, 'adminIndex']);
+        Route::patch('/admin/tickets/{id}/status', [TicketApiController::class, 'adminUpdateStatus']);
+        Route::post('/admin/tickets/{id}/assign', [TicketApiController::class, 'adminAssign']);
     });
 
     // Unversioned aliases
@@ -464,6 +475,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/polls/{id}/vote', [PollApiController::class, 'vote']);
     Route::get('/polls/{id}/results', [PollApiController::class, 'results']);
     Route::get('/my-polls', [PollApiController::class, 'myPolls']);
+    Route::get('/tickets', [TicketApiController::class, 'index']);
+    Route::post('/tickets', [TicketApiController::class, 'store']);
+    Route::get('/tickets/{id}', [TicketApiController::class, 'show']);
+    Route::post('/tickets/{id}/reply', [TicketApiController::class, 'reply']);
+    Route::post('/tickets/{id}/close', [TicketApiController::class, 'close']);
+    Route::get('/admin/tickets', [TicketApiController::class, 'adminIndex']);
+    Route::patch('/admin/tickets/{id}/status', [TicketApiController::class, 'adminUpdateStatus']);
+    Route::post('/admin/tickets/{id}/assign', [TicketApiController::class, 'adminAssign']);
 
 });
 
