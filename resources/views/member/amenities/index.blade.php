@@ -104,9 +104,9 @@
               <div class="d-flex align-items-center justify-content-center w-100 h-100 bg-soft-success text-success">
                 <i class="mdi mdi-domain mdi-48px"></i>
               </div>
-            @endif
-            <span class="position-absolute top-0 end-0 m-3 badge {{ $amenity->fee > 0 ? 'bg-primary' : 'bg-success' }} rounded-pill px-3 py-2 shadow-sm">
-              {{ $amenity->fee > 0 ? '₹' . number_format($amenity->fee, 2) : 'Free to Book' }}
+            <span class="position-absolute top-0 end-0 m-3 badge {{ $amenity->booking_mode === 'automatic' ? 'bg-success' : 'bg-warning text-dark' }} rounded-pill px-3 py-2 shadow-sm">
+              <i class="mdi {{ $amenity->booking_mode === 'automatic' ? 'mdi-lightning-bolt' : 'mdi-clock-outline' }} me-1"></i>
+              {{ $amenity->booking_mode === 'automatic' ? 'Instant Booking' : 'Requires Approval' }}
             </span>
           </div>
 

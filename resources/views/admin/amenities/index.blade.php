@@ -78,7 +78,7 @@
               <th>Society</th>
               <th>Timings</th>
               <th>Booking Mode</th>
-              <th>Slot / Fee</th>
+              <th>Slot Duration</th>
               <th>Status</th>
               <th>Total Bookings</th>
               <th class="text-center">Actions</th>
@@ -116,8 +116,7 @@
                   @endif
                 </td>
                 <td>
-                  <div><small>{{ $amenity->slot_duration_minutes }} mins</small></div>
-                  <small class="text-muted">{{ $amenity->fee > 0 ? '₹' . number_format($amenity->fee, 2) : 'Free' }}</small>
+                  <small class="fw-semibold">{{ $amenity->slot_duration_minutes }} mins</small>
                 </td>
                 <td>
                   <span class="badge bg-{{ $amenity->status === 'active' ? 'success' : 'secondary' }}">

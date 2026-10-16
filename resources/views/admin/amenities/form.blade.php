@@ -99,17 +99,11 @@
             <input type="number" name="max_booking_duration_minutes" class="form-control" min="15" max="1440" step="15" value="{{ old('max_booking_duration_minutes', $amenity->max_booking_duration_minutes ?? 120) }}" required>
           </div>
 
-          {{-- Advance Days & Fee --}}
-          <div class="col-md-6">
+          {{-- Advance Days --}}
+          <div class="col-12">
             <label class="form-label fw-semibold">Advance Booking Limit (Days) <span class="text-danger">*</span></label>
             <input type="number" name="advance_booking_days" class="form-control" min="1" max="365" value="{{ old('advance_booking_days', $amenity->advance_booking_days ?? 7) }}" required>
             <small class="text-muted">How many days in advance residents can book.</small>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label fw-semibold">Booking Fee (₹)</label>
-            <input type="number" step="0.01" name="fee" class="form-control" placeholder="0.00" value="{{ old('fee', $amenity->fee ?? 0.00) }}">
-            <small class="text-muted">Leave 0 for free amenities.</small>
           </div>
 
           {{-- Available Days --}}

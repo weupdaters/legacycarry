@@ -47,10 +47,12 @@
                 {{ $amenity->booking_mode === 'automatic' ? 'Instant Automatic' : 'Admin Approval Required' }}
               </span>
             </li>
+            @if($amenity->fee > 0)
             <li class="list-group-item d-flex justify-content-between px-0">
               <span class="text-muted">Fee:</span>
-              <span class="fw-bold text-primary">{{ $amenity->fee > 0 ? '₹' . number_format($amenity->fee, 2) : 'Free' }}</span>
+              <span class="fw-bold text-primary">₹{{ number_format($amenity->fee, 2) }}</span>
             </li>
+            @endif
             <li class="list-group-item d-flex justify-content-between px-0">
               <span class="text-muted">Advance Limit:</span>
               <span class="fw-semibold">Up to {{ $amenity->advance_booking_days }} Days in advance</span>

@@ -65,7 +65,9 @@
                 <td class="ps-4 fw-medium text-muted">#{{ $booking->id }}</td>
                 <td>
                   <span class="fw-bold text-dark">{{ $booking->amenity?->name }}</span>
-                  <div><small class="text-muted">{{ $booking->amenity?->fee > 0 ? '₹' . number_format($booking->amenity->fee, 2) : 'Free' }}</small></div>
+                  @if($booking->amenity?->fee > 0)
+                    <div><small class="text-muted">₹{{ number_format($booking->amenity->fee, 2) }}</small></div>
+                  @endif
                 </td>
                 <td class="fw-medium text-dark">{{ $booking->booking_date->format('D, d M Y') }}</td>
                 <td>
