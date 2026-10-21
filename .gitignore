@@ -29,5 +29,8 @@ Homestead.yaml
 .DS_Store
 Thumbs.db
 Archive.zip
+
 /public/storage
+public/storage
 /storage
+storage/

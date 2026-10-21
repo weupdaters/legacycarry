@@ -224,3 +224,12 @@ Route::get('/cashfree-checkout/{paymentSessionId}', [\App\Http\Controllers\Cashf
 Route::get('/cashfree-return', [\App\Http\Controllers\CashfreeCheckoutController::class, 'callback'])->name('cashfree.return');
 Route::get('/cashfree-tester', [\App\Http\Controllers\CashfreeCheckoutController::class, 'tester'])->name('cashfree.tester');
 Route::post('/cashfree-tester/create-order', [\App\Http\Controllers\CashfreeCheckoutController::class, 'createTestOrder'])->name('cashfree.tester.create');
+
+// Direct storage fallback when public/storage shortcut is removed
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    return response()->file($filePath);
+})->where('path', '.*');
