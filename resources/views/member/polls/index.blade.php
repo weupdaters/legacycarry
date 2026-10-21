@@ -4,48 +4,19 @@
 
 @section('content')
 <style>
-  .btn-highlight-create {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
-    color: #1e1b4b !important;
+  .btn-theme-white {
+    background: #ffffff !important;
+    color: #7c3aed !important;
     font-weight: 700 !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45) !important;
-    transition: all 0.25s ease-in-out !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    transition: all 0.2s ease-in-out !important;
   }
-  .btn-highlight-create:hover {
+  .btn-theme-white:hover {
+    background: #f8fafc !important;
+    color: #6d28d9 !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6) !important;
-    color: #0f172a !important;
-  }
-  .btn-highlight-vote {
-    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35) !important;
-    transition: all 0.2s ease !important;
-  }
-  .btn-highlight-vote:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.5) !important;
-    color: #ffffff !important;
-  }
-  .btn-highlight-info {
-    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3) !important;
-  }
-  .btn-highlight-warning {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
-    color: #1e293b !important;
-    border: none !important;
-    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3) !important;
-  }
-  .btn-highlight-danger {
-    background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 3px 8px rgba(225, 29, 72, 0.3) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18) !important;
   }
   .poll-card-hover {
     transition: all 0.25s ease-in-out;
@@ -68,10 +39,10 @@
 @endphp
 
 <div class="container-fluid py-4">
-  {{-- Hero Banner --}}
+  {{-- Hero Banner (Matches Project Theme Pattern) --}}
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #6366f1 100%);">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
         <div class="card-body p-4 text-white d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
             <div class="d-flex align-items-center gap-2 mb-1">
@@ -84,16 +55,16 @@
             </div>
             <h3 class="fw-bold mb-1 text-white">Polls & Community Voting</h3>
             <p class="opacity-75 mb-0 font-14">
-              Participate in society decisions, upcoming initiatives, maintenance surveys, and feedback.
+              Have your say in society decisions, upcoming initiatives, and community opinions.
             </p>
           </div>
 
-          {{-- Highlighted Action Button --}}
+          {{-- Highlighted Action Button matching theme pattern (white pill with theme color) --}}
           @if($isResidentAdmin)
             <div>
               <a href="{{ Route::has('member.polls.create') ? route('member.polls.create') : url('residents/polls/create') }}" 
-                 class="btn btn-highlight-create rounded-pill px-4 py-2 font-15 d-inline-flex align-items-center">
-                <i class="mdi mdi-plus-circle font-18 me-1"></i> Create Poll
+                 class="btn btn-theme-white rounded-pill px-4 py-2 font-15 d-inline-flex align-items-center">
+                <i class="mdi mdi-plus-circle me-1 font-18" style="color: #7c3aed;"></i> Create Poll
               </a>
             </div>
           @endif
@@ -124,7 +95,7 @@
     </h4>
     @if($isResidentAdmin)
       <a href="{{ Route::has('member.polls.create') ? route('member.polls.create') : url('residents/polls/create') }}" 
-         class="btn btn-highlight-warning btn-sm rounded-pill fw-bold px-3">
+         class="btn btn-primary btn-sm rounded-pill fw-bold px-3">
         <i class="mdi mdi-plus me-1"></i> Add Poll
       </a>
     @endif
@@ -171,7 +142,7 @@
             {{-- Action Controls --}}
             <div class="mt-auto d-flex flex-column gap-2">
               <a href="{{ route('member.polls.show', $poll->id) }}" 
-                 class="btn {{ $hasVoted ? 'btn-outline-primary' : 'btn-highlight-vote' }} w-100 rounded-pill fw-bold py-2">
+                 class="btn {{ $hasVoted ? 'btn-outline-primary' : 'btn-primary' }} w-100 rounded-pill fw-bold py-2 shadow-sm">
                 <i class="mdi {{ $hasVoted ? 'mdi-check-circle-outline' : 'mdi-vote-outline' }} me-1"></i>
                 {{ $hasVoted ? 'View Your Selection' : 'Vote Now' }}
               </a>
@@ -180,14 +151,14 @@
                 <div class="d-flex flex-wrap gap-2 pt-2 border-top">
                   {{-- Results Button --}}
                   <a href="{{ Route::has('member.polls.results') ? route('member.polls.results', $poll->id) : url('residents/polls/' . $poll->id . '/results') }}" 
-                     class="btn btn-highlight-info btn-sm rounded-pill fw-bold flex-grow-1 px-3 py-1" 
+                     class="btn btn-outline-info btn-sm rounded-pill fw-semibold flex-grow-1 px-3 py-1" 
                      title="Analytics & Live Results">
                     <i class="mdi mdi-chart-bar me-1"></i> Results
                   </a>
 
                   {{-- Edit Button --}}
                   <a href="{{ Route::has('member.polls.edit') ? route('member.polls.edit', $poll->id) : url('residents/polls/' . $poll->id . '/edit') }}" 
-                     class="btn btn-highlight-warning btn-sm rounded-pill fw-bold px-3 py-1" 
+                     class="btn btn-outline-primary btn-sm rounded-pill fw-semibold px-3 py-1" 
                      title="Edit Poll">
                     <i class="mdi mdi-pencil me-1"></i> Edit
                   </a>
@@ -197,7 +168,7 @@
                         class="d-inline" 
                         onsubmit="return confirm('Close this poll early? No further votes can be cast.');">
                     @csrf
-                    <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill fw-bold px-3 py-1" title="Close Poll Early">
+                    <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill fw-semibold px-3 py-1" title="Close Poll Early">
                       <i class="mdi mdi-lock-outline me-1"></i> Close
                     </button>
                   </form>
@@ -208,7 +179,7 @@
                         onsubmit="return confirm('Permanently delete this poll and all its cast votes?');">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-highlight-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Poll">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-3 py-1" title="Delete Poll">
                       <i class="mdi mdi-delete-outline me-1"></i> Delete
                     </button>
                   </form>
@@ -225,7 +196,7 @@
           <h6 class="fw-bold">No Active Polls</h6>
           <p class="small mb-3">There are currently no active polls open for voting in your society.</p>
           @if($isResidentAdmin)
-            <a href="{{ Route::has('member.polls.create') ? route('member.polls.create') : url('residents/polls/create') }}" class="btn btn-highlight-create btn-sm rounded-pill px-4 fw-bold">
+            <a href="{{ Route::has('member.polls.create') ? route('member.polls.create') : url('residents/polls/create') }}" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
               <i class="mdi mdi-plus me-1"></i> Create First Poll
             </a>
           @endif
@@ -275,13 +246,13 @@
                 <td class="text-end pe-4 py-3">
                   <div class="d-inline-flex justify-content-end gap-2 align-items-center">
                     <a href="{{ Route::has('member.polls.results') ? route('member.polls.results', $poll->id) : url('residents/polls/' . $poll->id . '/results') }}" 
-                       class="btn btn-highlight-info btn-sm rounded-pill fw-bold px-3 py-1">
+                       class="btn btn-outline-info btn-sm rounded-pill fw-semibold px-3 py-1">
                       <i class="mdi mdi-chart-bar me-1"></i> Results
                     </a>
 
                     @if($isResidentAdmin)
                       <a href="{{ Route::has('member.polls.edit') ? route('member.polls.edit', $poll->id) : url('residents/polls/' . $poll->id . '/edit') }}" 
-                         class="btn btn-highlight-warning btn-sm rounded-pill fw-bold px-3 py-1" 
+                         class="btn btn-outline-primary btn-sm rounded-pill fw-semibold px-3 py-1" 
                          title="Edit Poll">
                         <i class="mdi mdi-pencil me-1"></i> Edit
                       </a>
@@ -291,7 +262,7 @@
                             onsubmit="return confirm('Permanently delete this closed poll?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-highlight-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Poll">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-semibold px-3 py-1" title="Delete Poll">
                           <i class="mdi mdi-delete me-1"></i> Delete
                         </button>
                       </form>

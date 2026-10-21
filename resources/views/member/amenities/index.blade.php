@@ -17,53 +17,19 @@
   .amenity-row-hover:hover {
     background-color: #f0fdf4 !important;
   }
-  .btn-highlight-primary {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    color: #ffffff !important;
-    border: none;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-    transition: all 0.2s ease;
+  .btn-theme-white {
+    background: #ffffff !important;
+    color: #059669 !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    transition: all 0.2s ease-in-out !important;
   }
-  .btn-highlight-primary:hover {
+  .btn-theme-white:hover {
+    background: #f8fafc !important;
+    color: #047857 !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.45);
-    color: #ffffff !important;
-  }
-  .btn-highlight-warning {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-    color: #1e293b !important;
-    border: none;
-    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
-    transition: all 0.2s ease;
-  }
-  .btn-highlight-warning:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.45);
-    color: #0f172a !important;
-  }
-  .btn-highlight-info {
-    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-    color: #ffffff !important;
-    border: none;
-    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
-    transition: all 0.2s ease;
-  }
-  .btn-highlight-info:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(2, 132, 199, 0.45);
-    color: #ffffff !important;
-  }
-  .btn-highlight-danger {
-    background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
-    color: #ffffff !important;
-    border: none;
-    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3);
-    transition: all 0.2s ease;
-  }
-  .btn-highlight-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(225, 29, 72, 0.45);
-    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18) !important;
   }
   .pulse-badge {
     animation: pulseGlow 1.8s infinite;
@@ -101,12 +67,12 @@
             </p>
           </div>
 
-          {{-- Quick Header Action Buttons --}}
+          {{-- Quick Header Action Buttons (Matches App Theme Pattern) --}}
           <div class="d-flex flex-wrap gap-2 align-items-center">
             <a href="{{ Route::has('member.amenities.my-bookings') ? route('member.amenities.my-bookings') : url('residents/amenities/my-bookings') }}" 
-               class="btn fw-bold rounded-pill px-3 shadow-sm text-dark bg-white" 
-               style="transition: all 0.2s ease;">
-              <i class="mdi mdi-history me-1 text-success"></i> My Bookings
+               class="btn fw-bold rounded-pill px-3 shadow-sm" 
+               style="background: #ffffff !important; color: #059669 !important;">
+              <i class="mdi mdi-history me-1"></i> My Bookings
               @if(isset($upcomingBookings) && $upcomingBookings->count() > 0)
                 <span class="badge bg-success text-white ms-1 rounded-pill">{{ $upcomingBookings->count() }}</span>
               @endif
@@ -114,16 +80,17 @@
 
             @if($isResidentAdmin)
               <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all') : url('residents/amenities/bookings/all') }}" 
-                 class="btn btn-highlight-info fw-bold rounded-pill px-4">
-                <i class="mdi mdi-clipboard-list-outline me-1"></i> Manage All Bookings
+                 class="btn btn-outline-light fw-bold rounded-pill px-3">
+                <i class="mdi mdi-clipboard-list-outline me-1"></i> Manage Bookings
                 @if(isset($pendingTotalCount) && $pendingTotalCount > 0)
                   <span class="badge bg-warning text-dark ms-1 pulse-badge">{{ $pendingTotalCount }} Pending</span>
                 @endif
               </a>
 
               <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" 
-                 class="btn btn-highlight-warning fw-bold rounded-pill px-4">
-                <i class="mdi mdi-plus-circle me-1"></i> Add Amenity
+                 class="btn fw-bold rounded-pill px-3 shadow-sm" 
+                 style="background: #ffffff !important; color: #059669 !important;">
+                <i class="mdi mdi-plus me-1"></i> Add Amenity
               </a>
             @endif
           </div>
@@ -233,7 +200,7 @@
 
       @if($isResidentAdmin)
         <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" 
-           class="btn btn-highlight-warning btn-sm fw-bold rounded-pill px-3">
+           class="btn btn-success btn-sm fw-bold rounded-pill px-3 shadow-sm">
           <i class="mdi mdi-plus me-1"></i> Add Amenity
         </a>
       @endif
@@ -339,13 +306,13 @@
                   </td>
                 @endif
 
-                {{-- Highlighted Action Buttons --}}
+                {{-- Action Buttons --}}
                 <td class="py-3 text-end pe-4">
                   <div class="d-inline-flex flex-wrap gap-2 justify-content-end align-items-center">
                     {{-- Book Slot Button --}}
                     @if($amenity->status === 'active')
                       <a href="{{ Route::has('member.amenities.book') ? route('member.amenities.book', $amenity->id) : url('residents/amenities/' . $amenity->id . '/book') }}" 
-                         class="btn btn-highlight-primary btn-sm rounded-pill fw-bold px-3 py-1" 
+                         class="btn btn-success btn-sm rounded-pill fw-bold px-3 py-1 shadow-sm" 
                          title="Book a slot for this amenity">
                         <i class="mdi mdi-calendar-plus me-1"></i> Book Slot
                       </a>
@@ -358,17 +325,17 @@
                     @if($isResidentAdmin)
                       {{-- View All Bookings for this Amenity Button --}}
                       <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all', ['amenity_id' => $amenity->id]) : url('residents/amenities/bookings/all?amenity_id=' . $amenity->id) }}" 
-                         class="btn btn-highlight-info btn-sm rounded-pill fw-bold px-3 py-1" 
+                         class="btn btn-outline-info btn-sm rounded-pill fw-bold px-3 py-1" 
                          title="Manage and approve bookings for {{ $amenity->name }}">
                         <i class="mdi mdi-clipboard-list-outline me-1"></i> Bookings
                         @if(($amenity->bookings_count ?? 0) > 0)
-                          <span class="badge bg-white text-dark ms-1 rounded-pill">{{ $amenity->bookings_count }}</span>
+                          <span class="badge bg-info text-white ms-1 rounded-pill">{{ $amenity->bookings_count }}</span>
                         @endif
                       </a>
 
                       {{-- Edit Amenity Button --}}
                       <a href="{{ Route::has('member.amenities.edit') ? route('member.amenities.edit', $amenity->id) : url('residents/amenities/' . $amenity->id . '/edit') }}" 
-                         class="btn btn-highlight-warning btn-sm rounded-pill fw-bold px-3 py-1" 
+                         class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 py-1" 
                          title="Edit details of {{ $amenity->name }}">
                         <i class="mdi mdi-pencil me-1"></i> Edit
                       </a>
@@ -379,7 +346,7 @@
                             onsubmit="return confirm('Are you sure you want to permanently delete \'{{ addslashes($amenity->name) }}\'? This will also delete related bookings.');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-highlight-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Amenity">
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Amenity">
                           <i class="mdi mdi-delete me-1"></i> Delete
                         </button>
                       </form>
@@ -394,7 +361,7 @@
                   <h6 class="fw-bold">No Amenities Found</h6>
                   <p class="small mb-3">No facilities are currently registered for your society.</p>
                   @if($isResidentAdmin)
-                    <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-highlight-warning btn-sm rounded-pill px-4 fw-bold">
+                    <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-success btn-sm rounded-pill px-4 fw-bold shadow-sm">
                       <i class="mdi mdi-plus me-1"></i> Add First Amenity
                     </a>
                   @endif
@@ -456,7 +423,7 @@
             <div class="mt-auto d-flex flex-column gap-2">
               @if($amenity->status === 'active')
                 <a href="{{ Route::has('member.amenities.book') ? route('member.amenities.book', $amenity->id) : url('residents/amenities/' . $amenity->id . '/book') }}" 
-                   class="btn btn-highlight-primary w-100 rounded-pill fw-bold py-2">
+                   class="btn btn-success w-100 rounded-pill fw-bold py-2 shadow-sm">
                   <i class="mdi mdi-calendar-plus me-1"></i> Book Slot
                 </a>
               @else
@@ -469,15 +436,15 @@
                 <div class="d-flex flex-wrap gap-2 pt-2 border-top">
                   {{-- Bookings button --}}
                   <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all', ['amenity_id' => $amenity->id]) : url('residents/amenities/bookings/all?amenity_id=' . $amenity->id) }}" 
-                     class="btn btn-highlight-info btn-sm rounded-pill fw-bold flex-grow-1 px-3 py-1" 
+                     class="btn btn-outline-info btn-sm rounded-pill fw-bold flex-grow-1 px-3 py-1" 
                      title="View Bookings for {{ $amenity->name }}">
                     <i class="mdi mdi-clipboard-list-outline me-1"></i> Bookings
-                    <span class="badge bg-white text-dark ms-1">{{ $amenity->bookings_count ?? 0 }}</span>
+                    <span class="badge bg-info text-white ms-1">{{ $amenity->bookings_count ?? 0 }}</span>
                   </a>
 
                   {{-- Edit button --}}
                   <a href="{{ Route::has('member.amenities.edit') ? route('member.amenities.edit', $amenity->id) : url('residents/amenities/' . $amenity->id . '/edit') }}" 
-                     class="btn btn-highlight-warning btn-sm rounded-pill fw-bold px-3 py-1" 
+                     class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 py-1" 
                      title="Edit {{ $amenity->name }}">
                     <i class="mdi mdi-pencil me-1"></i> Edit
                   </a>
@@ -488,7 +455,7 @@
                         onsubmit="return confirm('Are you sure you want to delete \'{{ addslashes($amenity->name) }}\'?');">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-highlight-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Amenity">
+                    <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-3 py-1" title="Delete Amenity">
                       <i class="mdi mdi-delete me-1"></i> Delete
                     </button>
                   </form>

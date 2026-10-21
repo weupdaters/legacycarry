@@ -12,9 +12,9 @@
                         <h3 class="fw-bold mb-1">Society Notices</h3>
                         <p class="opacity-75 mb-0">Stay updated with the latest announcements from your society management.</p>
                     </div>
-                    @if(has_permission('notice_create'))
+                    @if(has_permission('notice_create') || has_permission('resident_index') || (auth()->check() && auth()->user()->role === 'super_admin'))
                     <div>
-                        <a href="{{ route('member.notices.create') }}" class="btn btn-white text-primary fw-bold rounded-pill px-4">
+                        <a href="{{ Route::has('member.notices.create') ? route('member.notices.create') : url('residents/notices/create') }}" class="btn fw-bold rounded-pill px-4 shadow-sm" style="background: #ffffff !important; color: #4f46e5 !important;">
                             <i class="mdi mdi-plus-circle me-1"></i> Add Notice
                         </a>
                     </div>
