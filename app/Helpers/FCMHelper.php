@@ -114,12 +114,26 @@ class FCMHelper
                 'body' => $body,
             ];
 
+            $androidNotification = [
+                'channel_id' => 'high_importance_channel',
+                'sound' => 'default',
+            ];
+
             $messagePayload = [
                 'token' => trim($token),
                 'notification' => $notificationPayload,
                 'data' => $formattedData,
                 'android' => [
                     'priority' => 'high',
+                    'notification' => $androidNotification,
+                ],
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'default',
+                            'mutable-content' => 1,
+                        ],
+                    ],
                 ],
             ];
 
@@ -128,13 +142,8 @@ class FCMHelper
                 $formattedData['image'] = $image;
                 $messagePayload['notification'] = $notificationPayload;
                 $messagePayload['data'] = $formattedData;
-                $messagePayload['android']['notification'] = ['image' => $image];
-                $messagePayload['apns'] = [
-                    'payload' => [
-                        'aps' => ['mutable-content' => 1],
-                    ],
-                    'fcm_options' => ['image' => $image],
-                ];
+                $messagePayload['android']['notification']['image'] = $image;
+                $messagePayload['apns']['fcm_options'] = ['image' => $image];
             }
 
             try {

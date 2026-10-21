@@ -298,15 +298,19 @@ class NotificationController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(function ($notif) {
+                $meta = is_array($notif->meta) ? $notif->meta : [];
                 return [
                     'id' => $notif->id,
                     'title' => $notif->title,
                     'description' => $notif->description,
                     'image' => $notif->image,
                     'image_url' => $notif->image,
+                    'type' => $meta['type'] ?? 'general',
+                    'screen' => $meta['screen'] ?? null,
                     'sent_to' => $notif->sent_to,
-                    'meta' => $notif->meta,
-                    'created_at' => $notif->created_at ? $notif->created_at->format('d M Y, h:i A') : null,
+                    'meta' => $meta,
+                    'created_at' => $notif->created_at ? $notif->created_at->format('Y-m-d H:i:s') : null,
+                    'created_at_human' => $notif->created_at ? $notif->created_at->format('d M Y, h:i A') : null,
                     'created_at_raw' => $notif->created_at,
                     'updated_at' => $notif->updated_at,
                 ];

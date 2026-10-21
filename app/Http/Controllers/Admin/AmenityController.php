@@ -7,6 +7,7 @@ use App\Models\Amenity;
 use App\Models\AmenityBooking;
 use App\Models\Society;
 use App\Services\AmenityBookingService;
+use App\Services\SocietyNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -101,7 +102,24 @@ class AmenityController extends Controller
             $data['image'] = $request->file('image')->store('amenities', 'public');
         }
 
-        Amenity::create($data);
+        $amenity = Amenity::create($data);
+
+        // Notify society residents about the new amenity
+        if ($amenity->status === 'active') {
+            SocietyNotificationService::notifySocietyResidents(
+                $amenity->society_id,
+                'New Amenity Available: ' . $amenity->name,
+                "A new amenity {$amenity->name} is now available for booking.",
+                'amenity_update',
+                [
+                    'screen'       => 'amenity_details',
+                    'type'         => 'amenity_update',
+                    'amenity_id'   => (string) $amenity->id,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                $amenity->image_url
+            );
+        }
 
         return redirect()->route('admin.amenities.index')->with('success', 'Amenity created successfully.');
     }
@@ -153,6 +171,23 @@ class AmenityController extends Controller
         }
 
         $amenity->update($data);
+
+        // Notify society residents about amenity updates
+        if ($amenity->status === 'active') {
+            SocietyNotificationService::notifySocietyResidents(
+                $amenity->society_id,
+                'Amenity Updated: ' . $amenity->name,
+                "The details and slots for {$amenity->name} have been updated.",
+                'amenity_update',
+                [
+                    'screen'       => 'amenity_details',
+                    'type'         => 'amenity_update',
+                    'amenity_id'   => (string) $amenity->id,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                $amenity->image_url
+            );
+        }
 
         return redirect()->route('admin.amenities.index')->with('success', 'Amenity updated successfully.');
     }

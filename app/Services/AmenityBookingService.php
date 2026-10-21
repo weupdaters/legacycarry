@@ -231,10 +231,18 @@ class AmenityBookingService
             if ($status === 'confirmed') {
                 SocietyNotificationService::notifyUser(
                     $user,
-                    'Amenity Booking Confirmed',
+                    'Amenity Booking Confirmed! 🎉',
                     "Your booking for {$amenity->name} on {$dateString} from " . substr($startTimeNorm, 0, 5) . " to " . substr($endTimeNorm, 0, 5) . " is confirmed.",
                     'amenity_booking_confirmed',
-                    ['booking_id' => $booking->id, 'amenity_id' => $amenity->id]
+                    [
+                        'screen'       => 'amenity_booking_details',
+                        'type'         => 'amenity_booking_confirmed',
+                        'booking_id'   => (string) $booking->id,
+                        'amenity_id'   => (string) $amenity->id,
+                        'status'       => 'confirmed',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ],
+                    $amenity->image_url
                 );
             } else {
                 // Pending admin approval
@@ -243,15 +251,30 @@ class AmenityBookingService
                     'Amenity Booking Request Submitted',
                     "Your booking request for {$amenity->name} on {$dateString} has been submitted for admin approval.",
                     'amenity_booking_pending',
-                    ['booking_id' => $booking->id, 'amenity_id' => $amenity->id]
+                    [
+                        'screen'       => 'amenity_booking_details',
+                        'type'         => 'amenity_booking_pending',
+                        'booking_id'   => (string) $booking->id,
+                        'amenity_id'   => (string) $amenity->id,
+                        'status'       => 'pending',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ],
+                    $amenity->image_url
                 );
 
                 SocietyNotificationService::notifyAdmins(
                     $amenity->society_id,
                     'New Amenity Booking Request',
                     "{$user->name} requested a booking for {$amenity->name} on {$dateString}.",
-                    'admin_amenity_booking_pending',
-                    ['booking_id' => $booking->id, 'amenity_id' => $amenity->id]
+                    'amenity_booking_pending',
+                    [
+                        'screen'       => 'amenity_booking_details',
+                        'type'         => 'amenity_booking_pending',
+                        'booking_id'   => (string) $booking->id,
+                        'amenity_id'   => (string) $amenity->id,
+                        'status'       => 'pending',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             }
 
@@ -298,10 +321,18 @@ class AmenityBookingService
             // Notify resident
             SocietyNotificationService::notifyUser(
                 $lockedBooking->user,
-                'Amenity Booking Approved!',
+                'Amenity Booking Confirmed! 🎉',
                 "Your booking request for {$lockedBooking->amenity->name} on " . $bookingDateStr . " has been approved.",
-                'amenity_booking_approved',
-                ['booking_id' => $lockedBooking->id]
+                'amenity_booking_confirmed',
+                [
+                    'screen'       => 'amenity_booking_details',
+                    'type'         => 'amenity_booking_confirmed',
+                    'booking_id'   => (string) $lockedBooking->id,
+                    'amenity_id'   => (string) $lockedBooking->amenity_id,
+                    'status'       => 'confirmed',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                $lockedBooking->amenity?->image_url
             );
 
             return $lockedBooking;
@@ -331,7 +362,16 @@ class AmenityBookingService
                 'Amenity Booking Rejected',
                 "Your booking for {$lockedBooking->amenity->name} was rejected. Reason: {$reason}",
                 'amenity_booking_rejected',
-                ['booking_id' => $lockedBooking->id, 'reason' => $reason]
+                [
+                    'screen'       => 'amenity_booking_details',
+                    'type'         => 'amenity_booking_rejected',
+                    'booking_id'   => (string) $lockedBooking->id,
+                    'amenity_id'   => (string) $lockedBooking->amenity_id,
+                    'status'       => 'rejected',
+                    'reason'       => (string) $reason,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                $lockedBooking->amenity?->image_url
             );
 
             return $lockedBooking;
@@ -370,16 +410,31 @@ class AmenityBookingService
                     $lockedBooking->society_id,
                     'Amenity Booking Cancelled',
                     "Resident {$user->name} cancelled their booking for {$lockedBooking->amenity->name}.",
-                    'amenity_booking_cancelled_by_user',
-                    ['booking_id' => $lockedBooking->id]
+                    'amenity_booking_cancelled',
+                    [
+                        'screen'       => 'amenity_booking_details',
+                        'type'         => 'amenity_booking_cancelled',
+                        'booking_id'   => (string) $lockedBooking->id,
+                        'amenity_id'   => (string) $lockedBooking->amenity_id,
+                        'status'       => 'cancelled',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             } else {
                 SocietyNotificationService::notifyUser(
                     $lockedBooking->user,
                     'Amenity Booking Cancelled by Admin',
                     "Your booking for {$lockedBooking->amenity->name} was cancelled by the society admin.",
-                    'amenity_booking_cancelled_by_admin',
-                    ['booking_id' => $lockedBooking->id]
+                    'amenity_booking_cancelled',
+                    [
+                        'screen'       => 'amenity_booking_details',
+                        'type'         => 'amenity_booking_cancelled',
+                        'booking_id'   => (string) $lockedBooking->id,
+                        'amenity_id'   => (string) $lockedBooking->amenity_id,
+                        'status'       => 'cancelled',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ],
+                    $lockedBooking->amenity?->image_url
                 );
             }
 

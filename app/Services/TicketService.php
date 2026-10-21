@@ -56,7 +56,15 @@ class TicketService
                 "New Ticket #{$ticket->ticket_number}",
                 "{$user->name} raised a {$ticket->category} ticket: {$ticket->title}",
                 'new_ticket_created',
-                ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number]
+                [
+                    'screen'       => 'report_details',
+                    'type'         => 'resident_report_status',
+                    'ticket_id'    => (string) $ticket->id,
+                    'report_id'    => (string) $ticket->id,
+                    'reference'    => (string) $ticket->ticket_number,
+                    'status'       => 'open',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
             );
 
             // Confirm to Resident
@@ -65,7 +73,15 @@ class TicketService
                 "Ticket #{$ticket->ticket_number} Submitted",
                 "Your complaint '{$ticket->title}' has been submitted to your society management.",
                 'ticket_submitted',
-                ['ticket_id' => $ticket->id, 'ticket_number' => $ticket->ticket_number]
+                [
+                    'screen'       => 'report_details',
+                    'type'         => 'resident_report_status',
+                    'ticket_id'    => (string) $ticket->id,
+                    'report_id'    => (string) $ticket->id,
+                    'reference'    => (string) $ticket->ticket_number,
+                    'status'       => 'open',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
             );
 
             return $ticket;
@@ -105,7 +121,14 @@ class TicketService
                     "New Reply on Ticket #{$ticket->ticket_number}",
                     "Resident {$user->name} replied on ticket: {$ticket->title}",
                     'ticket_reply_from_resident',
-                    ['ticket_id' => $ticket->id]
+                    [
+                        'screen'       => 'report_details',
+                        'type'         => 'resident_report_status',
+                        'ticket_id'    => (string) $ticket->id,
+                        'report_id'    => (string) $ticket->id,
+                        'reference'    => (string) $ticket->ticket_number,
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             } else {
                 // Admin replied -> Notify resident
@@ -115,7 +138,14 @@ class TicketService
                         "Update on Ticket #{$ticket->ticket_number}",
                         "Management replied: " . Str::limit($message, 100),
                         'ticket_reply_from_admin',
-                        ['ticket_id' => $ticket->id]
+                        [
+                            'screen'       => 'report_details',
+                            'type'         => 'resident_report_status',
+                            'ticket_id'    => (string) $ticket->id,
+                            'report_id'    => (string) $ticket->id,
+                            'reference'    => (string) $ticket->ticket_number,
+                            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                        ]
                     );
                 }
             }
@@ -152,8 +182,16 @@ class TicketService
                 $ticket->user,
                 "Ticket #{$ticket->ticket_number} {$statusLabel}",
                 "Your ticket status has been updated to '{$statusLabel}'." . ($resolutionNotes ? " Note: {$resolutionNotes}" : ""),
-                'ticket_status_changed',
-                ['ticket_id' => $ticket->id, 'status' => $status]
+                'resident_report_status',
+                [
+                    'screen'       => 'report_details',
+                    'type'         => 'resident_report_status',
+                    'ticket_id'    => (string) $ticket->id,
+                    'report_id'    => (string) $ticket->id,
+                    'reference'    => (string) $ticket->ticket_number,
+                    'status'       => (string) $status,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
             );
 
             return $ticket;

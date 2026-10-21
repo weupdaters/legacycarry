@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Report;
+use App\Models\User;
+use App\Services\AmenityBookingService;
+use App\Services\SocietyNotificationService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -56,6 +59,43 @@ class ReportController extends Controller
             'reference' => $reference,
             'status' => 'open',
         ]);
+
+        // Send confirmation notification to resident & notify admins
+        $user = $request->user() ?: User::find($userId);
+        if ($user) {
+            SocietyNotificationService::notifyUser(
+                $user,
+                "Report Submitted: #{$report->reference}",
+                "Your report ({$report->report_type}) has been submitted successfully.",
+                'resident_report_status',
+                [
+                    'screen'       => 'report_details',
+                    'type'         => 'resident_report_status',
+                    'report_id'    => (string) $report->id,
+                    'reference'    => (string) $report->reference,
+                    'status'       => 'open',
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
+            );
+
+            $societyId = AmenityBookingService::getUserSocietyId($user);
+            if ($societyId) {
+                SocietyNotificationService::notifyAdmins(
+                    $societyId,
+                    "New Report #{$report->reference}",
+                    "{$user->name} submitted a {$report->report_type} report.",
+                    'resident_report_status',
+                    [
+                        'screen'       => 'report_details',
+                        'type'         => 'resident_report_status',
+                        'report_id'    => (string) $report->id,
+                        'reference'    => (string) $report->reference,
+                        'status'       => 'open',
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
+                );
+            }
+        }
 
         return response()->json([
             'message' => 'Report submitted',

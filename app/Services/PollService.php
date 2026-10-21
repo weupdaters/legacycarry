@@ -83,7 +83,20 @@ class PollService
                 throw $e;
             }
 
-            // NOTE: Per requirement, avoid spamming excessive push notifications on individual votes.
+            // Send confirmation push & database notification to voter
+            SocietyNotificationService::notifyUser(
+                $user,
+                'Vote Recorded! 🗳️',
+                "Your vote for '{$poll->title}' has been recorded successfully.",
+                'poll_vote_recorded',
+                [
+                    'screen'       => 'poll_details',
+                    'type'         => 'poll_vote_recorded',
+                    'poll_id'      => (string) $poll->id,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
+            );
+
             return $vote;
         });
     }
@@ -135,7 +148,12 @@ class PollService
                     'New Society Poll: ' . $poll->title,
                     'A new poll has been opened for voting. Cast your vote now!',
                     'new_poll_published',
-                    ['poll_id' => $poll->id]
+                    [
+                        'screen'       => 'poll_details',
+                        'type'         => 'new_poll_published',
+                        'poll_id'      => (string) $poll->id,
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             }
 
@@ -191,7 +209,12 @@ class PollService
                     'New Society Poll: ' . $poll->title,
                     'A new poll has been opened for voting. Cast your vote now!',
                     'new_poll_published',
-                    ['poll_id' => $poll->id]
+                    [
+                        'screen'       => 'poll_details',
+                        'type'         => 'new_poll_published',
+                        'poll_id'      => (string) $poll->id,
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             }
 
@@ -214,7 +237,12 @@ class PollService
                     'Poll Closed: ' . $poll->title,
                     "Voting has ended with {$results['total_votes']} votes cast. Results are now available to view.",
                     'poll_closed_results',
-                    ['poll_id' => $poll->id]
+                    [
+                        'screen'       => 'poll_details',
+                        'type'         => 'poll_closed_results',
+                        'poll_id'      => (string) $poll->id,
+                        'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                    ]
                 );
             }
 

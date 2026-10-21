@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
+use App\Services\SocietyNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -138,12 +139,35 @@ class ReportController extends Controller
             'admin_notes' => 'nullable|string|max:1000',
         ]);
 
-        $report = Report::findOrFail($id);
+        $report = Report::with('user')->findOrFail($id);
         $report->status = $request->status;
         if ($request->has('admin_notes')) {
             $report->admin_notes = $request->admin_notes;
         }
         $report->save();
+
+        // Notify resident user about report status update
+        if ($report->user) {
+            $statusLabel = ucfirst(str_replace('_', ' ', $report->status));
+            $title = "Report Status Updated: {$statusLabel}" . ($report->status === 'resolved' ? ' ✅' : '');
+            $typeDesc = !empty($report->report_type) ? " ({$report->report_type})" : '';
+            $body = "Your report #{$report->reference}{$typeDesc} has been marked as {$statusLabel}." . ($request->filled('admin_notes') ? " Note: " . $request->admin_notes : "");
+
+            SocietyNotificationService::notifyUser(
+                $report->user,
+                $title,
+                $body,
+                'resident_report_status',
+                [
+                    'screen'       => 'report_details',
+                    'type'         => 'resident_report_status',
+                    'report_id'    => (string) $report->id,
+                    'reference'    => (string) $report->reference,
+                    'status'       => (string) $report->status,
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ]
+            );
+        }
 
         if ($request->ajax()) {
             return response()->json([
