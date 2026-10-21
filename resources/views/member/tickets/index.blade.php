@@ -1,6 +1,6 @@
 @extends('member.layouts.app')
 
-@section('title', 'My Complaints & Tickets')
+@section('title', $isResidentAdmin && $activeTab === 'society' ? 'Society Complaints & Helpdesk' : 'My Complaints & Tickets')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -8,13 +8,19 @@
   <div class="row mb-4">
     <div class="col-12">
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);">
-        <div class="card-body p-4 text-white d-flex justify-content-between align-items-center">
+        <div class="card-body p-4 text-white d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
-            <h3 class="fw-bold mb-1">Complaints & Helpdesk</h3>
-            <p class="opacity-75 mb-0">Raise issues regarding plumbing, electrical, maintenance, or security directly to your society management.</p>
+            <h3 class="fw-bold mb-1">
+              {{ $isResidentAdmin && $activeTab === 'society' ? 'Society Complaints & Helpdesk' : 'Complaints & Helpdesk' }}
+            </h3>
+            <p class="opacity-75 mb-0">
+              {{ $isResidentAdmin && $activeTab === 'society' 
+                 ? 'Review, respond to, and resolve complaints submitted by residents across your society.' 
+                 : 'Raise issues regarding plumbing, electrical, maintenance, or security directly to your society management.' }}
+            </p>
           </div>
           <div>
-            <a href="{{ route('member.tickets.create') }}" class="btn btn-white text-primary fw-bold rounded-pill px-4">
+            <a href="{{ route('member.tickets.create') }}" class="btn fw-bold rounded-pill px-4 shadow-sm" style="background: #ffffff !important; color: #0284c7 !important;">
               <i class="mdi mdi-plus-circle me-1"></i> Raise New Ticket
             </a>
           </div>
@@ -37,19 +43,38 @@
     </div>
   @endif
 
+  {{-- Admin Scope Toggle --}}
+  @if($isResidentAdmin)
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+      <div class="card-body p-2 d-flex flex-wrap gap-2">
+        <a href="{{ route('member.tickets.index', ['view' => 'society', 'status' => request('status')]) }}" class="btn {{ $activeTab === 'society' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
+          <i class="mdi mdi-domain me-1"></i> All Society Complaints
+          <span class="badge {{ $activeTab === 'society' ? 'bg-white text-primary' : 'bg-secondary text-white' }} ms-1 rounded-pill">{{ $societyTicketsCount }}</span>
+        </a>
+        <a href="{{ route('member.tickets.index', ['view' => 'my', 'status' => request('status')]) }}" class="btn {{ $activeTab === 'my' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
+          <i class="mdi mdi-account me-1"></i> My Complaints
+          <span class="badge {{ $activeTab === 'my' ? 'bg-white text-primary' : 'bg-secondary text-white' }} ms-1 rounded-pill">{{ $myTicketsCount }}</span>
+        </a>
+      </div>
+    </div>
+  @endif
+
   {{-- Filter Tabs --}}
-  <div class="d-flex gap-2 mb-3">
-    <a href="{{ route('member.tickets.index') }}" class="btn btn-sm {{ !request('status') ? 'btn-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
-      All Tickets
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{{ route('member.tickets.index', ['view' => $activeTab]) }}" class="btn btn-sm {{ !request('status') ? 'btn-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
+      All Statuses
     </a>
-    <a href="{{ route('member.tickets.index', ['status' => 'open']) }}" class="btn btn-sm {{ request('status') == 'open' ? 'btn-warning text-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'open']) }}" class="btn btn-sm {{ request('status') == 'open' ? 'btn-warning text-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
       Open
     </a>
-    <a href="{{ route('member.tickets.index', ['status' => 'in_progress']) }}" class="btn btn-sm {{ request('status') == 'in_progress' ? 'btn-info text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'in_progress']) }}" class="btn btn-sm {{ request('status') == 'in_progress' ? 'btn-info text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
       In Progress
     </a>
-    <a href="{{ route('member.tickets.index', ['status' => 'resolved']) }}" class="btn btn-sm {{ request('status') == 'resolved' ? 'btn-success' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'resolved']) }}" class="btn btn-sm {{ request('status') == 'resolved' ? 'btn-success' : 'btn-outline-secondary' }} rounded-pill px-3">
       Resolved
+    </a>
+    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'closed']) }}" class="btn btn-sm {{ request('status') == 'closed' ? 'btn-secondary text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
+      Closed
     </a>
   </div>
 
@@ -61,6 +86,9 @@
           <thead class="table-light">
             <tr>
               <th class="ps-4">Ticket #</th>
+              @if($isResidentAdmin && $activeTab === 'society')
+                <th>Resident</th>
+              @endif
               <th>Category</th>
               <th>Subject / Title</th>
               <th>Priority</th>
@@ -73,6 +101,17 @@
             @forelse($tickets as $ticket)
               <tr>
                 <td class="ps-4 fw-bold text-primary">#{{ $ticket->ticket_number }}</td>
+                @if($isResidentAdmin && $activeTab === 'society')
+                  <td>
+                    <div class="fw-semibold text-dark">{{ $ticket->user?->name ?? 'Resident' }}</div>
+                    <small class="text-muted d-block">
+                      <i class="mdi mdi-phone me-1"></i>{{ $ticket->user?->phone ?? $ticket->user?->mobile ?? $ticket->user?->email ?? '-' }}
+                    </small>
+                    @if($ticket->user?->details?->flat)
+                      <span class="badge bg-soft-primary text-primary mt-1">Flat: {{ $ticket->user->details->flat->flat_number }}</span>
+                    @endif
+                  </td>
+                @endif
                 <td>
                   <span class="badge bg-light text-dark border">{{ $ticket->category }}</span>
                 </td>
@@ -81,13 +120,13 @@
                 </td>
                 <td>
                   @if($ticket->priority === 'urgent')
-                    <span class="badge bg-danger">Urgent</span>
+                    <span class="badge bg-danger rounded-pill px-2">Urgent</span>
                   @elseif($ticket->priority === 'high')
-                    <span class="badge bg-warning text-dark">High</span>
+                    <span class="badge bg-warning text-dark rounded-pill px-2">High</span>
                   @elseif($ticket->priority === 'medium')
-                    <span class="badge bg-info text-dark">Medium</span>
+                    <span class="badge bg-info text-dark rounded-pill px-2">Medium</span>
                   @else
-                    <span class="badge bg-secondary">Low</span>
+                    <span class="badge bg-secondary rounded-pill px-2">Low</span>
                   @endif
                 </td>
                 <td>
@@ -103,16 +142,21 @@
                 </td>
                 <td><small class="text-muted">{{ $ticket->created_at->format('d M, Y H:i') }}</small></td>
                 <td class="text-end pe-4">
-                  <a href="{{ route('member.tickets.show', $ticket->id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                    View & Chat
+                  <a href="{{ route('member.tickets.show', $ticket->id) }}" class="btn {{ $isResidentAdmin && $activeTab === 'society' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm rounded-pill px-3">
+                    <i class="mdi {{ $isResidentAdmin && $activeTab === 'society' ? 'mdi-tune' : 'mdi-forum-outline' }} me-1"></i>
+                    {{ $isResidentAdmin && $activeTab === 'society' ? 'Manage & Chat' : 'View & Chat' }}
                   </a>
                 </td>
               </tr>
             @empty
               <tr>
-                <td colspan="7" class="text-center py-5 text-muted">
+                <td colspan="{{ $isResidentAdmin && $activeTab === 'society' ? '8' : '7' }}" class="text-center py-5 text-muted">
                   <i class="mdi mdi-message-alert-outline mdi-36px d-block mb-2 text-secondary"></i>
-                  No tickets found. Need assistance? Click "Raise New Ticket".
+                  @if($isResidentAdmin && $activeTab === 'society')
+                    No complaints found in your society matching this filter.
+                  @else
+                    No tickets found. Need assistance? Click "Raise New Ticket".
+                  @endif
                 </td>
               </tr>
             @endforelse
@@ -121,7 +165,7 @@
       </div>
 
       <div class="p-3">
-        {{ $tickets->links() }}
+        {{ $tickets->appends(request()->query())->links() }}
       </div>
     </div>
   </div>

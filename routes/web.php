@@ -209,6 +209,7 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::get('/tickets/{id}', [\App\Http\Controllers\Member\TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{id}/reply', [\App\Http\Controllers\Member\TicketController::class, 'reply'])->name('tickets.reply');
     Route::post('/tickets/{id}/close', [\App\Http\Controllers\Member\TicketController::class, 'close'])->name('tickets.close');
+    Route::post('/tickets/{id}/status', [\App\Http\Controllers\Member\TicketController::class, 'updateStatus'])->name('tickets.status');
 
 });
 

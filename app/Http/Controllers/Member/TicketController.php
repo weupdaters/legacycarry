@@ -18,29 +18,63 @@ class TicketController extends Controller
     }
 
     /**
-     * List authenticated resident's tickets.
+     * List tickets:
+     * - Resident Admin: Sees all complaints of their society with a toggle to view "My Complaints".
+     * - Normal Resident: Sees only their own complaints.
      */
     public function index(Request $request)
     {
         $user = auth()->user();
-        $societyId = AmenityBookingService::getUserSocietyId($user);
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: getSocietyId();
 
         if (!$societyId) {
             return view('member.tickets.index', [
                 'tickets' => collect(),
+                'isResidentAdmin' => false,
+                'activeTab' => 'my',
+                'societyTicketsCount' => 0,
+                'myTicketsCount' => 0,
                 'error' => 'You are not assigned to any society.',
             ]);
         }
 
-        $query = Ticket::where('user_id', $user->id)->latest();
+        $isResidentAdmin = has_permission('ticket_index')
+            || has_permission('ticket_show')
+            || has_permission('ticket_reply')
+            || has_permission('ticket_status_update')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        $activeTab = $request->input('view', $isResidentAdmin ? 'society' : 'my');
+
+        $query = Ticket::with(['user.details.flat', 'society'])->latest();
+
+        if ($activeTab === 'society' && $isResidentAdmin) {
+            $query->where('society_id', $societyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
         $tickets = $query->paginate(15);
 
-        return view('member.tickets.index', compact('tickets'));
+        $societyTicketsCount = $isResidentAdmin ? Ticket::where('society_id', $societyId)->count() : 0;
+        $myTicketsCount = Ticket::where('user_id', $user->id)->count();
+
+        return view('member.tickets.index', compact(
+            'tickets',
+            'isResidentAdmin',
+            'activeTab',
+            'societyTicketsCount',
+            'myTicketsCount'
+        ));
     }
 
     /**
@@ -92,18 +126,37 @@ class TicketController extends Controller
     }
 
     /**
-     * Show ticket conversation thread.
+     * Show ticket conversation thread:
+     * - Resident Admin: Can view any ticket belonging to their society.
+     * - Normal Resident: Can view only their own ticket.
      */
     public function show($id)
     {
         $user = auth()->user();
-        $ticket = Ticket::with(['replies.user'])->where('id', $id)->where('user_id', $user->id)->firstOrFail();
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: getSocietyId();
 
-        return view('member.tickets.show', compact('ticket'));
+        $isResidentAdmin = has_permission('ticket_show')
+            || has_permission('ticket_index')
+            || has_permission('ticket_reply')
+            || has_permission('ticket_status_update')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        $query = Ticket::with(['replies.user', 'user.details.flat', 'society', 'assignee'])->where('id', $id);
+
+        if ($isResidentAdmin && $societyId) {
+            $query->where('society_id', $societyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $ticket = $query->firstOrFail();
+
+        return view('member.tickets.show', compact('ticket', 'isResidentAdmin'));
     }
 
     /**
-     * Post a reply to ticket.
+     * Post a reply to ticket thread.
      */
     public function reply(Request $request, $id)
     {
@@ -113,7 +166,23 @@ class TicketController extends Controller
         ]);
 
         $user = auth()->user();
-        $ticket = Ticket::where('id', $id)->where('user_id', $user->id)->firstOrFail();
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: getSocietyId();
+
+        $isResidentAdmin = has_permission('ticket_reply')
+            || has_permission('ticket_index')
+            || has_permission('ticket_status_update')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        $query = Ticket::where('id', $id);
+
+        if ($isResidentAdmin && $societyId) {
+            $query->where('society_id', $societyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $ticket = $query->firstOrFail();
 
         $this->ticketService->replyTicket(
             $ticket,
@@ -126,14 +195,61 @@ class TicketController extends Controller
     }
 
     /**
+     * Update ticket status (Resident Admin).
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: getSocietyId();
+
+        $isResidentAdmin = has_permission('ticket_status_update')
+            || has_permission('ticket_edit')
+            || has_permission('ticket_index')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        abort_unless($isResidentAdmin, 403, 'Unauthorized to update ticket status.');
+
+        $request->validate([
+            'status' => 'required|in:open,in_progress,resolved,closed',
+            'resolution_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $ticket = Ticket::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        $this->ticketService->updateStatus(
+            $ticket,
+            $user,
+            $request->input('status'),
+            $request->input('resolution_notes')
+        );
+
+        return back()->with('success', 'Ticket status updated to ' . ucfirst(str_replace('_', ' ', $request->input('status'))) . '.');
+    }
+
+    /**
      * Close ticket.
      */
     public function close($id)
     {
         $user = auth()->user();
-        $ticket = Ticket::where('id', $id)->where('user_id', $user->id)->firstOrFail();
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: getSocietyId();
 
-        $this->ticketService->updateStatus($ticket, $user, 'closed', 'Closed by resident.');
+        $isResidentAdmin = has_permission('ticket_status_update')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        $query = Ticket::where('id', $id);
+
+        if ($isResidentAdmin && $societyId) {
+            $query->where('society_id', $societyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $ticket = $query->firstOrFail();
+
+        $this->ticketService->updateStatus($ticket, $user, 'closed', 'Closed by resident/management.');
 
         return back()->with('success', 'Ticket closed.');
     }

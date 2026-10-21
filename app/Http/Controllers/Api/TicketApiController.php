@@ -87,14 +87,32 @@ class TicketApiController extends Controller
     }
 
     /**
-     * Resident: List authenticated resident's tickets.
+     * Resident / Resident Admin: List tickets.
+     * - Resident Admin: Defaults to all tickets of their society (can pass scope=my for own).
+     * - Normal Resident: Returns their own tickets.
      * GET /api/v1/tickets
      */
     public function index(Request $request): JsonResponse
     {
         $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user) ?: (function_exists('getSocietyId') ? getSocietyId() : null);
 
-        $query = Ticket::where('user_id', $user->id)->latest();
+        $isResidentAdmin = has_permission('ticket_index')
+            || has_permission('ticket_show')
+            || has_permission('ticket_reply')
+            || has_permission('ticket_status_update')
+            || has_permission('resident_index')
+            || $user->role === 'super_admin';
+
+        $scope = $request->input('scope', ($isResidentAdmin && $societyId) ? 'society' : 'my');
+
+        $query = Ticket::with(['user', 'society'])->latest();
+
+        if ($scope === 'society' && $isResidentAdmin && $societyId) {
+            $query->where('society_id', $societyId);
+        } else {
+            $query->where('user_id', $user->id);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -110,6 +128,10 @@ class TicketApiController extends Controller
             return [
                 'id' => $ticket->id,
                 'ticket_number' => $ticket->ticket_number,
+                'society_id' => $ticket->society_id,
+                'resident_id' => $ticket->user_id,
+                'resident_name' => $ticket->user?->name,
+                'resident_phone' => $ticket->user?->phone,
                 'category' => $ticket->category,
                 'title' => $ticket->title,
                 'priority' => $ticket->priority,
