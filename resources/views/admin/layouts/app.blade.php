@@ -46,11 +46,6 @@
     <!-- Sidebar -->
     @include('admin.layouts.sidebar')
 
-
-
-    <!-- Modals -->
-    @include('admin.layouts.model')
-
     <!-- Page Content -->
     <div class="content-page">
       <div class="content">
@@ -79,6 +74,9 @@
 
   </div>
   <!-- END Wrapper -->
+
+  <!-- Modals -->
+  @include('admin.layouts.model')
 
   <!-- Notifications -->
   @include('admin.layouts.notification')

@@ -4,7 +4,7 @@
 <div class="container-fluid">
 
   {{-- PAGE HEADER --}}
-  <div class="py-3 d-flex justify-content-between align-items-center">
+  <div class="py-3 mb-2">
     <div class="d-flex align-items-center gap-2">
       <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i> Back to Reports

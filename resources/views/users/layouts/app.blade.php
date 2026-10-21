@@ -36,11 +36,6 @@
         <!-- Sidebar -->
         @include('users.layouts.sidebar')
 
-       
-
-        <!-- Modals -->
-        @include('users.layouts.model')
-
         <!-- Page Content -->
         <div class="content-page">
             <div class="content">
@@ -67,8 +62,11 @@
     </div>
     <!-- END Wrapper -->
 
-     <!-- Notifications -->
-     @include('users.layouts.notification')
+    <!-- Modals -->
+    @include('users.layouts.model')
+
+    <!-- Notifications -->
+    @include('users.layouts.notification')
 
     <!-- Vendor JS -->
     <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>

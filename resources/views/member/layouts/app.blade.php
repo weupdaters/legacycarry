@@ -39,11 +39,6 @@
     <!-- Sidebar -->
     @include('member.layouts.sidebar')
 
-
-
-    <!-- Modals -->
-    @include('member.layouts.model')
-
     <!-- Page Content -->
     <div class="content-page">
       <div class="content">
@@ -72,6 +67,9 @@
 
   </div>
   <!-- END Wrapper -->
+
+  <!-- Modals -->
+  @include('member.layouts.model')
 
   <!-- Notifications -->
   @include('member.layouts.notification')
