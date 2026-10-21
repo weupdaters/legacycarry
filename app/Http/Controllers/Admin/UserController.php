@@ -28,15 +28,23 @@ class UserController extends Controller
 
     public function Residents(Request $request)
     {
+        $societies = \App\Models\Society::orderBy('name')->get();
+
         $residents = User::where('role', 'customer')
-            ->with('details')
+            ->with(['details.society', 'details.flat', 'society', 'residentAssignment.society'])
 
             // Global search
             ->when($request->search, function ($q) use ($request) {
                 $q->where(function ($sub) use ($request) {
                     $sub->where('name', 'like', "%{$request->search}%")
                         ->orWhere('phone', 'like', "%{$request->search}%")
-                        ->orWhere('email', 'like', "%{$request->search}%");
+                        ->orWhere('email', 'like', "%{$request->search}%")
+                        ->orWhereHas('details.society', function ($sq) use ($request) {
+                            $sq->where('name', 'like', "%{$request->search}%");
+                        })
+                        ->orWhereHas('society', function ($sq) use ($request) {
+                            $sq->where('name', 'like', "%{$request->search}%");
+                        });
                 });
             })
 
@@ -45,15 +53,26 @@ class UserController extends Controller
                 $q->where('verification_status', $request->status);
             })
 
+            // Society filter
+            ->when($request->society_id, function ($q) use ($request) {
+                $q->where(function ($sq) use ($request) {
+                    $sq->where('user_society_id', $request->society_id)
+                       ->orWhereHas('details', function ($dq) use ($request) {
+                           $dq->where('society_id', $request->society_id);
+                       })
+                       ->orWhereHas('residentAssignment', function ($rq) use ($request) {
+                           $rq->where('society_id', $request->society_id);
+                       });
+                });
+            })
+
             ->paginate(10);
 
         if ($request->ajax()) {
-            return view('admin.residents.index', compact('residents'))->render();
+            return view('admin.residents.index', compact('residents', 'societies'))->render();
         }
 
-
-
-        return view('admin.residents.index', compact('residents'));
+        return view('admin.residents.index', compact('residents', 'societies'));
     }
 
 

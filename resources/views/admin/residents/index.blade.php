@@ -25,13 +25,24 @@
             <div class="row g-3 mb-4">
 
               <!-- GLOBAL SEARCH -->
-              <div class="col-md-8">
+              <div class="col-md-5">
                 <label class="filter-label">Search</label>
-                <input type="text" id="search" class="form-control" placeholder="Search name, phone, email...">
+                <input type="text" id="search" class="form-control" placeholder="Search name, phone, email, society...">
+              </div>
+
+              <!-- SOCIETY FILTER -->
+              <div class="col-md-4">
+                <label class="filter-label">Society</label>
+                <select id="society_id" class="form-select">
+                  <option value="">All Societies</option>
+                  @foreach ($societies ?? [] as $soc)
+                    <option value="{{ $soc->id }}">{{ $soc->name }}</option>
+                  @endforeach
+                </select>
               </div>
 
               <!-- VERIFICATION STATUS -->
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label class="filter-label">Verification</label>
                 <select id="status" class="form-select">
                   <option value="">All</option>
@@ -57,6 +68,7 @@
                       <th>Name</th>
                       <th>Phone</th>
                       <th>Email</th>
+                      <th>Society</th>
                       <th>Resident Type</th>
                       <th>Verification</th>
                       <th>Flat</th>
@@ -70,6 +82,11 @@
                     @foreach ($residents as $resident)
                       @php
                         $detail = $resident->details ?? null;
+                        $societyName = $detail->society->name 
+                            ?? $resident->society->name 
+                            ?? $resident->residentAssignment->society->name 
+                            ?? assingedSocietyName($resident->id) 
+                            ?? null;
                       @endphp
 
                       <tr>
@@ -77,6 +94,13 @@
                         <td>{{ $resident->name }}</td>
                         <td>{{ $resident->phone }}</td>
                         <td>{{ $resident->email }}</td>
+                        <td>
+                          @if ($societyName)
+                            <span class="badge bg-soft-primary text-primary fw-semibold">{{ $societyName }}</span>
+                          @else
+                            <span class="text-muted">-</span>
+                          @endif
+                        </td>
                         <td>{{ $resident->user_residential_status }}</td>
 
                         <td>
@@ -172,7 +196,8 @@
         type: "GET",
         data: {
           search: $('#search').val(),
-          status: $('#status').val()
+          status: $('#status').val(),
+          society_id: $('#society_id').val()
         },
         success: function(response) {
 
@@ -194,6 +219,11 @@
 
       // Status dropdown
       $('#status').on('change', function() {
+        loadData();
+      });
+
+      // Society dropdown
+      $('#society_id').on('change', function() {
         loadData();
       });
 

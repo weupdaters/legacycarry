@@ -38,6 +38,7 @@
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Email</th>
+                    <th>Society</th>
 
                     {{-- New Fields Added --}}
                     <th>Flat</th>
@@ -54,6 +55,11 @@
                       $user = $resident instanceof \App\Models\User ? $resident : ($resident->user ?? $resident);
                       $detail = $user->details ?? ($resident->details ?? null);
                       $flat = $detail->flat ?? ($user->residentAssignment?->flat ?? ($resident->flat ?? null));
+                      $societyName = $detail->society->name 
+                          ?? $user->society->name 
+                          ?? $user->residentAssignment->society->name 
+                          ?? assingedSocietyName($user->id) 
+                          ?? null;
                     @endphp
 
                     <tr>
@@ -61,6 +67,13 @@
                       <td>{{ $user->name }}</td>
                       <td>{{ $user->phone ?? '-' }}</td>
                       <td>{{ $user->email ?? '-' }}</td>
+                      <td>
+                        @if ($societyName)
+                          <span class="badge bg-soft-primary text-primary fw-semibold">{{ $societyName }}</span>
+                        @else
+                          <span class="text-muted">-</span>
+                        @endif
+                      </td>
 
                       {{-- New fields from user_details / flat table --}}
                       <td>{{ $flat->building_no ?? ($flat->flat_no ?? '-') }}</td>
