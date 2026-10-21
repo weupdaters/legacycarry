@@ -180,15 +180,17 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::post('/amenities', [\App\Http\Controllers\Member\AmenityBookingController::class, 'store'])->name('amenities.store');
     Route::get('/amenities/my-bookings', [\App\Http\Controllers\Member\AmenityBookingController::class, 'myBookings'])->name('amenities.my-bookings');
     Route::get('/amenities/bookings/all', [\App\Http\Controllers\Member\AmenityBookingController::class, 'allBookings'])->name('amenities.bookings.all');
-    Route::post('/amenities/bookings/{id}/approve', [\App\Http\Controllers\Member\AmenityBookingController::class, 'approveBooking'])->name('amenities.bookings.approve');
-    Route::post('/amenities/bookings/{id}/reject', [\App\Http\Controllers\Member\AmenityBookingController::class, 'rejectBooking'])->name('amenities.bookings.reject');
-    Route::get('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookView'])->name('amenities.book');
-    Route::post('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookSubmit'])->name('amenities.book.submit');
-    Route::get('/amenities/{id}/slots-ajax', [\App\Http\Controllers\Member\AmenityBookingController::class, 'getSlotsAjax'])->name('amenities.slots-ajax');
-    Route::get('/amenities/{id}/edit', [\App\Http\Controllers\Member\AmenityBookingController::class, 'edit'])->name('amenities.edit');
-    Route::put('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'update'])->name('amenities.update');
-    Route::delete('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'destroy'])->name('amenities.destroy');
-    Route::post('/amenities/bookings/{id}/cancel', [\App\Http\Controllers\Member\AmenityBookingController::class, 'cancel'])->name('amenities.cancel');
+    Route::get('/amenities/all-bookings', [\App\Http\Controllers\Member\AmenityBookingController::class, 'allBookings'])->name('amenities.bookings.all.alias');
+    Route::get('/amenities/manage-bookings', [\App\Http\Controllers\Member\AmenityBookingController::class, 'allBookings'])->name('amenities.bookings.manage');
+    Route::post('/amenities/bookings/{id}/approve', [\App\Http\Controllers\Member\AmenityBookingController::class, 'approveBooking'])->name('amenities.bookings.approve')->whereNumber('id');
+    Route::post('/amenities/bookings/{id}/reject', [\App\Http\Controllers\Member\AmenityBookingController::class, 'rejectBooking'])->name('amenities.bookings.reject')->whereNumber('id');
+    Route::get('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookView'])->name('amenities.book')->whereNumber('id');
+    Route::post('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookSubmit'])->name('amenities.book.submit')->whereNumber('id');
+    Route::get('/amenities/{id}/slots-ajax', [\App\Http\Controllers\Member\AmenityBookingController::class, 'getSlotsAjax'])->name('amenities.slots-ajax')->whereNumber('id');
+    Route::get('/amenities/{id}/edit', [\App\Http\Controllers\Member\AmenityBookingController::class, 'edit'])->name('amenities.edit')->whereNumber('id');
+    Route::put('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'update'])->name('amenities.update')->whereNumber('id');
+    Route::delete('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'destroy'])->name('amenities.destroy')->whereNumber('id');
+    Route::post('/amenities/bookings/{id}/cancel', [\App\Http\Controllers\Member\AmenityBookingController::class, 'cancel'])->name('amenities.cancel')->whereNumber('id');
 
     // Polls & Voting & Management
     Route::get('/polls', [\App\Http\Controllers\Member\PollController::class, 'index'])->name('polls.index');

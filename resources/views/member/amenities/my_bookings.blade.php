@@ -9,7 +9,7 @@
       <h3 class="fw-bold text-dark mb-1">My Amenity Bookings</h3>
       <p class="text-muted small mb-0">Track confirmation status, upcoming schedules, and booking history.</p>
     </div>
-    <a href="{{ route('member.amenities.index') }}" class="btn btn-success rounded-pill px-4">
+    <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-success rounded-pill px-4">
       <i class="mdi mdi-plus me-1"></i> Book New Amenity
     </a>
   </div>

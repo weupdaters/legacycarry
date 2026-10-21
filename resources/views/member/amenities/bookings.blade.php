@@ -14,8 +14,13 @@
       <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-outline-secondary rounded-pill px-4">
         <i class="mdi mdi-arrow-left me-1"></i> Back to Amenities
       </a>
-      @if(has_permission('amenity_create'))
-        <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-success rounded-pill px-4">
+      @php
+        $canAddAmenity = has_permission('amenity_create') 
+            || has_permission('resident_index') 
+            || auth()->user()->role === 'super_admin';
+      @endphp
+      @if($canAddAmenity)
+        <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-4">
           <i class="mdi mdi-plus me-1"></i> Add Amenity
         </a>
       @endif

@@ -9,7 +9,7 @@
       <h3 class="fw-bold text-dark mb-1">Book {{ $amenity->name }}</h3>
       <p class="text-muted small mb-0">Select your preferred date and available time slot to submit a booking.</p>
     </div>
-    <a href="{{ route('member.amenities.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+    <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-outline-secondary rounded-pill px-4">
       <i class="mdi mdi-arrow-left me-1"></i> Back to Amenities
     </a>
   </div>

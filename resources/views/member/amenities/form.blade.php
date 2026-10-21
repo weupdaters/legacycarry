@@ -8,7 +8,7 @@
     <div class="col-lg-10">
       {{-- Back Button --}}
       <div class="mb-3 d-flex justify-content-between align-items-center">
-        <a href="{{ route('member.amenities.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
           <i class="mdi mdi-arrow-left me-1"></i> Back to Amenities
         </a>
         <h4 class="fw-bold mb-0 text-dark">
@@ -28,7 +28,7 @@
             </div>
           @endif
 
-          <form method="POST" action="{{ isset($amenity) ? route('member.amenities.update', $amenity->id) : route('member.amenities.store') }}" enctype="multipart/form-data">
+          <form method="POST" action="{{ isset($amenity) ? (Route::has('member.amenities.update') ? route('member.amenities.update', $amenity->id) : url('residents/amenities/' . $amenity->id)) : (Route::has('member.amenities.store') ? route('member.amenities.store') : url('residents/amenities')) }}" enctype="multipart/form-data">
             @csrf
             @if(isset($amenity))
               @method('PUT')
@@ -130,7 +130,7 @@
 
             {{-- Submit --}}
             <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
-              <a href="{{ route('member.amenities.index') }}" class="btn btn-light rounded-pill px-4">Cancel</a>
+              <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-light rounded-pill px-4">Cancel</a>
               <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">
                 <i class="mdi mdi-check me-1"></i> {{ isset($amenity) ? 'Update Amenity' : 'Save Amenity' }}
               </button>

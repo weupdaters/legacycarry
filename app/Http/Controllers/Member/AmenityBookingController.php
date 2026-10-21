@@ -20,6 +20,25 @@ class AmenityBookingController extends Controller
     }
 
     /**
+     * Determine if current user has Resident Admin or Super Admin privileges.
+     */
+    protected function isResidentAdmin(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        return $user->role === 'super_admin'
+            || has_permission('amenity_booking_index')
+            || has_permission('amenity_booking_approve')
+            || has_permission('amenity_create')
+            || has_permission('amenity_edit')
+            || has_permission('amenity_delete')
+            || has_permission('resident_index');
+    }
+
+    /**
      * View all available society amenities and upcoming bookings.
      */
     public function index()
@@ -31,14 +50,35 @@ class AmenityBookingController extends Controller
             return view('member.amenities.index', [
                 'amenities' => collect(),
                 'upcomingBookings' => collect(),
+                'isResidentAdmin' => false,
+                'pendingTotalCount' => 0,
                 'error' => 'You are not assigned to any society.',
             ]);
         }
 
-        $amenities = Amenity::where('society_id', $societyId)
-            ->active()
-            ->orderBy('name')
-            ->get();
+        $isResidentAdmin = $this->isResidentAdmin();
+
+        $query = Amenity::where('society_id', $societyId)
+            ->withCount([
+                'bookings',
+                'bookings as pending_bookings_count' => function ($q) {
+                    $q->where('status', 'pending');
+                }
+            ]);
+
+        // Regular residents only see active amenities; admins see all (to edit/activate)
+        if (!$isResidentAdmin) {
+            $query->active();
+        }
+
+        $amenities = $query->orderBy('name')->get();
+
+        $pendingTotalCount = 0;
+        if ($isResidentAdmin) {
+            $pendingTotalCount = AmenityBooking::where('society_id', $societyId)
+                ->where('status', 'pending')
+                ->count();
+        }
 
         $upcomingBookings = AmenityBooking::with('amenity')
             ->where('user_id', $user->id)
@@ -48,7 +88,7 @@ class AmenityBookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('member.amenities.index', compact('amenities', 'upcomingBookings', 'societyId'));
+        return view('member.amenities.index', compact('amenities', 'upcomingBookings', 'societyId', 'isResidentAdmin', 'pendingTotalCount'));
     }
 
     /**
@@ -161,7 +201,7 @@ class AmenityBookingController extends Controller
      */
     public function create()
     {
-        abort_unless(has_permission('amenity_create'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to create amenities.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -179,7 +219,7 @@ class AmenityBookingController extends Controller
      */
     public function store(Request $request)
     {
-        abort_unless(has_permission('amenity_create'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to create amenities.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -220,7 +260,7 @@ class AmenityBookingController extends Controller
      */
     public function edit($id)
     {
-        abort_unless(has_permission('amenity_edit'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to edit amenities.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -236,7 +276,7 @@ class AmenityBookingController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_unless(has_permission('amenity_edit'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to update amenities.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -278,7 +318,7 @@ class AmenityBookingController extends Controller
      */
     public function destroy($id)
     {
-        abort_unless(has_permission('amenity_delete'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to delete amenities.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -299,16 +339,9 @@ class AmenityBookingController extends Controller
      */
     public function allBookings(Request $request)
     {
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to view society amenity bookings.');
+
         $user = auth()->user();
-        $isResidentAdmin = has_permission('amenity_booking_index')
-            || has_permission('amenity_booking_approve')
-            || has_permission('amenity_create')
-            || has_permission('amenity_edit')
-            || has_permission('resident_index')
-            || $user->role === 'super_admin';
-
-        abort_unless($isResidentAdmin, 403, 'Unauthorized to view society amenity bookings.');
-
         $societyId = AmenityBookingService::getUserSocietyId($user) ?: (function_exists('getSocietyId') ? getSocietyId() : null);
 
         $amenities = Amenity::where('society_id', $societyId)->orderBy('name')->get();
@@ -339,16 +372,9 @@ class AmenityBookingController extends Controller
      */
     public function approveBooking(Request $request, $id)
     {
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to approve amenity bookings.');
+
         $user = auth()->user();
-        $isResidentAdmin = has_permission('amenity_booking_approve')
-            || has_permission('amenity_booking_index')
-            || has_permission('amenity_create')
-            || has_permission('amenity_edit')
-            || has_permission('resident_index')
-            || $user->role === 'super_admin';
-
-        abort_unless($isResidentAdmin, 403, 'Unauthorized to approve amenity bookings.');
-
         $societyId = AmenityBookingService::getUserSocietyId($user) ?: (function_exists('getSocietyId') ? getSocietyId() : null);
 
         $booking = AmenityBooking::where('id', $id)->where('society_id', $societyId)->firstOrFail();
@@ -366,18 +392,11 @@ class AmenityBookingController extends Controller
      */
     public function rejectBooking(Request $request, $id)
     {
-        $user = auth()->user();
-        $isResidentAdmin = has_permission('amenity_booking_approve')
-            || has_permission('amenity_booking_index')
-            || has_permission('amenity_create')
-            || has_permission('amenity_edit')
-            || has_permission('resident_index')
-            || $user->role === 'super_admin';
-
-        abort_unless($isResidentAdmin, 403, 'Unauthorized to reject amenity bookings.');
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to reject amenity bookings.');
 
         $request->validate(['reason' => 'required|string|max:500']);
 
+        $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user) ?: (function_exists('getSocietyId') ? getSocietyId() : null);
 
         $booking = AmenityBooking::where('id', $id)->where('society_id', $societyId)->firstOrFail();
