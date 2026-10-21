@@ -12,6 +12,7 @@
       <h4 class="fw-semibold m-0 ms-2">
         Report Details <span class="text-muted fs-6">({{ $report->reference ?? 'RPT-'.$report->id }})</span>
       </h4>
+    </div>
   </div>
 
   @if(session('success'))
@@ -61,7 +62,7 @@
 
           <div class="row mb-3">
             <div class="col-sm-4 text-muted fw-semibold">Contact Email:</div>
-            <div class="col-sm-8">{{ $report->email ?? ($report->user->email ?? 'Not provided') }}</div>
+            <div class="col-sm-8 text-break" style="word-break: break-all;">{{ $report->email ?? ($report->user->email ?? 'Not provided') }}</div>
           </div>
 
           <div class="row mb-3">
@@ -94,7 +95,7 @@
             <h6 class="fw-bold mb-2 text-muted text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
               <i class="bi bi-file-text me-1"></i> Description / Issue Details
             </h6>
-            <div class="p-3 bg-light rounded border text-dark" style="white-space: pre-line; line-height: 1.6; font-size: 14px;">
+            <div class="p-3 bg-light rounded border text-dark text-break" style="white-space: pre-line; line-height: 1.6; font-size: 14px; word-break: break-word;">
               {{ $report->description }}
             </div>
           </div>
@@ -149,15 +150,15 @@
           @if($report->user)
             <div class="d-flex align-items-center mb-3">
               @if($report->user->avatar_url)
-                <img src="{{ $report->user->avatar_url }}" class="rounded-circle me-3" style="width: 55px; height: 55px; object-fit: cover; border: 2px solid #e2e8f0;">
+                <img src="{{ $report->user->avatar_url }}" class="rounded-circle me-3 flex-shrink-0" style="width: 55px; height: 55px; object-fit: cover; border: 2px solid #e2e8f0;">
               @else
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 55px; height: 55px; font-size: 20px; font-weight: 700;">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 55px; height: 55px; font-size: 20px; font-weight: 700;">
                   {{ strtoupper(substr($report->user->name, 0, 1)) }}
                 </div>
               @endif
 
-              <div>
-                <h6 class="mb-0 fw-bold">{{ $report->user->name }}</h6>
+              <div class="overflow-hidden">
+                <h6 class="mb-0 fw-bold text-truncate">{{ $report->user->name }}</h6>
                 <small class="text-muted">User ID: #{{ $report->user->id }}</small>
                 <div>
                   <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 11px;">
@@ -167,19 +168,21 @@
               </div>
             </div>
 
-            <table class="table table-borderless table-sm mb-0">
-              <tr>
-                <td class="text-muted fw-semibold" style="width: 90px;">Email:</td>
-                <td>{{ $report->user->email }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted fw-semibold">Phone:</td>
-                <td>{{ $report->user->phone ?? '-' }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted fw-semibold">Joined:</td>
-                <td>{{ $report->user->created_at ? $report->user->created_at->format('d M Y') : '-' }}</td>
-              </tr>
+            <table class="table table-borderless table-sm mb-0" style="table-layout: fixed; width: 100%;">
+              <tbody>
+                <tr>
+                  <td class="text-muted fw-semibold" style="width: 65px; vertical-align: top;">Email:</td>
+                  <td class="text-break" style="word-break: break-all;">{{ $report->user->email }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted fw-semibold" style="vertical-align: top;">Phone:</td>
+                  <td class="text-break">{{ $report->user->phone ?? '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted fw-semibold" style="vertical-align: top;">Joined:</td>
+                  <td>{{ $report->user->created_at ? $report->user->created_at->format('d M Y') : '-' }}</td>
+                </tr>
+              </tbody>
             </table>
 
             @if($report->user->role == 'customer')
