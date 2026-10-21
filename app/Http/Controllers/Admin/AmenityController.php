@@ -159,8 +159,8 @@ class AmenityController extends Controller
         $societies = Society::orderBy('name')->get();
         $amenities = Amenity::orderBy('name')->get();
 
-        $query = AmenityBooking::with(['amenity', 'user', 'society'])
-            ->latest('booking_date');
+        $query = AmenityBooking::with(['amenity.society', 'user', 'society'])
+            ->latest('id');
 
         if ($request->filled('society_id')) {
             $query->where('society_id', $request->input('society_id'));

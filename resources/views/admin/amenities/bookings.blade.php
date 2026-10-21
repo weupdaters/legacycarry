@@ -105,7 +105,7 @@
                   <small class="text-muted">{{ $booking->user?->phone ?? $booking->user?->email }}</small>
                 </td>
                 <td>
-                  <span class="fw-medium text-primary">{{ $booking->booking_date->format('d M, Y') }}</span>
+                  <span class="fw-medium text-primary">{{ \Carbon\Carbon::parse($booking->booking_date)->format('d M, Y') }}</span>
                   <div>
                     <span class="badge bg-light text-dark border">
                       {{ substr($booking->start_time, 0, 5) }} - {{ substr($booking->end_time, 0, 5) }}
@@ -159,7 +159,7 @@
                             <div class="modal-body">
                               <p class="mb-2"><strong>Amenity:</strong> {{ $booking->amenity?->name }}</p>
                               <p class="mb-2"><strong>Resident:</strong> {{ $booking->user?->name }}</p>
-                              <p class="mb-3"><strong>Slot:</strong> {{ $booking->booking_date->format('d M, Y') }} ({{ substr($booking->start_time, 0, 5) }} - {{ substr($booking->end_time, 0, 5) }})</p>
+                              <p class="mb-3"><strong>Slot:</strong> {{ \Carbon\Carbon::parse($booking->booking_date)->format('d M, Y') }} ({{ substr($booking->start_time, 0, 5) }} - {{ substr($booking->end_time, 0, 5) }})</p>
                               <div class="mb-3">
                                 <label class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
                                 <textarea name="reason" class="form-control" rows="3" required placeholder="Provide reason for resident notification..."></textarea>

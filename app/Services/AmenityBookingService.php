@@ -271,9 +271,11 @@ class AmenityBookingService
                 throw new InvalidArgumentException("Only pending bookings can be approved. Current status: {$lockedBooking->status}.");
             }
 
+            $bookingDateStr = \Carbon\Carbon::parse($lockedBooking->booking_date)->format('Y-m-d');
+
             // Re-verify no conflicting confirmed booking was created in parallel
             $overlap = AmenityBooking::where('amenity_id', $lockedBooking->amenity_id)
-                ->where('booking_date', $lockedBooking->booking_date->format('Y-m-d'))
+                ->where('booking_date', $bookingDateStr)
                 ->where('id', '!=', $lockedBooking->id)
                 ->where('status', 'confirmed')
                 ->where(function ($q) use ($lockedBooking) {
@@ -297,7 +299,7 @@ class AmenityBookingService
             SocietyNotificationService::notifyUser(
                 $lockedBooking->user,
                 'Amenity Booking Approved!',
-                "Your booking request for {$lockedBooking->amenity->name} on " . $lockedBooking->booking_date->format('Y-m-d') . " has been approved.",
+                "Your booking request for {$lockedBooking->amenity->name} on " . $bookingDateStr . " has been approved.",
                 'amenity_booking_approved',
                 ['booking_id' => $lockedBooking->id]
             );

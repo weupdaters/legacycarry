@@ -124,10 +124,15 @@
                   </span>
                 </td>
                 <td>
-                  <span class="badge bg-info">{{ $amenity->bookings_count }} bookings</span>
+                  <a href="{{ route('admin.amenities.bookings', ['amenity_id' => $amenity->id, 'society_id' => $amenity->society_id]) }}" class="badge bg-info text-decoration-none px-3 py-2 shadow-sm" title="Click to view & approve bookings for {{ $amenity->name }}">
+                    <i class="bi bi-calendar-check me-1"></i> {{ $amenity->bookings_count }} bookings
+                  </a>
                 </td>
                 <td class="text-center">
                   <div class="btn-group btn-group-sm">
+                    <a href="{{ route('admin.amenities.bookings', ['amenity_id' => $amenity->id, 'society_id' => $amenity->society_id]) }}" class="btn btn-outline-info" title="View & Approve Bookings">
+                      <i class="bi bi-calendar-check"></i>
+                    </a>
                     <a href="{{ route('admin.amenities.edit', $amenity->id) }}" class="btn btn-outline-secondary" title="Edit">
                       <i class="bi bi-pencil"></i>
                     </a>

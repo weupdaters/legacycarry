@@ -298,15 +298,17 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\AmenityController::class, 'index'])->name('admin.amenities.index');
         Route::get('/create', [\App\Http\Controllers\Admin\AmenityController::class, 'create'])->name('admin.amenities.create');
         Route::post('/', [\App\Http\Controllers\Admin\AmenityController::class, 'store'])->name('admin.amenities.store');
-        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\AmenityController::class, 'edit'])->name('admin.amenities.edit');
-        Route::put('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'update'])->name('admin.amenities.update');
-        Route::delete('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'destroy'])->name('admin.amenities.destroy');
 
         // Bookings
-        Route::get('/bookings/list', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings'])->name('admin.amenities.bookings');
+        Route::get('/bookings', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings'])->name('admin.amenities.bookings');
+        Route::get('/bookings/list', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings']);
         Route::post('/bookings/{id}/approve', [\App\Http\Controllers\Admin\AmenityController::class, 'approveBooking'])->name('admin.amenities.bookings.approve');
         Route::post('/bookings/{id}/reject', [\App\Http\Controllers\Admin\AmenityController::class, 'rejectBooking'])->name('admin.amenities.bookings.reject');
         Route::post('/bookings/{id}/cancel', [\App\Http\Controllers\Admin\AmenityController::class, 'cancelBooking'])->name('admin.amenities.bookings.cancel');
+
+        Route::get('/{id}/edit', [\App\Http\Controllers\Admin\AmenityController::class, 'edit'])->name('admin.amenities.edit');
+        Route::put('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'update'])->name('admin.amenities.update');
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\AmenityController::class, 'destroy'])->name('admin.amenities.destroy');
     });
 
     // Poll management routes

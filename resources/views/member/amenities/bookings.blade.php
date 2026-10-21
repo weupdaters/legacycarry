@@ -140,7 +140,7 @@
                   <small class="text-muted">{{ $booking->created_at ? $booking->created_at->format('d M, h:i A') : '-' }}</small>
                 </td>
                 <td class="text-end pe-4">
-                  @if($booking->status === 'pending' && has_permission('amenity_booking_approve'))
+                  @if($booking->status === 'pending')
                     <form method="POST" action="{{ route('member.amenities.bookings.approve', $booking->id) }}" class="d-inline" onsubmit="return confirm('Approve this amenity booking?');">
                       @csrf
                       <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 me-1" title="Approve">
