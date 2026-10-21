@@ -38,7 +38,15 @@
                 <div class="row g-0 h-100">
                     <div class="col-4 position-relative overflow-hidden">
                         @if($notice->image)
-                            <img src="{{ asset('storage/' . $notice->image) }}" class="img-fluid h-100 w-100" style="object-fit: cover; position: absolute; top:0; left:0;">
+                            <div class="image-popup-hover w-100 h-100" 
+                                 data-preview-image="{{ asset('storage/' . $notice->image) }}"
+                                 data-preview-title="{{ $notice->title }}"
+                                 title="Click to preview image">
+                                <img src="{{ asset('storage/' . $notice->image) }}" class="img-fluid h-100 w-100 img-popup-clickable" style="object-fit: cover; position: absolute; top:0; left:0;" alt="{{ $notice->title }}">
+                                <div class="image-zoom-overlay d-flex align-items-center justify-content-center">
+                                    <i class="mdi mdi-arrow-expand-all text-white font-20"></i>
+                                </div>
+                            </div>
                         @else
                             <div class="bg-light d-flex align-items-center justify-content-center h-100 w-100" style="position: absolute; top:0; left:0;">
                                 <i class="mdi mdi-bell-outline mdi-36px text-muted opacity-50"></i>

@@ -15,7 +15,15 @@
 
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                 @if($notice->image)
-                    <img src="{{ asset('storage/' . $notice->image) }}" class="card-img-top w-100" style="max-height: 400px; object-fit: cover;">
+                    <div class="image-popup-hover w-100" 
+                         data-preview-image="{{ asset('storage/' . $notice->image) }}"
+                         data-preview-title="{{ $notice->title }}"
+                         title="Click to view full image">
+                        <img src="{{ asset('storage/' . $notice->image) }}" class="card-img-top w-100 img-popup-clickable" style="max-height: 400px; object-fit: cover;" alt="{{ $notice->title }}">
+                        <div class="image-zoom-overlay d-flex align-items-center justify-content-center">
+                            <i class="mdi mdi-arrow-expand-all text-white font-24"></i>
+                        </div>
+                    </div>
                 @endif
                 
                 <div class="card-body p-5">

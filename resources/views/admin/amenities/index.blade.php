@@ -230,7 +230,15 @@
               <tr>
                 <td style="width: 70px;">
                   @if($amenity->image)
-                    <img src="{{ asset('storage/' . $amenity->image) }}" class="rounded" width="55" height="55" style="object-fit: cover;">
+                    <div class="image-popup-hover rounded overflow-hidden" 
+                         data-preview-image="{{ asset('storage/' . $amenity->image) }}"
+                         data-preview-title="{{ $amenity->name }}"
+                         title="Click to view full image">
+                      <img src="{{ asset('storage/' . $amenity->image) }}" class="rounded shadow-sm border img-popup-clickable" width="55" height="55" style="object-fit: cover;" alt="{{ $amenity->name }}">
+                      <div class="image-zoom-overlay rounded d-flex align-items-center justify-content-center">
+                        <i class="bi bi-arrows-fullscreen text-white" style="font-size: 13px;"></i>
+                      </div>
+                    </div>
                   @else
                     <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 55px; height: 55px;">
                       <i class="bi bi-image text-muted"></i>

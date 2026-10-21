@@ -40,8 +40,16 @@
                 <tr>
                   <td>
                     @if ($notice->image)
-                      <img src="{{ asset('storage/' . $notice->image) }}" width="60" height="60" style="object-fit:cover;"
-                        class="rounded">
+                      <div class="image-popup-hover rounded overflow-hidden" 
+                           data-preview-image="{{ asset('storage/' . $notice->image) }}"
+                           data-preview-title="{{ $notice->title }}"
+                           title="Click to preview image popup">
+                        <img src="{{ asset('storage/' . $notice->image) }}" width="60" height="60" style="object-fit:cover;"
+                          class="rounded shadow-sm border img-popup-clickable" alt="{{ $notice->title }}">
+                        <div class="image-zoom-overlay rounded d-flex align-items-center justify-content-center">
+                          <i class="bi bi-arrows-fullscreen text-white" style="font-size: 14px;"></i>
+                        </div>
+                      </div>
                     @else
                       <span class="text-muted">No image</span>
                     @endif
