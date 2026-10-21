@@ -29,6 +29,11 @@ Homestead.yaml
 .DS_Store
 Thumbs.db
 Archive.zip
+*.tar.gz
+*.bak
+__MACOSX/
+*/__MACOSX/
+.serverless/
 
 /public/storage
 public/storage
