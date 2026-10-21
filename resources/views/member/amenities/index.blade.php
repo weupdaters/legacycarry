@@ -378,7 +378,15 @@
                   <div class="d-flex align-items-center">
                     <div class="me-3 position-relative" style="width: 52px; height: 52px; flex-shrink: 0;">
                       @if($amenity->image)
-                        <img src="{{ asset('storage/' . $amenity->image) }}" class="rounded-3 w-100 h-100 border" style="object-fit: cover;">
+                        <div class="image-popup-hover w-100 h-100 rounded-3 overflow-hidden"
+                             data-preview-image="{{ asset('storage/' . $amenity->image) }}"
+                             data-preview-title="{{ $amenity->name }}"
+                             title="Click to preview image">
+                          <img src="{{ asset('storage/' . $amenity->image) }}" class="rounded-3 w-100 h-100 border img-popup-clickable" style="object-fit: cover;" alt="{{ $amenity->name }}">
+                          <div class="image-zoom-overlay rounded-3 d-flex align-items-center justify-content-center">
+                            <i class="mdi mdi-arrow-expand-all text-white font-14"></i>
+                          </div>
+                        </div>
                       @else
                         <div class="rounded-3 w-100 h-100 bg-soft-success text-success d-flex align-items-center justify-content-center border border-success-subtle">
                           <i class="mdi mdi-domain mdi-24px"></i>
@@ -527,7 +535,15 @@
         <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden amenity-card-hover">
           <div style="height: 190px; position: relative;" class="bg-light">
             @if($amenity->image)
-              <img src="{{ asset('storage/' . $amenity->image) }}" class="w-100 h-100" style="object-fit: cover;">
+              <div class="image-popup-hover w-100 h-100" 
+                   data-preview-image="{{ asset('storage/' . $amenity->image) }}"
+                   data-preview-title="{{ $amenity->name }}"
+                   title="Click to preview image">
+                <img src="{{ asset('storage/' . $amenity->image) }}" class="w-100 h-100 img-popup-clickable" style="object-fit: cover;" alt="{{ $amenity->name }}">
+                <div class="image-zoom-overlay d-flex align-items-center justify-content-center">
+                  <i class="mdi mdi-arrow-expand-all text-white font-24"></i>
+                </div>
+              </div>
             @else
               <div class="d-flex align-items-center justify-content-center w-100 h-100 bg-soft-success text-success">
                 <i class="mdi mdi-domain mdi-48px"></i>
