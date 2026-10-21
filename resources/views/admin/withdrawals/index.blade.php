@@ -619,7 +619,7 @@
           <i class="bi bi-info-circle me-1"></i> Send payout money directly to any bank account or UPI ID using Cashfree live transfer.
         </div>
 
-        <form id="directPayoutModalForm">
+        <form id="directPayoutModalForm" autocomplete="off">
           @csrf
           <div class="row g-3">
             <div class="col-md-6">
@@ -633,39 +633,39 @@
               <label class="form-label fw-semibold small">Amount to Transfer (₹) <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text fw-bold">₹</span>
-                <input type="number" step="0.01" min="1" class="form-control fw-bold" id="modal_payout_amount" name="amount" value="1.00" required>
+                <input type="number" step="0.01" min="1" class="form-control fw-bold" id="modal_payout_amount" name="amount" placeholder="Enter amount" autocomplete="off" required>
               </div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label fw-semibold small">Beneficiary Full Name <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="modal_payout_name" name="name" placeholder="e.g. RANJIT SINGH" value="RANJIT SINGH" required>
+              <input type="text" class="form-control" id="modal_payout_name" name="name" placeholder="Enter beneficiary name" autocomplete="off" required>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold small">Beneficiary Phone Number</label>
-              <input type="text" class="form-control" id="modal_payout_phone" name="phone" placeholder="e.g. 9915041743" value="9915041743">
+              <input type="text" class="form-control" id="modal_payout_phone" name="phone" placeholder="Enter 10-digit mobile number" autocomplete="off">
             </div>
 
             <!-- Bank fields -->
             <div class="col-md-6 modal-bank-field">
               <label class="form-label fw-semibold small">Bank Account Number <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="modal_payout_account" name="account_number" placeholder="Enter bank account number" value="50100474836561">
+              <input type="text" class="form-control" id="modal_payout_account" name="account_number" placeholder="Enter bank account number" autocomplete="off">
             </div>
             <div class="col-md-6 modal-bank-field">
               <label class="form-label fw-semibold small">Bank IFSC Code <span class="text-danger">*</span></label>
-              <input type="text" class="form-control text-uppercase" id="modal_payout_ifsc" name="ifsc" placeholder="e.g. HDFC0001583" value="HDFC0001583">
+              <input type="text" class="form-control text-uppercase" id="modal_payout_ifsc" name="ifsc" placeholder="e.g. HDFC0001234" autocomplete="off">
             </div>
 
             <!-- UPI field -->
             <div class="col-md-12 modal-upi-field" style="display: none;">
               <label class="form-label fw-semibold small">UPI VPA ID <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="modal_payout_upi" name="upi_id" placeholder="e.g. 9915041743@ptsbi" value="9915041743@ptsbi">
+              <input type="text" class="form-control" id="modal_payout_upi" name="upi_id" placeholder="e.g. username@okhdfcbank" autocomplete="off">
               <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>Note: UPI mode must be enabled on your Cashfree wallet.</div>
             </div>
 
             <div class="col-md-12">
               <label class="form-label fw-semibold small">Transfer Remarks / Notes</label>
-              <input type="text" class="form-control" id="modal_payout_remarks" name="remarks" placeholder="e.g. Direct Admin Payout" value="Direct Admin Payout">
+              <input type="text" class="form-control" id="modal_payout_remarks" name="remarks" placeholder="Enter transfer remarks (optional)" autocomplete="off">
             </div>
           </div>
 
@@ -696,6 +696,26 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         bankFields.forEach(el => el.style.display = 'block');
         upiFields.forEach(el => el.style.display = 'none');
+      }
+    });
+  }
+
+  const payoutModalEl = document.getElementById('directPayoutModal');
+  if (payoutModalEl) {
+    payoutModalEl.addEventListener('show.bs.modal', function () {
+      if (resultDiv) {
+        resultDiv.style.display = 'none';
+        resultDiv.innerHTML = '';
+      }
+      const formEl = document.getElementById('directPayoutModalForm');
+      if (formEl) {
+        formEl.reset();
+        // default back to bank
+        if (typeSelect) {
+          typeSelect.value = 'bank';
+          bankFields.forEach(el => el.style.display = 'block');
+          upiFields.forEach(el => el.style.display = 'none');
+        }
       }
     });
   }

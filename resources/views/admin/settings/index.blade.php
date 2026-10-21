@@ -650,27 +650,27 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="fw-semibold mb-1 small">Recipient Full Name</label>
-                                    <input type="text" class="form-control pro-input" id="direct_payout_name" placeholder="e.g. RANJIT SINGH" value="RANJIT SINGH">
+                                    <input type="text" class="form-control pro-input" id="direct_payout_name" placeholder="Enter recipient name" autocomplete="off">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="fw-semibold mb-1 small">Recipient Phone Number</label>
-                                    <input type="text" class="form-control pro-input" id="direct_payout_phone" placeholder="e.g. 9915041743" value="9915041743">
+                                    <input type="text" class="form-control pro-input" id="direct_payout_phone" placeholder="Enter 10-digit phone number" autocomplete="off">
                                 </div>
 
                                 <!-- Bank Account Fields -->
                                 <div class="col-md-6 direct-bank-field">
                                     <label class="fw-semibold mb-1 small">Bank Account Number</label>
-                                    <input type="text" class="form-control pro-input" id="direct_payout_account" placeholder="Enter bank account number" value="50100474836561">
+                                    <input type="text" class="form-control pro-input" id="direct_payout_account" placeholder="Enter bank account number" autocomplete="off">
                                 </div>
                                 <div class="col-md-6 direct-bank-field">
                                     <label class="fw-semibold mb-1 small">Bank IFSC Code</label>
-                                    <input type="text" class="form-control pro-input text-uppercase" id="direct_payout_ifsc" placeholder="e.g. HDFC0001583" value="HDFC0001583">
+                                    <input type="text" class="form-control pro-input text-uppercase" id="direct_payout_ifsc" placeholder="e.g. HDFC0001234" autocomplete="off">
                                 </div>
 
                                 <!-- UPI Field -->
                                 <div class="col-md-12 direct-upi-field" style="display: none;">
                                     <label class="fw-semibold mb-1 small">UPI VPA Handle</label>
-                                    <input type="text" class="form-control pro-input" id="direct_payout_upi" placeholder="e.g. 9915041743@ptsbi" value="9915041743@ptsbi">
+                                    <input type="text" class="form-control pro-input" id="direct_payout_upi" placeholder="e.g. username@okhdfcbank" autocomplete="off">
                                     <div class="text-danger small mt-1"><i class="fas fa-exclamation-circle me-1"></i>Note: UPI mode must be enabled on your Cashfree wallet.</div>
                                 </div>
 
@@ -678,12 +678,12 @@
                                     <label class="fw-semibold mb-1 small">Payout Amount (₹)</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-white fw-bold">₹</span>
-                                        <input type="number" step="0.01" min="1" class="form-control pro-input fw-bold" id="direct_payout_amount" value="1.00">
+                                        <input type="number" step="0.01" min="1" class="form-control pro-input fw-bold" id="direct_payout_amount" placeholder="Enter amount" autocomplete="off">
                                     </div>
                                 </div>
                                 <div class="col-md-8">
                                     <label class="fw-semibold mb-1 small">Remarks / Purpose</label>
-                                    <input type="text" class="form-control pro-input" id="direct_payout_remarks" placeholder="e.g. Admin Payout Transfer" value="Admin Payout Transfer">
+                                    <input type="text" class="form-control pro-input" id="direct_payout_remarks" placeholder="Enter remarks (optional)" autocomplete="off">
                                 </div>
 
                                 <div class="col-12 mt-3">
