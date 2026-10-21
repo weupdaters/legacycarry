@@ -741,11 +741,8 @@
                             </span>
                         </div>
                         <div class="d-flex gap-2">
-                            <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
-                            </a>
                             <a href="{{ asset('storage/' . $doc->file_path) }}" download class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-download me-1"></i> Download
+                                <i class="mdi mdi-download me-1"></i> Download
                             </a>
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                         </div>
@@ -781,8 +778,8 @@
                         @endif
                     </div>
                     <div class="modal-footer bg-light">
-                        <a href="{{ asset('storage/' . $job->user->employee->id_proof_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                        <a href="{{ asset('storage/' . $job->user->employee->id_proof_path) }}" download class="btn btn-outline-secondary btn-sm">
+                            <i class="mdi mdi-download me-1"></i> Download
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                     </div>
@@ -803,8 +800,8 @@
                         <img src="{{ asset('storage/' . $job->user->employee->selfie_path) }}" class="doc-preview-img shadow rounded" alt="Employee Selfie">
                     </div>
                     <div class="modal-footer bg-light">
-                        <a href="{{ asset('storage/' . $job->user->employee->selfie_path) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
+                        <a href="{{ asset('storage/' . $job->user->employee->selfie_path) }}" download class="btn btn-outline-secondary btn-sm">
+                            <i class="mdi mdi-download me-1"></i> Download
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                     </div>
@@ -842,11 +839,8 @@
                             @endif
                         </div>
                         <div class="modal-footer bg-light">
-                            <a href="{{ asset('storage/' . $app->certificate_photo) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-box-arrow-up-right me-1"></i> Open in New Tab
-                            </a>
                             <a href="{{ asset('storage/' . $app->certificate_photo) }}" download class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-download me-1"></i> Download
+                                <i class="mdi mdi-download me-1"></i> Download
                             </a>
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                         </div>

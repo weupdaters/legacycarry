@@ -163,9 +163,11 @@
 
           <td>
             @if ($app->certificate_photo)
-              <a href="{{ asset('storage/' . $app->certificate_photo) }}" target="_blank"
+              <a href="{{ asset('storage/' . $app->certificate_photo) }}"
+                data-preview-image="{{ asset('storage/' . $app->certificate_photo) }}"
+                data-preview-title="Certificate Photo ({{ $app->user->name ?? 'Applicant' }})"
                 class="btn btn-sm btn-outline-primary">
-                View
+                <i class="bi bi-image me-1"></i> View
               </a>
               {{-- <td>
             <a href="{{ route('chat.resident.employer', [$app->user_id, $job->user_id]) }}"

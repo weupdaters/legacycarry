@@ -121,9 +121,10 @@
                             <td>
                                 @if($app->certificate_photo)
                                     <a href="{{ asset('storage/' . $app->certificate_photo) }}"
-                                       target="_blank"
+                                       data-preview-image="{{ asset('storage/' . $app->certificate_photo) }}"
+                                       data-preview-title="Certificate Photo ({{ $app->user->name ?? 'Applicant' }})"
                                        class="btn btn-sm btn-outline-primary">
-                                        View
+                                        <i class="mdi mdi-image me-1"></i> View
                                     </a>
                                 @else
                                     <span class="text-muted">None</span>

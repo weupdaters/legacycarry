@@ -63,7 +63,7 @@
             <label class="form-label">Avatar (jpg, png)</label>
             <input name="avatar" type="file" accept="image/*" class="form-control">
             @if($user->avatar)
-                <small class="text-muted">Current: <a href="{{ asset('storage/'.$user->avatar) }}" target="_blank">view</a></small>
+                <small class="text-muted">Current: <a href="{{ asset('storage/'.$user->avatar) }}" data-preview-image="{{ asset('storage/'.$user->avatar) }}" data-preview-title="{{ $user->name }} Avatar">view</a></small>
             @endif
         </div>
 
