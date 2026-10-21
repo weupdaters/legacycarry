@@ -80,6 +80,32 @@ class AmenityBookingController extends Controller
                 ->count();
         }
 
+        // Full Analytics Report metrics for Society
+        $bookingBaseQuery = AmenityBooking::where('society_id', $societyId);
+        $totalBookingsCount = (clone $bookingBaseQuery)->count();
+        $confirmedCount = (clone $bookingBaseQuery)->where('status', 'confirmed')->count();
+        $rejectedCount = (clone $bookingBaseQuery)->where('status', 'rejected')->count();
+        $cancelledCount = (clone $bookingBaseQuery)->where('status', 'cancelled')->count();
+        $todayBookingsCount = (clone $bookingBaseQuery)->whereDate('booking_date', Carbon::today())->count();
+        $thisMonthBookingsCount = (clone $bookingBaseQuery)->whereMonth('booking_date', Carbon::now()->month)->whereYear('booking_date', Carbon::now()->year)->count();
+
+        $analytics = [
+            'total_facilities' => Amenity::where('society_id', $societyId)->count(),
+            'active_facilities' => Amenity::where('society_id', $societyId)->where('status', 'active')->count(),
+            'total_bookings' => $totalBookingsCount,
+            'pending_bookings' => $pendingTotalCount,
+            'confirmed_bookings' => $confirmedCount,
+            'rejected_bookings' => $rejectedCount,
+            'cancelled_bookings' => $cancelledCount,
+            'today_bookings' => $todayBookingsCount,
+            'this_month_bookings' => $thisMonthBookingsCount,
+            'popular_amenities' => Amenity::where('society_id', $societyId)
+                ->withCount('bookings')
+                ->orderByDesc('bookings_count')
+                ->take(5)
+                ->get(),
+        ];
+
         $upcomingBookings = AmenityBooking::with('amenity')
             ->where('user_id', $user->id)
             ->whereIn('status', ['pending', 'confirmed'])
@@ -88,7 +114,7 @@ class AmenityBookingController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        return view('member.amenities.index', compact('amenities', 'upcomingBookings', 'societyId', 'isResidentAdmin', 'pendingTotalCount'));
+        return view('member.amenities.index', compact('amenities', 'upcomingBookings', 'societyId', 'isResidentAdmin', 'pendingTotalCount', 'analytics'));
     }
 
     /**

@@ -44,6 +44,26 @@
     color: #ffffff !important;
     border-color: #059669 !important;
   }
+  .report-stat-card {
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    border-radius: 1rem !important;
+  }
+  .report-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px -4px rgba(16, 185, 129, 0.16), 0 8px 16px -4px rgba(0, 0, 0, 0.06) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+  }
+  .stat-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
 </style>
 
 <div class="container-fluid py-4">
@@ -69,6 +89,13 @@
 
           {{-- Quick Header Action Buttons (Matches App Theme Pattern) --}}
           <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button type="button" 
+                    class="btn fw-bold rounded-pill px-3 shadow-sm btn-theme-white"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#amenityAnalyticsModal">
+              <i class="mdi mdi-chart-box-outline me-1"></i> Report & Analytics
+            </button>
+
             <a href="{{ Route::has('member.amenities.my-bookings') ? route('member.amenities.my-bookings') : url('residents/amenities/my-bookings') }}" 
                class="btn fw-bold rounded-pill px-3 shadow-sm" 
                style="background: #ffffff !important; color: #059669 !important;">
@@ -93,6 +120,121 @@
                 <i class="mdi mdi-plus me-1"></i> Add Amenity
               </a>
             @endif
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- 4 Animated Report Analytics Cards --}}
+  <div class="row g-3 mb-4">
+    {{-- Card 1: Total Facilities --}}
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white report-stat-card" data-bs-toggle="modal" data-bs-target="#amenityAnalyticsModal" style="cursor: pointer;">
+        <div class="card-body p-3 p-md-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="text-muted font-13 fw-semibold text-uppercase tracking-wider">Total Facilities</span>
+            <div class="stat-icon-box" style="background: #dcfce7; color: #059669;">
+              <i class="mdi mdi-domain"></i>
+            </div>
+          </div>
+          <div class="d-flex align-items-baseline gap-2">
+            <h2 class="fw-bold mb-0 text-dark">{{ $analytics['total_facilities'] ?? $amenities->count() }}</h2>
+            <span class="badge bg-soft-success text-success rounded-pill font-11 px-2 py-1">
+              {{ $analytics['active_facilities'] ?? 0 }} Active
+            </span>
+          </div>
+          <div class="mt-2 text-muted font-12 d-flex align-items-center justify-content-between">
+            <span>Bookable amenities</span>
+            <span class="text-success fw-semibold"><i class="mdi mdi-eye-outline me-1"></i>Analytics</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Card 2: Total Bookings --}}
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white report-stat-card" data-bs-toggle="modal" data-bs-target="#amenityAnalyticsModal" style="cursor: pointer;">
+        <div class="card-body p-3 p-md-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="text-muted font-13 fw-semibold text-uppercase tracking-wider">Total Bookings</span>
+            <div class="stat-icon-box" style="background: #e0f2fe; color: #0284c7;">
+              <i class="mdi mdi-calendar-check"></i>
+            </div>
+          </div>
+          <div class="d-flex align-items-baseline gap-2">
+            <h2 class="fw-bold mb-0 text-dark">{{ $analytics['total_bookings'] ?? 0 }}</h2>
+            <span class="badge bg-soft-info text-info rounded-pill font-11 px-2 py-1">
+              {{ $analytics['this_month_bookings'] ?? 0 }} This Month
+            </span>
+          </div>
+          <div class="mt-2 text-muted font-12 d-flex align-items-center justify-content-between">
+            <span>{{ $analytics['today_bookings'] ?? 0 }} reserved today</span>
+            <span class="text-info fw-semibold"><i class="mdi mdi-chart-line me-1"></i>Report</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Card 3: Pending Approvals --}}
+    <div class="col-sm-6 col-xl-3">
+      @if($isResidentAdmin)
+        <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all', ['status' => 'pending']) : url('residents/amenities/bookings/all?status=pending') }}" class="text-decoration-none">
+      @else
+        <div data-bs-toggle="modal" data-bs-target="#amenityAnalyticsModal" style="cursor: pointer;">
+      @endif
+        <div class="card border-0 shadow-sm rounded-4 h-100 bg-white report-stat-card">
+          <div class="card-body p-3 p-md-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="text-muted font-13 fw-semibold text-uppercase tracking-wider">Pending Approvals</span>
+              <div class="stat-icon-box {{ ($analytics['pending_bookings'] ?? 0) > 0 ? 'pulse-badge' : '' }}" style="background: #fef3c7; color: #d97706;">
+                <i class="mdi mdi-clock-alert-outline"></i>
+              </div>
+            </div>
+            <div class="d-flex align-items-baseline gap-2">
+              <h2 class="fw-bold mb-0 text-warning">{{ $analytics['pending_bookings'] ?? 0 }}</h2>
+              @if(($analytics['pending_bookings'] ?? 0) > 0)
+                <span class="badge bg-warning text-dark rounded-pill font-11 px-2 py-1">Needs Action</span>
+              @else
+                <span class="badge bg-soft-success text-success rounded-pill font-11 px-2 py-1">All Clear</span>
+              @endif
+            </div>
+            <div class="mt-2 text-muted font-12 d-flex align-items-center justify-content-between">
+              <span>Awaiting decision</span>
+              <span class="text-warning fw-semibold"><i class="mdi mdi-arrow-right me-1"></i>Review</span>
+            </div>
+          </div>
+        </div>
+      @if($isResidentAdmin)
+        </a>
+      @else
+        </div>
+      @endif
+    </div>
+
+    {{-- Card 4: Confirmed Bookings --}}
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-4 h-100 bg-white report-stat-card" data-bs-toggle="modal" data-bs-target="#amenityAnalyticsModal" style="cursor: pointer;">
+        <div class="card-body p-3 p-md-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <span class="text-muted font-13 fw-semibold text-uppercase tracking-wider">Confirmed Bookings</span>
+            <div class="stat-icon-box" style="background: #ecfdf5; color: #10b981;">
+              <i class="mdi mdi-check-decagram"></i>
+            </div>
+          </div>
+          <div class="d-flex align-items-baseline gap-2">
+            <h2 class="fw-bold mb-0 text-success">{{ $analytics['confirmed_bookings'] ?? 0 }}</h2>
+            @php
+              $totalB = $analytics['total_bookings'] ?? 0;
+              $confRate = $totalB > 0 ? round((($analytics['confirmed_bookings'] ?? 0) / $totalB) * 100) : 0;
+            @endphp
+            <span class="badge bg-success text-white rounded-pill font-11 px-2 py-1">
+              {{ $confRate }}% Rate
+            </span>
+          </div>
+          <div class="mt-2 text-muted font-12 d-flex align-items-center justify-content-between">
+            <span>Successfully reserved</span>
+            <span class="text-success fw-semibold"><i class="mdi mdi-chart-donut me-1"></i>Breakdown</span>
           </div>
         </div>
       </div>
@@ -197,6 +339,10 @@
           <i class="mdi mdi-view-grid me-1"></i> Grid View
         </button>
       </div>
+
+      <button type="button" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#amenityAnalyticsModal">
+        <i class="mdi mdi-chart-box-outline me-1"></i> Report & Analytics
+      </button>
 
       @if($isResidentAdmin)
         <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" 
@@ -474,6 +620,187 @@
         </div>
       </div>
     @endforelse
+  </div>
+  {{-- Amenity Analytics & Report Deep Dive Modal --}}
+  <div class="modal fade" id="amenityAnalyticsModal" tabindex="-1" aria-labelledby="amenityAnalyticsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        {{-- Modal Header --}}
+        <div class="modal-header text-white px-4 py-3" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%);">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-white text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="mdi mdi-chart-box-outline mdi-20px"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-white mb-0" id="amenityAnalyticsModalLabel">
+                Facilities & Booking Analytics Report
+              </h5>
+              <small class="text-white-50 font-12">Real-time usage metrics and booking distribution</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        {{-- Modal Body --}}
+        <div class="modal-body p-4 bg-light">
+          {{-- KPI Summary Grid --}}
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="bg-white p-3 rounded-3 shadow-sm border text-center h-100">
+                <div class="text-muted font-12 fw-semibold text-uppercase">Total Facilities</div>
+                <div class="fs-3 fw-bold text-dark mt-1">{{ $analytics['total_facilities'] ?? $amenities->count() }}</div>
+                <small class="badge bg-soft-success text-success rounded-pill font-11 mt-1">
+                  {{ $analytics['active_facilities'] ?? 0 }} Active
+                </small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="bg-white p-3 rounded-3 shadow-sm border text-center h-100">
+                <div class="text-muted font-12 fw-semibold text-uppercase">Total Bookings</div>
+                <div class="fs-3 fw-bold text-primary mt-1">{{ $analytics['total_bookings'] ?? 0 }}</div>
+                <small class="text-muted font-11">All time records</small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="bg-white p-3 rounded-3 shadow-sm border text-center h-100">
+                <div class="text-muted font-12 fw-semibold text-uppercase">This Month</div>
+                <div class="fs-3 fw-bold text-info mt-1">{{ $analytics['this_month_bookings'] ?? 0 }}</div>
+                <small class="text-muted font-11">Current cycle</small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="bg-white p-3 rounded-3 shadow-sm border text-center h-100">
+                <div class="text-muted font-12 fw-semibold text-uppercase">Today's Bookings</div>
+                <div class="fs-3 fw-bold text-success mt-1">{{ $analytics['today_bookings'] ?? 0 }}</div>
+                <small class="text-muted font-11">{{ \Carbon\Carbon::today()->format('d M Y') }}</small>
+              </div>
+            </div>
+          </div>
+
+          {{-- Booking Status Distribution Breakdown --}}
+          @php
+            $totB = max($analytics['total_bookings'] ?? 0, 1);
+            $confPct = round((($analytics['confirmed_bookings'] ?? 0) / $totB) * 100);
+            $pendPct = round((($analytics['pending_bookings'] ?? 0) / $totB) * 100);
+            $rejPct = round((($analytics['rejected_bookings'] ?? 0) / $totB) * 100);
+            $cancPct = round((($analytics['cancelled_bookings'] ?? 0) / $totB) * 100);
+          @endphp
+          <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold text-dark mb-0">
+                  <i class="mdi mdi-chart-donut text-success me-1"></i> Booking Status Distribution
+                </h6>
+                <small class="text-muted">{{ $analytics['total_bookings'] ?? 0 }} Total Requests</small>
+              </div>
+
+              {{-- Stacked Progress Bar --}}
+              <div class="progress mb-3 rounded-pill" style="height: 12px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ $confPct }}%;" title="Confirmed: {{ $confPct }}%"></div>
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $pendPct }}%;" title="Pending: {{ $pendPct }}%"></div>
+                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $rejPct }}%;" title="Rejected: {{ $rejPct }}%"></div>
+                <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ $cancPct }}%;" title="Cancelled: {{ $cancPct }}%"></div>
+              </div>
+
+              {{-- Legend Pills --}}
+              <div class="row g-2 text-center font-12">
+                <div class="col-6 col-md-3">
+                  <div class="p-2 rounded bg-soft-success border border-success-subtle">
+                    <div class="fw-bold text-success">{{ $analytics['confirmed_bookings'] ?? 0 }}</div>
+                    <span class="text-muted">Confirmed ({{ $confPct }}%)</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="p-2 rounded bg-soft-warning border border-warning-subtle">
+                    <div class="fw-bold text-warning">{{ $analytics['pending_bookings'] ?? 0 }}</div>
+                    <span class="text-muted">Pending ({{ $pendPct }}%)</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="p-2 rounded bg-soft-danger border border-danger-subtle">
+                    <div class="fw-bold text-danger">{{ $analytics['rejected_bookings'] ?? 0 }}</div>
+                    <span class="text-muted">Rejected ({{ $rejPct }}%)</span>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="p-2 rounded bg-soft-secondary border border-secondary-subtle">
+                    <div class="fw-bold text-secondary">{{ $analytics['cancelled_bookings'] ?? 0 }}</div>
+                    <span class="text-muted">Cancelled ({{ $cancPct }}%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {{-- Popular Facilities Leaderboard --}}
+          <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-3">
+              <h6 class="fw-bold text-dark mb-3">
+                <i class="mdi mdi-trophy-outline text-warning me-1"></i> Most Utilized Facilities
+              </h6>
+
+              @if(isset($analytics['popular_amenities']) && $analytics['popular_amenities']->isNotEmpty())
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover align-middle mb-0 font-13">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Facility</th>
+                        <th>Mode</th>
+                        <th>Slot Duration</th>
+                        <th class="text-end">Total Bookings</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($analytics['popular_amenities'] as $idx => $pop)
+                        <tr>
+                          <td class="fw-bold text-muted">{{ $idx + 1 }}</td>
+                          <td>
+                            <span class="fw-semibold text-dark">{{ $pop->name }}</span>
+                          </td>
+                          <td>
+                            @if($pop->booking_mode === 'automatic')
+                              <span class="badge bg-soft-success text-success rounded-pill font-11">Auto</span>
+                            @else
+                              <span class="badge bg-soft-warning text-warning rounded-pill font-11">Approval</span>
+                            @endif
+                          </td>
+                          <td class="text-muted">{{ $pop->slot_duration_minutes }} mins</td>
+                          <td class="text-end">
+                            <span class="badge bg-success text-white rounded-pill px-2 py-1">
+                              {{ $pop->bookings_count }} bookings
+                            </span>
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              @else
+                <div class="text-center py-3 text-muted font-13">
+                  No booking activity recorded yet.
+                </div>
+              @endif
+            </div>
+          </div>
+        </div>
+
+        {{-- Modal Footer --}}
+        <div class="modal-footer bg-white border-top px-4 py-3 d-flex justify-content-between align-items-center">
+          <small class="text-muted font-12">
+            <i class="mdi mdi-clock-outline me-1"></i> Updated in real-time
+          </small>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3 btn-sm" onclick="window.print()">
+              <i class="mdi mdi-printer me-1"></i> Print / Save Report
+            </button>
+            <button type="button" class="btn btn-success rounded-pill px-4 btn-sm fw-bold" data-bs-dismiss="modal">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

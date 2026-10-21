@@ -7,6 +7,7 @@ use App\Models\Amenity;
 use App\Models\AmenityBooking;
 use App\Models\Society;
 use App\Services\AmenityBookingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,8 +29,13 @@ class AmenityController extends Controller
 
         $query = Amenity::with('society')->withCount('bookings');
 
+        $bookingQuery = AmenityBooking::query();
+        $amenityQuery = Amenity::query();
+
         if ($request->filled('society_id')) {
             $query->where('society_id', $request->input('society_id'));
+            $bookingQuery->where('society_id', $request->input('society_id'));
+            $amenityQuery->where('society_id', $request->input('society_id'));
         }
 
         if ($request->filled('status')) {
@@ -38,7 +44,21 @@ class AmenityController extends Controller
 
         $amenities = $query->latest()->paginate(15);
 
-        return view('admin.amenities.index', compact('amenities', 'societies'));
+        // Global or filtered Analytics metrics
+        $analytics = [
+            'total_facilities' => (clone $amenityQuery)->count(),
+            'active_facilities' => (clone $amenityQuery)->where('status', 'active')->count(),
+            'total_bookings' => (clone $bookingQuery)->count(),
+            'pending_bookings' => (clone $bookingQuery)->where('status', 'pending')->count(),
+            'confirmed_bookings' => (clone $bookingQuery)->where('status', 'confirmed')->count(),
+            'rejected_bookings' => (clone $bookingQuery)->where('status', 'rejected')->count(),
+            'cancelled_bookings' => (clone $bookingQuery)->where('status', 'cancelled')->count(),
+            'today_bookings' => (clone $bookingQuery)->whereDate('booking_date', Carbon::today())->count(),
+            'this_month_bookings' => (clone $bookingQuery)->whereMonth('booking_date', Carbon::now()->month)->whereYear('booking_date', Carbon::now()->year)->count(),
+            'popular_amenities' => (clone $amenityQuery)->withCount('bookings')->orderByDesc('bookings_count')->take(5)->get(),
+        ];
+
+        return view('admin.amenities.index', compact('amenities', 'societies', 'analytics'));
     }
 
     /**

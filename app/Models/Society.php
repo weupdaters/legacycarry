@@ -10,7 +10,7 @@ class Society extends Model
 
     public function residents()
     {
-        return $this->hasMany(Resident::class);
+        return $this->hasMany(ResidentAssignment::class);
     }
 
     public function flats()
