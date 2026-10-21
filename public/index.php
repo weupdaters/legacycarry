@@ -13,6 +13,12 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
+// Auto-purge stale compiled route cache if present
+$cachedRoutesPath = __DIR__ . '/../bootstrap/cache/routes-v7.php';
+if (file_exists($cachedRoutesPath)) {
+    @unlink($cachedRoutesPath);
+}
+
 // Bootstrap Laravel and handle the request...
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
