@@ -15,7 +15,7 @@
           </div>
           @if(has_permission('poll_create'))
             <div>
-              <a href="{{ route('member.polls.create') }}" class="btn btn-white text-primary fw-bold rounded-pill px-4">
+              <a href="{{ Route::has('member.polls.create') ? route('member.polls.create') : url('residents/polls/create') }}" class="btn btn-white text-primary fw-bold rounded-pill px-4">
                 <i class="mdi mdi-plus me-1"></i> Create Poll
               </a>
             </div>
@@ -80,17 +80,17 @@
               @if(has_permission('poll_edit') || has_permission('poll_delete') || has_permission('poll_close') || has_permission('poll_results'))
                 <div class="d-flex flex-wrap gap-1 pt-2 border-top">
                   @if(has_permission('poll_results') || has_permission('poll_edit'))
-                    <a href="{{ route('member.polls.results', $poll->id) }}" class="btn btn-outline-info btn-sm rounded-pill flex-grow-1" title="Analytics & Results">
+                    <a href="{{ Route::has('member.polls.results') ? route('member.polls.results', $poll->id) : url('residents/polls/' . $poll->id . '/results') }}" class="btn btn-outline-info btn-sm rounded-pill flex-grow-1" title="Analytics & Results">
                       <i class="mdi mdi-chart-bar me-1"></i> Results
                     </a>
                   @endif
                   @if(has_permission('poll_edit'))
-                    <a href="{{ route('member.polls.edit', $poll->id) }}" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1" title="Edit Poll">
+                    <a href="{{ Route::has('member.polls.edit') ? route('member.polls.edit', $poll->id) : url('residents/polls/' . $poll->id . '/edit') }}" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1" title="Edit Poll">
                       <i class="mdi mdi-pencil me-1"></i> Edit
                     </a>
                   @endif
                   @if(has_permission('poll_close') || has_permission('poll_edit'))
-                    <form method="POST" action="{{ route('member.polls.close', $poll->id) }}" class="d-inline" onsubmit="return confirm('Close this poll early? No more votes can be cast.');">
+                    <form method="POST" action="{{ Route::has('member.polls.close') ? route('member.polls.close', $poll->id) : url('residents/polls/' . $poll->id . '/close') }}" class="d-inline" onsubmit="return confirm('Close this poll early? No more votes can be cast.');">
                       @csrf
                       <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill" title="Close Poll">
                         <i class="mdi mdi-lock-outline"></i> Close
@@ -98,7 +98,7 @@
                     </form>
                   @endif
                   @if(has_permission('poll_delete'))
-                    <form method="POST" action="{{ route('member.polls.destroy', $poll->id) }}" class="d-inline" onsubmit="return confirm('Delete this poll and all its votes?');">
+                    <form method="POST" action="{{ Route::has('member.polls.destroy') ? route('member.polls.destroy', $poll->id) : url('residents/polls/' . $poll->id) }}" class="d-inline" onsubmit="return confirm('Delete this poll and all its votes?');">
                       @csrf
                       @method('DELETE')
                       <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" title="Delete Poll">
@@ -158,16 +158,16 @@
                 </td>
                 <td class="text-end pe-4">
                   <div class="d-flex justify-content-end gap-1">
-                    <a href="{{ route('member.polls.results', $poll->id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <a href="{{ Route::has('member.polls.results') ? route('member.polls.results', $poll->id) : url('residents/polls/' . $poll->id . '/results') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                       <i class="mdi mdi-chart-bar me-1"></i> Results
                     </a>
                     @if(has_permission('poll_edit'))
-                      <a href="{{ route('member.polls.edit', $poll->id) }}" class="btn btn-outline-primary btn-sm rounded-pill" title="Edit">
+                      <a href="{{ Route::has('member.polls.edit') ? route('member.polls.edit', $poll->id) : url('residents/polls/' . $poll->id . '/edit') }}" class="btn btn-outline-primary btn-sm rounded-pill" title="Edit">
                         <i class="mdi mdi-pencil"></i>
                       </a>
                     @endif
                     @if(has_permission('poll_delete'))
-                      <form method="POST" action="{{ route('member.polls.destroy', $poll->id) }}" class="d-inline" onsubmit="return confirm('Delete this poll?');">
+                      <form method="POST" action="{{ Route::has('member.polls.destroy') ? route('member.polls.destroy', $poll->id) : url('residents/polls/' . $poll->id) }}" class="d-inline" onsubmit="return confirm('Delete this poll?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" title="Delete">

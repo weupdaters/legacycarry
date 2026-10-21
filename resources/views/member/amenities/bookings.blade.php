@@ -11,11 +11,11 @@
       <p class="text-muted mb-0">Review, approve, or reject amenity booking requests submitted by residents in your society.</p>
     </div>
     <div class="d-flex gap-2">
-      <a href="{{ route('member.amenities.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+      <a href="{{ Route::has('member.amenities.index') ? route('member.amenities.index') : url('residents/amenities') }}" class="btn btn-outline-secondary rounded-pill px-4">
         <i class="mdi mdi-arrow-left me-1"></i> Back to Amenities
       </a>
       @if(has_permission('amenity_create'))
-        <a href="{{ route('member.amenities.create') }}" class="btn btn-success rounded-pill px-4">
+        <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-success rounded-pill px-4">
           <i class="mdi mdi-plus me-1"></i> Add Amenity
         </a>
       @endif
@@ -39,7 +39,7 @@
   {{-- Filter Card --}}
   <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
-      <form method="GET" action="{{ route('member.amenities.bookings.all') }}" class="row g-3 align-items-end">
+      <form method="GET" action="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all') : url('residents/amenities/bookings/all') }}" class="row g-3 align-items-end">
         <div class="col-md-4">
           <label class="form-label small fw-semibold text-muted">Filter by Amenity</label>
           <select name="amenity_id" class="form-select rounded-3">
@@ -72,7 +72,7 @@
           <button type="submit" class="btn btn-primary rounded-3 w-100">
             <i class="mdi mdi-filter me-1"></i> Filter
           </button>
-          <a href="{{ route('member.amenities.bookings.all') }}" class="btn btn-light rounded-3" title="Clear Filters">
+          <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all') : url('residents/amenities/bookings/all') }}" class="btn btn-light rounded-3" title="Clear Filters">
             <i class="mdi mdi-refresh"></i>
           </a>
         </div>
@@ -141,7 +141,7 @@
                 </td>
                 <td class="text-end pe-4">
                   @if($booking->status === 'pending')
-                    <form method="POST" action="{{ route('member.amenities.bookings.approve', $booking->id) }}" class="d-inline" onsubmit="return confirm('Approve this amenity booking?');">
+                    <form method="POST" action="{{ Route::has('member.amenities.bookings.approve') ? route('member.amenities.bookings.approve', $booking->id) : url('residents/amenities/bookings/' . $booking->id . '/approve') }}" class="d-inline" onsubmit="return confirm('Approve this amenity booking?');">
                       @csrf
                       <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 me-1" title="Approve">
                         <i class="mdi mdi-check"></i> Approve
@@ -156,7 +156,7 @@
                     <div class="modal fade text-start" id="rejectModal{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content rounded-4 border-0 shadow">
-                          <form method="POST" action="{{ route('member.amenities.bookings.reject', $booking->id) }}">
+                          <form method="POST" action="{{ Route::has('member.amenities.bookings.reject') ? route('member.amenities.bookings.reject', $booking->id) : url('residents/amenities/bookings/' . $booking->id . '/reject') }}">
                             @csrf
                             <div class="modal-header border-0 pb-0">
                               <h5 class="modal-title fw-bold text-dark">Reject Booking #{{ $booking->id }}</h5>

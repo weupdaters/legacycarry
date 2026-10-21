@@ -20,7 +20,7 @@
             </p>
           </div>
           <div>
-            <a href="{{ route('member.tickets.create') }}" class="btn fw-bold rounded-pill px-4 shadow-sm" style="background: #ffffff !important; color: #0284c7 !important;">
+            <a href="{{ Route::has('member.tickets.create') ? route('member.tickets.create') : url('residents/tickets/create') }}" class="btn fw-bold rounded-pill px-4 shadow-sm" style="background: #ffffff !important; color: #0284c7 !important;">
               <i class="mdi mdi-plus-circle me-1"></i> Raise New Ticket
             </a>
           </div>
@@ -47,11 +47,11 @@
   @if($isResidentAdmin)
     <div class="card border-0 shadow-sm rounded-4 mb-3">
       <div class="card-body p-2 d-flex flex-wrap gap-2">
-        <a href="{{ route('member.tickets.index', ['view' => 'society', 'status' => request('status')]) }}" class="btn {{ $activeTab === 'society' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
+        <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => 'society', 'status' => request('status')]) : url('residents/tickets?view=society&status=' . request('status')) }}" class="btn {{ $activeTab === 'society' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
           <i class="mdi mdi-domain me-1"></i> All Society Complaints
           <span class="badge {{ $activeTab === 'society' ? 'bg-white text-primary' : 'bg-secondary text-white' }} ms-1 rounded-pill">{{ $societyTicketsCount }}</span>
         </a>
-        <a href="{{ route('member.tickets.index', ['view' => 'my', 'status' => request('status')]) }}" class="btn {{ $activeTab === 'my' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
+        <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => 'my', 'status' => request('status')]) : url('residents/tickets?view=my&status=' . request('status')) }}" class="btn {{ $activeTab === 'my' ? 'btn-primary shadow-sm' : 'btn-light' }} rounded-pill px-4 fw-semibold">
           <i class="mdi mdi-account me-1"></i> My Complaints
           <span class="badge {{ $activeTab === 'my' ? 'bg-white text-primary' : 'bg-secondary text-white' }} ms-1 rounded-pill">{{ $myTicketsCount }}</span>
         </a>
@@ -61,19 +61,19 @@
 
   {{-- Filter Tabs --}}
   <div class="d-flex flex-wrap gap-2 mb-3">
-    <a href="{{ route('member.tickets.index', ['view' => $activeTab]) }}" class="btn btn-sm {{ !request('status') ? 'btn-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => $activeTab]) : url('residents/tickets?view=' . $activeTab) }}" class="btn btn-sm {{ !request('status') ? 'btn-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
       All Statuses
     </a>
-    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'open']) }}" class="btn btn-sm {{ request('status') == 'open' ? 'btn-warning text-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => $activeTab, 'status' => 'open']) : url('residents/tickets?view=' . $activeTab . '&status=open') }}" class="btn btn-sm {{ request('status') == 'open' ? 'btn-warning text-dark' : 'btn-outline-secondary' }} rounded-pill px-3">
       Open
     </a>
-    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'in_progress']) }}" class="btn btn-sm {{ request('status') == 'in_progress' ? 'btn-info text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => $activeTab, 'status' => 'in_progress']) : url('residents/tickets?view=' . $activeTab . '&status=in_progress') }}" class="btn btn-sm {{ request('status') == 'in_progress' ? 'btn-info text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
       In Progress
     </a>
-    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'resolved']) }}" class="btn btn-sm {{ request('status') == 'resolved' ? 'btn-success' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => $activeTab, 'status' => 'resolved']) : url('residents/tickets?view=' . $activeTab . '&status=resolved') }}" class="btn btn-sm {{ request('status') == 'resolved' ? 'btn-success' : 'btn-outline-secondary' }} rounded-pill px-3">
       Resolved
     </a>
-    <a href="{{ route('member.tickets.index', ['view' => $activeTab, 'status' => 'closed']) }}" class="btn btn-sm {{ request('status') == 'closed' ? 'btn-secondary text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
+    <a href="{{ Route::has('member.tickets.index') ? route('member.tickets.index', ['view' => $activeTab, 'status' => 'closed']) : url('residents/tickets?view=' . $activeTab . '&status=closed') }}" class="btn btn-sm {{ request('status') == 'closed' ? 'btn-secondary text-white' : 'btn-outline-secondary' }} rounded-pill px-3">
       Closed
     </a>
   </div>
@@ -142,7 +142,7 @@
                 </td>
                 <td><small class="text-muted">{{ $ticket->created_at->format('d M, Y H:i') }}</small></td>
                 <td class="text-end pe-4">
-                  <a href="{{ route('member.tickets.show', $ticket->id) }}" class="btn {{ $isResidentAdmin && $activeTab === 'society' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm rounded-pill px-3">
+                  <a href="{{ Route::has('member.tickets.show') ? route('member.tickets.show', $ticket->id) : url('residents/tickets/' . $ticket->id) }}" class="btn {{ $isResidentAdmin && $activeTab === 'society' ? 'btn-primary' : 'btn-outline-primary' }} btn-sm rounded-pill px-3">
                     <i class="mdi {{ $isResidentAdmin && $activeTab === 'society' ? 'mdi-tune' : 'mdi-forum-outline' }} me-1"></i>
                     {{ $isResidentAdmin && $activeTab === 'society' ? 'Manage & Chat' : 'View & Chat' }}
                   </a>

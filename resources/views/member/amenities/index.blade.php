@@ -22,14 +22,14 @@
                 || auth()->user()->role === 'super_admin';
           @endphp
           <div class="d-flex flex-wrap gap-2">
-            <a href="{{ route('member.amenities.my-bookings') }}" class="btn fw-bold rounded-pill px-3 shadow-sm" style="background: #ffffff !important; color: #059669 !important;">
+            <a href="{{ Route::has('member.amenities.my-bookings') ? route('member.amenities.my-bookings') : url('residents/amenities/my-bookings') }}" class="btn fw-bold rounded-pill px-3 shadow-sm" style="background: #ffffff !important; color: #059669 !important;">
               <i class="mdi mdi-history me-1"></i> My Bookings
             </a>
             @if($isResidentAdmin)
-              <a href="{{ route('member.amenities.bookings.all') }}" class="btn btn-outline-light fw-bold rounded-pill px-3">
+              <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all') : url('residents/amenities/bookings/all') }}" class="btn btn-outline-light fw-bold rounded-pill px-3">
                 <i class="mdi mdi-clipboard-list-outline me-1"></i> Manage Bookings
               </a>
-              <a href="{{ route('member.amenities.create') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-3">
+              <a href="{{ Route::has('member.amenities.create') ? route('member.amenities.create') : url('residents/amenities/create') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-3">
                 <i class="mdi mdi-plus me-1"></i> Add Amenity
               </a>
             @endif
@@ -152,18 +152,18 @@
             </div>
 
             <div class="mt-auto d-flex flex-column gap-2">
-              <a href="{{ route('member.amenities.book', $amenity->id) }}" class="btn btn-success w-100 rounded-pill fw-semibold py-2">
+              <a href="{{ Route::has('member.amenities.book') ? route('member.amenities.book', $amenity->id) : url('residents/amenities/' . $amenity->id . '/book') }}" class="btn btn-success w-100 rounded-pill fw-semibold py-2">
                 <i class="mdi mdi-calendar-plus me-1"></i> Book Slot
               </a>
               @if($isResidentAdmin)
                 <div class="d-flex flex-wrap gap-1 pt-2 border-top">
-                  <a href="{{ route('member.amenities.bookings.all', ['amenity_id' => $amenity->id]) }}" class="btn btn-outline-info btn-sm rounded-pill flex-grow-1" title="View Bookings for this Amenity">
+                  <a href="{{ Route::has('member.amenities.bookings.all') ? route('member.amenities.bookings.all', ['amenity_id' => $amenity->id]) : url('residents/amenities/bookings/all?amenity_id=' . $amenity->id) }}" class="btn btn-outline-info btn-sm rounded-pill flex-grow-1" title="View Bookings for this Amenity">
                     <i class="mdi mdi-clipboard-text-outline me-1"></i> Bookings
                   </a>
-                  <a href="{{ route('member.amenities.edit', $amenity->id) }}" class="btn btn-outline-primary btn-sm rounded-pill" title="Edit">
+                  <a href="{{ Route::has('member.amenities.edit') ? route('member.amenities.edit', $amenity->id) : url('residents/amenities/' . $amenity->id . '/edit') }}" class="btn btn-outline-primary btn-sm rounded-pill" title="Edit">
                     <i class="mdi mdi-pencil"></i>
                   </a>
-                  <form method="POST" action="{{ route('member.amenities.destroy', $amenity->id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this amenity?');">
+                  <form method="POST" action="{{ Route::has('member.amenities.destroy') ? route('member.amenities.destroy', $amenity->id) : url('residents/amenities/' . $amenity->id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this amenity?');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill" title="Delete">
