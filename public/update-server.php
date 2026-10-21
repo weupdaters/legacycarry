@@ -22,8 +22,17 @@ if (!empty($gitOutput)) {
     echo "No output from git (shell_exec might be restricted, but files may already be synced).\n\n";
 }
 
-// 2. Direct File Deletion of Stale Cache
-echo "[2/4] Deleting compiled cache files...\n";
+// 2. Direct File Deletion of Stale Cache & Public Shortcut
+echo "[2/4] Deleting compiled cache files and public shortcut...\n";
+
+// Remove public/storage symlink shortcut if present
+$publicStorage = $baseDir . '/public/storage';
+if (is_link($publicStorage) || file_exists($publicStorage)) {
+    if (@unlink($publicStorage)) {
+        echo " - Removed public shortcut: public/storage\n";
+    }
+}
+
 $cacheFiles = [
     $baseDir . '/bootstrap/cache/routes-v7.php',
     $baseDir . '/bootstrap/cache/routes.php',
