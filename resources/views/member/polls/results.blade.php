@@ -13,7 +13,7 @@
       <p class="text-muted mb-0">{{ $poll->title }}</p>
     </div>
     <div class="d-flex gap-2">
-      <a href="{{ route('member.polls.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+      <a href="{{ Route::has('member.polls.index') ? route('member.polls.index') : url('residents/polls') }}" class="btn btn-outline-secondary rounded-pill px-4">
         <i class="mdi mdi-arrow-left me-1"></i> Back to Polls
       </a>
     </div>

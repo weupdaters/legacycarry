@@ -196,13 +196,13 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::get('/polls', [\App\Http\Controllers\Member\PollController::class, 'index'])->name('polls.index');
     Route::get('/polls/create', [\App\Http\Controllers\Member\PollController::class, 'create'])->name('polls.create');
     Route::post('/polls', [\App\Http\Controllers\Member\PollController::class, 'store'])->name('polls.store');
-    Route::get('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'show'])->name('polls.show');
-    Route::get('/polls/{id}/edit', [\App\Http\Controllers\Member\PollController::class, 'edit'])->name('polls.edit');
-    Route::put('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'update'])->name('polls.update');
-    Route::delete('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'destroy'])->name('polls.destroy');
-    Route::post('/polls/{id}/close', [\App\Http\Controllers\Member\PollController::class, 'close'])->name('polls.close');
-    Route::get('/polls/{id}/results', [\App\Http\Controllers\Member\PollController::class, 'results'])->name('polls.results');
-    Route::post('/polls/{id}/vote', [\App\Http\Controllers\Member\PollController::class, 'vote'])->name('polls.vote');
+    Route::get('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'show'])->name('polls.show')->whereNumber('id');
+    Route::get('/polls/{id}/edit', [\App\Http\Controllers\Member\PollController::class, 'edit'])->name('polls.edit')->whereNumber('id');
+    Route::put('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'update'])->name('polls.update')->whereNumber('id');
+    Route::delete('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'destroy'])->name('polls.destroy')->whereNumber('id');
+    Route::post('/polls/{id}/close', [\App\Http\Controllers\Member\PollController::class, 'close'])->name('polls.close')->whereNumber('id');
+    Route::get('/polls/{id}/results', [\App\Http\Controllers\Member\PollController::class, 'results'])->name('polls.results')->whereNumber('id');
+    Route::post('/polls/{id}/vote', [\App\Http\Controllers\Member\PollController::class, 'vote'])->name('polls.vote')->whereNumber('id');
 
     // Tickets & Complaints
     Route::get('/tickets', [\App\Http\Controllers\Member\TicketController::class, 'index'])->name('tickets.index');

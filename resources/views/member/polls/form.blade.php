@@ -11,7 +11,7 @@
       </h3>
       <p class="text-muted mb-0">Create polls to gather votes and opinions from residents in your society.</p>
     </div>
-    <a href="{{ route('member.polls.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+    <a href="{{ Route::has('member.polls.index') ? route('member.polls.index') : url('residents/polls') }}" class="btn btn-outline-secondary rounded-pill px-4">
       <i class="mdi mdi-arrow-left me-1"></i> Back to Polls
     </a>
   </div>
@@ -37,7 +37,7 @@
 
   <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
-      <form method="POST" action="{{ isset($poll) ? route('member.polls.update', $poll->id) : route('member.polls.store') }}">
+      <form method="POST" action="{{ isset($poll) ? (Route::has('member.polls.update') ? route('member.polls.update', $poll->id) : url('residents/polls/' . $poll->id)) : (Route::has('member.polls.store') ? route('member.polls.store') : url('residents/polls')) }}">
         @csrf
         @if(isset($poll))
           @method('PUT')
@@ -148,7 +148,7 @@
           </div>
 
           <div class="col-12 text-end pt-3 border-top">
-            <a href="{{ route('member.polls.index') }}" class="btn btn-light rounded-pill px-4 me-2">Cancel</a>
+            <a href="{{ Route::has('member.polls.index') ? route('member.polls.index') : url('residents/polls') }}" class="btn btn-light rounded-pill px-4 me-2">Cancel</a>
             <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
               <i class="mdi mdi-check me-1"></i> {{ isset($poll) ? 'Update Poll' : 'Publish Poll' }}
             </button>

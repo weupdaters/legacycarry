@@ -19,6 +19,24 @@ class PollController extends Controller
     }
 
     /**
+     * Check if user is Resident Admin or Super Admin.
+     */
+    protected function isResidentAdmin(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        return $user->role === 'super_admin'
+            || has_permission('poll_create')
+            || has_permission('poll_edit')
+            || has_permission('poll_delete')
+            || has_permission('poll_close')
+            || has_permission('resident_index');
+    }
+
+    /**
      * List active and closed polls for the resident's society.
      */
     public function index(Request $request)
@@ -55,7 +73,9 @@ class PollController extends Controller
             ->latest('end_date')
             ->paginate(10);
 
-        return view('member.polls.index', compact('activePolls', 'closedPolls'));
+        $isResidentAdmin = $this->isResidentAdmin();
+
+        return view('member.polls.index', compact('activePolls', 'closedPolls', 'isResidentAdmin'));
     }
 
     /**
@@ -109,7 +129,7 @@ class PollController extends Controller
      */
     public function create()
     {
-        abort_unless(has_permission('poll_create'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to create polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -125,7 +145,7 @@ class PollController extends Controller
      */
     public function store(Request $request)
     {
-        abort_unless(has_permission('poll_create'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to create polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -166,7 +186,7 @@ class PollController extends Controller
      */
     public function edit($id)
     {
-        abort_unless(has_permission('poll_edit'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to edit polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -184,7 +204,7 @@ class PollController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_unless(has_permission('poll_edit'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to update polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -227,7 +247,7 @@ class PollController extends Controller
      */
     public function destroy($id)
     {
-        abort_unless(has_permission('poll_delete'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to delete polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -243,7 +263,7 @@ class PollController extends Controller
      */
     public function close($id)
     {
-        abort_unless(has_permission('poll_close') || has_permission('poll_edit'), 403);
+        abort_unless($this->isResidentAdmin(), 403, 'Unauthorized to close polls.');
 
         $user = auth()->user();
         $societyId = AmenityBookingService::getUserSocietyId($user);
@@ -272,7 +292,7 @@ class PollController extends Controller
             ->firstOrFail();
 
         // Check if user is allowed to view results
-        if (!$poll->canViewResults($user->id) && !has_permission('poll_results') && !has_permission('poll_edit')) {
+        if (!$poll->canViewResults($user->id) && !$this->isResidentAdmin() && !has_permission('poll_results')) {
             abort(403, 'Poll results are not visible yet.');
         }
 

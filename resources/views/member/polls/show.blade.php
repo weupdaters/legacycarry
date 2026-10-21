@@ -9,7 +9,7 @@
       <h3 class="fw-bold text-dark mb-1">Society Poll</h3>
       <p class="text-muted small mb-0">{{ $poll->society?->name }}</p>
     </div>
-    <a href="{{ route('member.polls.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+    <a href="{{ Route::has('member.polls.index') ? route('member.polls.index') : url('residents/polls') }}" class="btn btn-outline-secondary rounded-pill px-4">
       <i class="mdi mdi-arrow-left me-1"></i> Back to Polls
     </a>
   </div>
