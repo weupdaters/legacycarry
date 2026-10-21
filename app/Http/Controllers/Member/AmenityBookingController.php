@@ -8,6 +8,7 @@ use App\Models\AmenityBooking;
 use App\Services\AmenityBookingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AmenityBookingController extends Controller
 {
@@ -150,6 +151,219 @@ class AmenityBookingController extends Controller
         try {
             $this->bookingService->cancelBooking($booking, $user, $request->input('reason'));
             return back()->with('success', 'Booking cancelled successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Show create amenity form for Resident Admin.
+     */
+    public function create()
+    {
+        abort_unless(has_permission('amenity_create'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+        if (!$societyId) {
+            return back()->with('error', 'You are not assigned to any society.');
+        }
+
+        $daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        return view('member.amenities.form', compact('daysOfWeek', 'societyId'));
+    }
+
+    /**
+     * Store new amenity created by Resident Admin.
+     */
+    public function store(Request $request)
+    {
+        abort_unless(has_permission('amenity_create'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+        if (!$societyId) {
+            return back()->with('error', 'You are not assigned to any society.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'status' => 'required|in:active,inactive',
+            'booking_mode' => 'required|in:automatic,admin_approval',
+            'opening_time' => 'required',
+            'closing_time' => 'required',
+            'available_days' => 'nullable|array',
+            'slot_duration_minutes' => 'required|integer|min:15|max:480',
+            'max_booking_duration_minutes' => 'required|integer|min:15|max:1440',
+            'advance_booking_days' => 'required|integer|min:1|max:365',
+        ]);
+
+        $data = $request->except(['_token', 'image']);
+        $data['society_id'] = $societyId;
+        $data['fee'] = 0;
+        $data['available_days'] = $request->input('available_days', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('amenities', 'public');
+        }
+
+        Amenity::create($data);
+
+        return redirect()->route('member.amenities.index')->with('success', 'Amenity created successfully.');
+    }
+
+    /**
+     * Show edit amenity form for Resident Admin.
+     */
+    public function edit($id)
+    {
+        abort_unless(has_permission('amenity_edit'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $amenity = Amenity::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+        $daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        return view('member.amenities.form', compact('amenity', 'daysOfWeek', 'societyId'));
+    }
+
+    /**
+     * Update amenity for Resident Admin.
+     */
+    public function update(Request $request, $id)
+    {
+        abort_unless(has_permission('amenity_edit'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $amenity = Amenity::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        $request->validate([
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'status' => 'required|in:active,inactive',
+            'booking_mode' => 'required|in:automatic,admin_approval',
+            'opening_time' => 'required',
+            'closing_time' => 'required',
+            'available_days' => 'nullable|array',
+            'slot_duration_minutes' => 'required|integer|min:15|max:480',
+            'max_booking_duration_minutes' => 'required|integer|min:15|max:1440',
+            'advance_booking_days' => 'required|integer|min:1|max:365',
+        ]);
+
+        $data = $request->except(['_token', '_method', 'image']);
+        $data['fee'] = 0;
+        $data['available_days'] = $request->input('available_days', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
+
+        if ($request->hasFile('image')) {
+            if ($amenity->image) {
+                Storage::disk('public')->delete($amenity->image);
+            }
+            $data['image'] = $request->file('image')->store('amenities', 'public');
+        }
+
+        $amenity->update($data);
+
+        return redirect()->route('member.amenities.index')->with('success', 'Amenity updated successfully.');
+    }
+
+    /**
+     * Delete amenity for Resident Admin.
+     */
+    public function destroy($id)
+    {
+        abort_unless(has_permission('amenity_delete'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $amenity = Amenity::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        if ($amenity->image) {
+            Storage::disk('public')->delete($amenity->image);
+        }
+
+        $amenity->delete();
+
+        return redirect()->route('member.amenities.index')->with('success', 'Amenity deleted successfully.');
+    }
+
+    /**
+     * Manage all bookings of the society for Resident Admin.
+     */
+    public function allBookings(Request $request)
+    {
+        abort_unless(has_permission('amenity_booking_index') || has_permission('amenity_booking_approve'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $amenities = Amenity::where('society_id', $societyId)->orderBy('name')->get();
+
+        $query = AmenityBooking::with(['amenity', 'user'])
+            ->where('society_id', $societyId)
+            ->latest('booking_date');
+
+        if ($request->filled('amenity_id')) {
+            $query->where('amenity_id', $request->input('amenity_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('date')) {
+            $query->where('booking_date', $request->input('date'));
+        }
+
+        $bookings = $query->paginate(20);
+
+        return view('member.amenities.bookings', compact('bookings', 'amenities', 'societyId'));
+    }
+
+    /**
+     * Approve pending booking (Resident Admin).
+     */
+    public function approveBooking(Request $request, $id)
+    {
+        abort_unless(has_permission('amenity_booking_approve'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $booking = AmenityBooking::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        try {
+            $this->bookingService->approveBooking($booking, $user);
+            return back()->with('success', 'Booking approved successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject pending booking (Resident Admin).
+     */
+    public function rejectBooking(Request $request, $id)
+    {
+        abort_unless(has_permission('amenity_booking_approve'), 403);
+
+        $request->validate(['reason' => 'required|string|max:500']);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $booking = AmenityBooking::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        try {
+            $this->bookingService->rejectBooking($booking, $user, $request->input('reason'));
+            return back()->with('success', 'Booking rejected.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }

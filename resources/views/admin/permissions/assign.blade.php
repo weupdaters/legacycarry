@@ -44,11 +44,13 @@
                 <table class="table table-striped align-middle">
                   <thead>
                     <tr>
-                      <th style="width: 220px;">Module</th>
-                      <th class="text-center">Show</th>
-                      <th class="text-center">Index</th>
-                      <th class="text-center">Create</th>
-                      <th class="text-center">Edit</th>
+                      <th style="width: 200px;">Module</th>
+                      <th class="text-center" style="width: 90px;">Show</th>
+                      <th class="text-center" style="width: 90px;">Index</th>
+                      <th class="text-center" style="width: 90px;">Create</th>
+                      <th class="text-center" style="width: 90px;">Edit</th>
+                      <th class="text-center" style="width: 90px;">Delete</th>
+                      <th class="text-start ps-3">Additional Permissions</th>
                     </tr>
                   </thead>
 
@@ -61,12 +63,12 @@
                             <input class="form-check-input module-checkbox" type="checkbox"
                               id="module_{{ $module }}">
                             <label class="form-check-label fw-semibold" for="module_{{ $module }}">
-                              {{ ucfirst($module) }}
+                              {{ ucwords(str_replace('_', ' ', $module)) }}
                             </label>
                           </div>
                         </td>
 
-                        <!-- Actions -->
+                        <!-- Standard Actions -->
                         @foreach (['show', 'index', 'create', 'edit', 'delete'] as $action)
                           @php
                             $perm = $modulePermissions->where('name', $action)->first();
@@ -74,10 +76,40 @@
                           <td class="text-center">
                             @if ($perm)
                               <input type="checkbox" name="permissions[]" value="{{ $perm->id }}"
-                                class="form-check-input child-checkbox" @if (in_array($perm->id, $userPermissions)) checked @endif>
+                                class="form-check-input child-checkbox" 
+                                title="{{ $perm->label ?? ucfirst($action) }}"
+                                @if (in_array($perm->id, $userPermissions)) checked @endif>
+                            @else
+                              <span class="text-muted" style="opacity: 0.25;">-</span>
                             @endif
                           </td>
                         @endforeach
+
+                        <!-- Additional Module Permissions -->
+                        @php
+                          $extraPermissions = $modulePermissions->filter(function($p) {
+                              return !in_array($p->name, ['show', 'index', 'create', 'edit', 'delete']);
+                          });
+                        @endphp
+                        <td class="ps-3">
+                          @if ($extraPermissions->isNotEmpty())
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                              @foreach ($extraPermissions as $extra)
+                                <div class="form-check form-check-inline m-0 bg-white border rounded px-2 py-1 shadow-sm">
+                                  <input type="checkbox" name="permissions[]" value="{{ $extra->id }}"
+                                    id="perm_{{ $extra->id }}"
+                                    class="form-check-input child-checkbox me-1"
+                                    @if (in_array($extra->id, $userPermissions)) checked @endif>
+                                  <label class="form-check-label small" for="perm_{{ $extra->id }}" style="cursor: pointer; font-size: 11px;">
+                                    {{ $extra->label ?? ucwords(str_replace('_', ' ', $extra->name)) }}
+                                  </label>
+                                </div>
+                              @endforeach
+                            </div>
+                          @else
+                            <span class="text-muted" style="opacity: 0.25;">-</span>
+                          @endif
+                        </td>
                       </tr>
                     @endforeach
                   </tbody>
@@ -93,8 +125,26 @@
 
   </div>
 
-  {{-- JS (LOGIC UNCHANGED) --}}
+  {{-- JS --}}
   <script>
+    function updateParentCheckboxes() {
+      document.querySelectorAll('tbody tr').forEach(row => {
+        let parent = row.querySelector('.module-checkbox');
+        let children = row.querySelectorAll('.child-checkbox');
+        if (parent && children.length > 0) {
+          parent.checked = [...children].every(cb => cb.checked);
+        }
+      });
+      let allCheckboxes = document.querySelectorAll('.child-checkbox');
+      let checkAll = document.getElementById('checkAll');
+      if (checkAll && allCheckboxes.length > 0) {
+        checkAll.checked = [...allCheckboxes].every(cb => cb.checked);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', updateParentCheckboxes);
+    updateParentCheckboxes();
+
     document.getElementById('checkAll').addEventListener('change', function() {
       document.querySelectorAll('input[type=checkbox]').forEach(cb => {
         cb.checked = this.checked;
@@ -107,6 +157,7 @@
         row.querySelectorAll('.child-checkbox').forEach(ch => {
           ch.checked = this.checked;
         });
+        updateParentCheckboxes();
       });
     });
 
@@ -114,8 +165,14 @@
       child.addEventListener('change', function() {
         let row = this.closest('tr');
         let parent = row.querySelector('.module-checkbox');
-        parent.checked = [...row.querySelectorAll('.child-checkbox')]
-          .every(cb => cb.checked);
+        if (parent) {
+          parent.checked = [...row.querySelectorAll('.child-checkbox')].every(cb => cb.checked);
+        }
+        let allCheckboxes = document.querySelectorAll('.child-checkbox');
+        let checkAll = document.getElementById('checkAll');
+        if (checkAll && allCheckboxes.length > 0) {
+          checkAll.checked = [...allCheckboxes].every(cb => cb.checked);
+        }
       });
     });
   </script>

@@ -103,4 +103,181 @@ class PollController extends Controller
             return back()->with('error', 'Failed to submit vote. Please try again.');
         }
     }
+
+    /**
+     * Show create poll form for Resident Admin.
+     */
+    public function create()
+    {
+        abort_unless(has_permission('poll_create'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+        if (!$societyId) {
+            return back()->with('error', 'You are not assigned to any society.');
+        }
+
+        return view('member.polls.form', compact('societyId'));
+    }
+
+    /**
+     * Store new poll for Resident Admin.
+     */
+    public function store(Request $request)
+    {
+        abort_unless(has_permission('poll_create'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+        if (!$societyId) {
+            return back()->with('error', 'You are not assigned to any society.');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:draft,scheduled,active,closed',
+            'results_visibility' => 'required|in:always,after_vote,after_close',
+            'target_audience' => 'required|in:all,owners,tenants',
+            'options' => 'required|array|min:2|max:4',
+            'options.*' => 'required|string|max:255',
+        ]);
+
+        try {
+            $data = $request->only(['title', 'description', 'start_date', 'end_date', 'status', 'results_visibility', 'target_audience']);
+            $data['society_id'] = $societyId;
+
+            $this->pollService->createPoll(
+                $user,
+                $data,
+                $request->input('options')
+            );
+
+            return redirect()->route('member.polls.index')->with('success', 'Poll created successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Show edit poll form for Resident Admin.
+     */
+    public function edit($id)
+    {
+        abort_unless(has_permission('poll_edit'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $poll = Poll::with('options')->withCount('votes')
+            ->where('id', $id)
+            ->where('society_id', $societyId)
+            ->firstOrFail();
+
+        return view('member.polls.form', compact('poll', 'societyId'));
+    }
+
+    /**
+     * Update poll for Resident Admin.
+     */
+    public function update(Request $request, $id)
+    {
+        abort_unless(has_permission('poll_edit'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $poll = Poll::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        $rules = [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:draft,scheduled,active,closed',
+            'results_visibility' => 'required|in:always,after_vote,after_close',
+            'target_audience' => 'required|in:all,owners,tenants',
+        ];
+
+        // Options can only be updated if no votes have been cast yet
+        if (!$poll->votes()->exists()) {
+            $rules['options'] = 'required|array|min:2|max:4';
+            $rules['options.*'] = 'required|string|max:255';
+        }
+
+        $request->validate($rules);
+
+        try {
+            $this->pollService->updatePoll(
+                $poll,
+                $request->only(['title', 'description', 'start_date', 'end_date', 'status', 'results_visibility', 'target_audience']),
+                $poll->votes()->exists() ? null : $request->input('options')
+            );
+
+            return redirect()->route('member.polls.index')->with('success', 'Poll updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete poll for Resident Admin.
+     */
+    public function destroy($id)
+    {
+        abort_unless(has_permission('poll_delete'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $poll = Poll::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+        $poll->delete();
+
+        return redirect()->route('member.polls.index')->with('success', 'Poll deleted successfully.');
+    }
+
+    /**
+     * Close poll early (Resident Admin).
+     */
+    public function close($id)
+    {
+        abort_unless(has_permission('poll_close') || has_permission('poll_edit'), 403);
+
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $poll = Poll::where('id', $id)->where('society_id', $societyId)->firstOrFail();
+
+        try {
+            $this->pollService->closePoll($poll, $user);
+            return back()->with('success', 'Poll closed successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * View detailed poll results (Resident Admin / Eligible Residents).
+     */
+    public function results($id)
+    {
+        $user = auth()->user();
+        $societyId = AmenityBookingService::getUserSocietyId($user);
+
+        $poll = Poll::with(['options', 'votes.user'])
+            ->where('id', $id)
+            ->where('society_id', $societyId)
+            ->firstOrFail();
+
+        // Check if user is allowed to view results
+        if (!$poll->canViewResults($user->id) && !has_permission('poll_results') && !has_permission('poll_edit')) {
+            abort(403, 'Poll results are not visible yet.');
+        }
+
+        $results = $this->pollService->calculateResults($poll);
+
+        return view('member.polls.results', compact('poll', 'results'));
+    }
 }

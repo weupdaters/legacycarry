@@ -174,17 +174,32 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     Route::patch('/notices/{id}', [\App\Http\Controllers\Member\NoticeController::class, 'update'])->name('notices.update');
     Route::delete('/notices/{id}', [\App\Http\Controllers\Member\NoticeController::class, 'destroy'])->name('notices.destroy');
 
-    // Amenity Booking
+    // Amenity Booking & Management
     Route::get('/amenities', [\App\Http\Controllers\Member\AmenityBookingController::class, 'index'])->name('amenities.index');
+    Route::get('/amenities/create', [\App\Http\Controllers\Member\AmenityBookingController::class, 'create'])->name('amenities.create');
+    Route::post('/amenities', [\App\Http\Controllers\Member\AmenityBookingController::class, 'store'])->name('amenities.store');
     Route::get('/amenities/my-bookings', [\App\Http\Controllers\Member\AmenityBookingController::class, 'myBookings'])->name('amenities.my-bookings');
+    Route::get('/amenities/bookings/all', [\App\Http\Controllers\Member\AmenityBookingController::class, 'allBookings'])->name('amenities.bookings.all');
+    Route::post('/amenities/bookings/{id}/approve', [\App\Http\Controllers\Member\AmenityBookingController::class, 'approveBooking'])->name('amenities.bookings.approve');
+    Route::post('/amenities/bookings/{id}/reject', [\App\Http\Controllers\Member\AmenityBookingController::class, 'rejectBooking'])->name('amenities.bookings.reject');
     Route::get('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookView'])->name('amenities.book');
     Route::post('/amenities/{id}/book', [\App\Http\Controllers\Member\AmenityBookingController::class, 'bookSubmit'])->name('amenities.book.submit');
     Route::get('/amenities/{id}/slots-ajax', [\App\Http\Controllers\Member\AmenityBookingController::class, 'getSlotsAjax'])->name('amenities.slots-ajax');
+    Route::get('/amenities/{id}/edit', [\App\Http\Controllers\Member\AmenityBookingController::class, 'edit'])->name('amenities.edit');
+    Route::put('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'update'])->name('amenities.update');
+    Route::delete('/amenities/{id}', [\App\Http\Controllers\Member\AmenityBookingController::class, 'destroy'])->name('amenities.destroy');
     Route::post('/amenities/bookings/{id}/cancel', [\App\Http\Controllers\Member\AmenityBookingController::class, 'cancel'])->name('amenities.cancel');
 
-    // Polls & Voting
+    // Polls & Voting & Management
     Route::get('/polls', [\App\Http\Controllers\Member\PollController::class, 'index'])->name('polls.index');
+    Route::get('/polls/create', [\App\Http\Controllers\Member\PollController::class, 'create'])->name('polls.create');
+    Route::post('/polls', [\App\Http\Controllers\Member\PollController::class, 'store'])->name('polls.store');
     Route::get('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'show'])->name('polls.show');
+    Route::get('/polls/{id}/edit', [\App\Http\Controllers\Member\PollController::class, 'edit'])->name('polls.edit');
+    Route::put('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'update'])->name('polls.update');
+    Route::delete('/polls/{id}', [\App\Http\Controllers\Member\PollController::class, 'destroy'])->name('polls.destroy');
+    Route::post('/polls/{id}/close', [\App\Http\Controllers\Member\PollController::class, 'close'])->name('polls.close');
+    Route::get('/polls/{id}/results', [\App\Http\Controllers\Member\PollController::class, 'results'])->name('polls.results');
     Route::post('/polls/{id}/vote', [\App\Http\Controllers\Member\PollController::class, 'vote'])->name('polls.vote');
 
     // Tickets & Complaints

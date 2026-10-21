@@ -13,10 +13,20 @@
             <h3 class="fw-bold mb-1">Society Amenities</h3>
             <p class="opacity-75 mb-0">Browse and book facilities in your society such as Clubhouse, Gym, Pool, and Hall.</p>
           </div>
-          <div>
-            <a href="{{ route('member.amenities.my-bookings') }}" class="btn btn-white text-success fw-bold rounded-pill px-4">
+          <div class="d-flex flex-wrap gap-2">
+            <a href="{{ route('member.amenities.my-bookings') }}" class="btn btn-white text-success fw-bold rounded-pill px-3">
               <i class="mdi mdi-history me-1"></i> My Bookings
             </a>
+            @if(has_permission('amenity_booking_index') || has_permission('amenity_booking_approve'))
+              <a href="{{ route('member.amenities.bookings.all') }}" class="btn btn-outline-light fw-bold rounded-pill px-3">
+                <i class="mdi mdi-clipboard-list-outline me-1"></i> Manage Bookings
+              </a>
+            @endif
+            @if(has_permission('amenity_create'))
+              <a href="{{ route('member.amenities.create') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-3">
+                <i class="mdi mdi-plus me-1"></i> Add Amenity
+              </a>
+            @endif
           </div>
         </div>
       </div>
@@ -104,10 +114,16 @@
               <div class="d-flex align-items-center justify-content-center w-100 h-100 bg-soft-success text-success">
                 <i class="mdi mdi-domain mdi-48px"></i>
               </div>
+            @endif
             <span class="position-absolute top-0 end-0 m-3 badge {{ $amenity->booking_mode === 'automatic' ? 'bg-success' : 'bg-warning text-dark' }} rounded-pill px-3 py-2 shadow-sm">
               <i class="mdi {{ $amenity->booking_mode === 'automatic' ? 'mdi-lightning-bolt' : 'mdi-clock-outline' }} me-1"></i>
               {{ $amenity->booking_mode === 'automatic' ? 'Instant Booking' : 'Requires Approval' }}
             </span>
+            @if($amenity->status === 'inactive')
+              <span class="position-absolute top-0 start-0 m-3 badge bg-danger rounded-pill px-3 py-2 shadow-sm">
+                Inactive
+              </span>
+            @endif
           </div>
 
           <div class="card-body p-4 d-flex flex-column">
@@ -129,10 +145,28 @@
               </div>
             </div>
 
-            <div class="mt-auto">
+            <div class="mt-auto d-flex flex-column gap-2">
               <a href="{{ route('member.amenities.book', $amenity->id) }}" class="btn btn-success w-100 rounded-pill fw-semibold py-2">
                 <i class="mdi mdi-calendar-plus me-1"></i> Book Slot
               </a>
+              @if(has_permission('amenity_edit') || has_permission('amenity_delete'))
+                <div class="d-flex gap-2 pt-2 border-top">
+                  @if(has_permission('amenity_edit'))
+                    <a href="{{ route('member.amenities.edit', $amenity->id) }}" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1">
+                      <i class="mdi mdi-pencil me-1"></i> Edit
+                    </a>
+                  @endif
+                  @if(has_permission('amenity_delete'))
+                    <form method="POST" action="{{ route('member.amenities.destroy', $amenity->id) }}" class="flex-grow-1" onsubmit="return confirm('Are you sure you want to delete this amenity?');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill w-100">
+                        <i class="mdi mdi-delete me-1"></i> Delete
+                      </button>
+                    </form>
+                  @endif
+                </div>
+              @endif
             </div>
           </div>
         </div>
