@@ -296,7 +296,7 @@ class PollController extends Controller
             abort(403, 'Poll results are not visible yet.');
         }
 
-        $results = $this->pollService->calculateResults($poll);
+        $results = $poll->calculateResults();
 
         return view('member.polls.results', compact('poll', 'results'));
     }

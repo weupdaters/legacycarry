@@ -249,4 +249,12 @@ class PollService
             return $poll;
         });
     }
+
+    /**
+     * Calculate and structure poll voting results.
+     */
+    public function calculateResults(Poll $poll): array
+    {
+        return $poll->calculateResults();
+    }
 }
