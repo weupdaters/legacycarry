@@ -4,17 +4,46 @@
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+<style>
+    .stat-hover-card {
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    }
+    .stat-hover-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08) !important;
+        border-color: #cbd5e1 !important;
+    }
+    .pulse-dot-admin {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulseAdmin 2s infinite;
+    }
+    @keyframes pulseAdmin {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .badge-subtle-primary { background: #e0e7ff; color: #4338ca; }
+    .badge-subtle-success { background: #dcfce7; color: #15803d; }
+    .badge-subtle-warning { background: #fef3c7; color: #92400e; }
+    .badge-subtle-danger { background: #fee2e2; color: #b91c1c; }
+    .badge-subtle-info { background: #e0f2fe; color: #0369a1; }
+    .badge-subtle-purple { background: #f3e8ff; color: #7e22ce; }
+</style>
+
 <div class="container-fluid">
 
     {{-- PAGE HEADER --}}
     <div class="py-3 d-flex align-items-sm-center flex-sm-row flex-column mb-2">
         <div class="flex-grow-1">
             <h4 class="fs-18 fw-bold m-0">System Control Center</h4>
-            <p class="text-muted mb-0 fs-13"><span id="live-dot" class="badge bg-success-subtle text-success me-1 fs-10">● LIVE</span>Operational Intelligence • <span id="current-time"></span></p>
+            <p class="text-muted mb-0 fs-13"><span id="live-dot" class="badge bg-success-subtle text-success me-1 fs-10"><span class="pulse-dot-admin bg-success me-1"></span> LIVE</span>Operational Intelligence • <span id="current-time"></span></p>
         </div>
         <div class="ms-auto mt-2 mt-sm-0 d-flex gap-2">
             @if(Route::has('admin.dashboard'))<a href="{{ route('admin.dashboard') }}" class="btn btn-sm btn-light border fw-bold"><i data-feather="refresh-cw" class="icon-xxs me-1 text-success"></i>Refresh</a>@endif
-            
         </div>
     </div>
 
@@ -24,14 +53,17 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center flex-wrap gap-2">
-                        <span class="text-muted fw-bold fs-10 text-uppercase me-1">⚡ Launchpad:</span>
+                        <span class="text-muted fw-bold fs-10 text-uppercase me-1">⚡ Quick Launch:</span>
+                        @if(Route::has('admin.amenities.index'))<a href="{{ route('admin.amenities.index') }}" class="btn btn-xs bg-info-subtle text-info fw-bold border-0 px-3 py-1"><i data-feather="layers" class="icon-xxs me-1"></i>Amenities</a>@endif
+                        @if(Route::has('admin.polls.create'))<a href="{{ route('admin.polls.create') }}" class="btn btn-xs bg-primary-subtle text-primary fw-bold border-0 px-3 py-1"><i data-feather="check-square" class="icon-xxs me-1"></i>New Poll</a>@endif
+                        @if(Route::has('admin.reports.index'))<a href="{{ route('admin.reports.index') }}" class="btn btn-xs bg-danger-subtle text-danger fw-bold border-0 px-3 py-1"><i data-feather="alert-triangle" class="icon-xxs me-1"></i>Bug Reports</a>@endif
+                        @if(Route::has('admin.tickets.index'))<a href="{{ route('admin.tickets.index') }}" class="btn btn-xs bg-warning-subtle text-warning fw-bold border-0 px-3 py-1"><i data-feather="message-circle" class="icon-xxs me-1"></i>Tickets</a>@endif
                         @if(has_permission('notice_create'))<a href="{{ route('admin.notices.create') }}" class="btn btn-xs bg-primary-subtle text-primary fw-bold border-0 px-3 py-1"><i data-feather="plus" class="icon-xxs me-1"></i>Notice</a>@endif
                         @if(has_permission('guard_create'))<a href="{{ route('guards.create') }}" class="btn btn-xs bg-info-subtle text-info fw-bold border-0 px-3 py-1"><i data-feather="shield" class="icon-xxs me-1"></i>Guard</a>@endif
                         @if(has_permission('society_create'))<a href="{{ route('societies.create') }}" class="btn btn-xs bg-warning-subtle text-warning fw-bold border-0 px-3 py-1"><i data-feather="home" class="icon-xxs me-1"></i>Society</a>@endif
                         @if(has_permission('resident_assign_create'))<a href="{{ route('resident.assign.create') }}" class="btn btn-xs bg-danger-subtle text-danger fw-bold border-0 px-3 py-1"><i data-feather="user-plus" class="icon-xxs me-1"></i>Assign</a>@endif
                         @if(has_permission('service_create'))<a href="{{ route('services.create') }}" class="btn btn-xs bg-dark-subtle text-dark fw-bold border-0 px-3 py-1"><i data-feather="tool" class="icon-xxs me-1"></i>Service</a>@endif
                         @if(has_permission('shift_index'))<a href="{{ route('shift.guards.index') }}" class="btn btn-xs bg-secondary-subtle text-secondary fw-bold border-0 px-3 py-1"><i data-feather="clock" class="icon-xxs me-1"></i>Shifts</a>@endif
-                        
                     </div>
                 </div>
             </div>
@@ -42,6 +74,10 @@
     <div class="row g-3 mb-4">
         @php $statCards = [
             ['label'=>'Total Revenue','val'=>'₹'.number_format($totalRevenue),'icon'=>'credit-card','color'=>'success','sub'=>'Financial Flow','route'=>'admin.payments.index'],
+            ['label'=>'Amenities & Facilities','val'=>number_format($totalAmenities ?? 0),'icon'=>'layers','color'=>'info','sub'=>($pendingAmenityBookings ?? 0).' Pending Bookings','route'=>'admin.amenities.index'],
+            ['label'=>'Community Polls','val'=>number_format($totalPolls ?? 0),'icon'=>'check-square','color'=>'primary','sub'=>($activePolls ?? 0).' Active • '.($totalPollVotes ?? 0).' Votes','route'=>'admin.polls.index'],
+            ['label'=>'Reported Issues','val'=>number_format($totalReports ?? 0),'icon'=>'alert-triangle','color'=>'danger','sub'=>($pendingReports ?? 0).' Pending Review','route'=>'admin.reports.index'],
+            ['label'=>'Society Tickets','val'=>number_format($totalTickets ?? 0),'icon'=>'message-circle','color'=>'warning','sub'=>($pendingTickets ?? 0).' Open Complaints','route'=>'admin.tickets.index'],
             ['label'=>'Residents','val'=>number_format($totalResidents),'icon'=>'users','color'=>'primary','sub'=>$pendingVerifications.' Pending KYC','route'=>'resident.assign.index'],
             ['label'=>'Active Jobs','val'=>$activeJobs,'icon'=>'briefcase','color'=>'warning','sub'=>$totalJobs.' Total Posts','route'=>'jobs.index'],
             ['label'=>'Societies','val'=>$totalSocieties,'icon'=>'home','color'=>'info','sub'=>'Managed Sites','route'=>'societies.index'],
@@ -52,7 +88,7 @@
         ]; @endphp
         @foreach($statCards as $sc)
         <div class="col-xl-3 col-md-4 col-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-hover-card">
                 <div class="card-body p-3">
                     <div class="d-flex align-items-start justify-content-between mb-2">
                         <div class="bg-{{ $sc['color'] }}-subtle rounded p-2"><i data-feather="{{ $sc['icon'] }}" class="text-{{ $sc['color'] }} icon-sm"></i></div>
@@ -77,7 +113,7 @@
         ]; @endphp
         @foreach($cycles as $c)
         <div class="col-md-3 col-6">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-hover-card">
                 <div class="card-body text-center p-2">
                     <div id="{{ $c['id'] }}" style="min-height:140px;"></div>
                     <p class="text-muted fw-bold mb-0 fs-11 text-uppercase">{{ $c['label'] }}</p>
@@ -85,6 +121,205 @@
             </div>
         </div>
         @endforeach
+    </div>
+
+    {{-- SECTION: AMENITIES & POLLS OVERVIEW --}}
+    <div class="row g-3 mb-4">
+        {{-- AMENITY BOOKINGS TRACKER --}}
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-info-subtle text-info rounded p-1"><i data-feather="layers" class="icon-xs"></i></div>
+                        <h5 class="card-title fw-bold mb-0 fs-14">Facility & Amenity Reservations</h5>
+                    </div>
+                    @if(Route::has('admin.amenities.bookings'))
+                        <a href="{{ route('admin.amenities.bookings') }}" class="btn btn-xs btn-light border fw-bold">Manage Bookings →</a>
+                    @endif
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-centered table-nowrap mb-0">
+                        <thead class="bg-light fs-11 fw-bold text-muted text-uppercase">
+                            <tr>
+                                <th class="ps-3">Facility</th>
+                                <th>Society / Resident</th>
+                                <th>Schedule</th>
+                                <th>Status</th>
+                                <th class="text-end pe-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentAmenityBookings as $booking)
+                            <tr>
+                                <td class="ps-3 fw-semibold text-dark">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="bg-info-subtle text-info rounded px-2 py-1 fs-12 fw-bold">
+                                            🏊
+                                        </div>
+                                        <div>
+                                            <span class="d-block fw-bold fs-13">{{ $booking->amenity->name ?? 'Facility' }}</span>
+                                            <span class="text-muted fs-11">{{ ucfirst($booking->amenity->booking_mode ?? 'Slot') }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark fs-12 d-block">{{ $booking->society->name ?? 'Society' }}</span>
+                                    <span class="text-muted fs-11">{{ $booking->user->name ?? 'Resident' }}</span>
+                                </td>
+                                <td>
+                                    <span class="fs-12 fw-semibold d-block">{{ $booking->booking_date ? \Carbon\Carbon::parse($booking->booking_date)->format('M d, Y') : '—' }}</span>
+                                    <span class="text-muted fs-11">{{ $booking->start_time ?? '' }} - {{ $booking->end_time ?? '' }}</span>
+                                </td>
+                                <td>
+                                    @if($booking->status === 'confirmed' || $booking->status === 'approved')
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-10 fw-bold">Approved</span>
+                                    @elseif($booking->status === 'pending')
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-10 fw-bold">Pending</span>
+                                    @elseif($booking->status === 'rejected')
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 fs-10 fw-bold">Rejected</span>
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-10 fw-bold">{{ ucfirst($booking->status) }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-end pe-3">
+                                    @if(Route::has('admin.amenities.bookings'))
+                                        <a href="{{ route('admin.amenities.bookings') }}" class="btn btn-xs btn-outline-primary rounded px-2 py-1 fw-bold fs-11">View</a>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="5" class="text-center text-muted py-4 fs-12">No recent amenity reservations recorded.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {{-- ACTIVE COMMUNITY POLLS OVERVIEW --}}
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-primary-subtle text-primary rounded p-1"><i data-feather="check-square" class="icon-xs"></i></div>
+                        <h5 class="card-title fw-bold mb-0 fs-14">Community Polls Intelligence</h5>
+                    </div>
+                    @if(Route::has('admin.polls.index'))
+                        <a href="{{ route('admin.polls.index') }}" class="btn btn-xs btn-light border fw-bold">All Polls →</a>
+                    @endif
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-centered table-nowrap mb-0">
+                        <thead class="bg-light fs-11 fw-bold text-muted text-uppercase">
+                            <tr>
+                                <th class="ps-3">Poll Title</th>
+                                <th>Society</th>
+                                <th>Votes</th>
+                                <th>Status</th>
+                                <th class="text-end pe-3">Analytics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentPolls as $poll)
+                            @php $isLive = $poll->isVotingOpen(); @endphp
+                            <tr>
+                                <td class="ps-3">
+                                    <span class="fw-bold text-dark fs-13 d-block">{{ Str::limit($poll->title, 28) }}</span>
+                                    <span class="text-muted fs-11">Ends: {{ $poll->end_date ? $poll->end_date->format('M d, Y') : '—' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light border text-dark fs-11">{{ $poll->society->name ?? 'All Societies' }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary fs-12">{{ $poll->votes_count }}</span>
+                                    <span class="text-muted fs-11">votes</span>
+                                </td>
+                                <td>
+                                    @if($isLive)
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-10 fw-bold">
+                                            <span class="pulse-dot-admin bg-success me-1"></span> Active
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-10 fw-bold">Closed</span>
+                                    @endif
+                                </td>
+                                <td class="text-end pe-3">
+                                    @if(Route::has('admin.polls.results'))
+                                        <a href="{{ route('admin.polls.results', $poll->id) }}" class="btn btn-xs btn-primary fw-bold px-2 py-1 text-white fs-11" style="border-radius:6px;">Results</a>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="5" class="text-center text-muted py-4 fs-12">No community polls available.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECTION: SYSTEM FEEDBACK & BUG REPORTS --}}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-danger-subtle text-danger rounded p-1"><i data-feather="alert-triangle" class="icon-xs"></i></div>
+                        <h5 class="card-title fw-bold mb-0 fs-14">Reported Bugs & User Complaints</h5>
+                    </div>
+                    @if(Route::has('admin.reports.index'))
+                        <a href="{{ route('admin.reports.index') }}" class="btn btn-xs btn-light border fw-bold">Full Issue Registry →</a>
+                    @endif
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-centered table-nowrap mb-0">
+                        <thead class="bg-light fs-11 fw-bold text-muted text-uppercase">
+                            <tr>
+                                <th class="ps-3">Report ID</th>
+                                <th>Category / Type</th>
+                                <th>Reporter Email</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Reported Time</th>
+                                <th class="text-end pe-3">Inspect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentReports as $rep)
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark font-monospace">#REP-{{ $rep->id }}</td>
+                                <td>
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 fs-11 fw-bold text-uppercase">
+                                        {{ str_replace('_', ' ', $rep->report_type ?? 'Bug') }}
+                                    </span>
+                                </td>
+                                <td class="fw-semibold text-dark fs-12">{{ $rep->email ?? ($rep->user->email ?? 'N/A') }}</td>
+                                <td class="text-muted fs-12 text-truncate" style="max-width: 250px;">{{ Str::limit($rep->description, 50) }}</td>
+                                <td>
+                                    @if($rep->status === 'pending')
+                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-10 fw-bold">Pending Review</span>
+                                    @elseif($rep->status === 'resolved')
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-10 fw-bold">Resolved</span>
+                                    @else
+                                        <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-10 fw-bold">{{ ucfirst($rep->status) }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-muted fs-11">{{ $rep->created_at ? $rep->created_at->format('M d, Y h:i A') : 'N/A' }}</td>
+                                <td class="text-end pe-3">
+                                    @if(Route::has('admin.reports.show'))
+                                        <a href="{{ route('admin.reports.show', $rep->id) }}" class="btn btn-xs btn-primary fw-bold px-3 py-1 text-white fs-11" style="border-radius:6px;">View</a>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="7" class="text-center text-muted py-4 fs-12">No bug reports or user issues reported.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- ANALYTICS CHARTS ROW 1 --}}
@@ -122,7 +357,6 @@
                 <div class="card-body pt-0"><div id="adm-soc-bar" style="min-height:280px;"></div></div>
             </div>
         </div>
-        
     </div>
 
     {{-- DATA TABLES ROW --}}
@@ -151,7 +385,7 @@
                                 <td class="text-end pe-4">@if(Route::has('admin.payments.show'))<a href="{{ route('admin.payments.show', $pay->id) }}" class="btn btn-primary btn-sm fw-bold px-3" style="font-size:12px;">View</a>@endif</td>
                             </tr>
                             @empty
-                            <tr><td colspan="5" class="text-center text-muted py-3 fs-13">No transactions yet</td></tr>
+                            <tr><td colspan="6" class="text-center text-muted py-3 fs-13">No transactions yet</td></tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -15,6 +15,12 @@ use App\Models\Pass;
 use App\Models\Service;
 use App\Models\Payment;
 use App\Models\GuardShift;
+use App\Models\Amenity;
+use App\Models\AmenityBooking;
+use App\Models\Poll;
+use App\Models\PollVote;
+use App\Models\Ticket;
+use App\Models\Report;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
@@ -47,7 +53,29 @@ class HomeController extends Controller
         $revenueGoal = 1000000;
         $revenuePercent = ($totalRevenue / $revenueGoal) * 100;
 
-        // 4. LISTS
+        // 4. AMENITIES, POLLS, REPORTS & TICKETS
+        $totalAmenities = Amenity::count();
+        $totalAmenityBookings = AmenityBooking::count();
+        $pendingAmenityBookings = AmenityBooking::where('status', 'pending')->count();
+        $recentAmenityBookings = AmenityBooking::with(['amenity', 'society', 'user'])->latest()->take(5)->get();
+
+        $totalPolls = Poll::count();
+        $activePolls = Poll::where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->count();
+        $totalPollVotes = PollVote::count();
+        $recentPolls = Poll::with('society')->withCount('votes')->latest()->take(4)->get();
+
+        $totalReports = Report::count();
+        $pendingReports = Report::where('status', 'pending')->count();
+        $recentReports = Report::with('user')->latest()->take(5)->get();
+
+        $totalTickets = Ticket::count();
+        $pendingTickets = Ticket::whereIn('status', ['open', 'in_progress'])->count();
+        $recentTickets = Ticket::with(['society', 'user'])->latest()->take(5)->get();
+
+        // 5. LISTS
         $recentJobs = JobPost::latest()->take(5)->get();
         $recentResidents = User::whereIn('role', ['customer', 'resident'])->latest()->take(5)->get();
         $recentNotices = class_exists(SocietyNotice::class) ? SocietyNotice::latest()->take(5)->get() : collect([]);
@@ -55,12 +83,12 @@ class HomeController extends Controller
         $totalNotices = class_exists(SocietyNotice::class) ? SocietyNotice::count() : 0;
         $totalPasses = class_exists(Pass::class) ? Pass::count() : 0;
 
-        // 5. CALCULATED PERFORMANCE (PERCENTAGES)
+        // 6. CALCULATED PERFORMANCE (PERCENTAGES)
         $occupancyRate = $totalGuards > 0 ? ($activeGuardsOnShift / $totalGuards) * 100 : 0;
         $resolutionRate = $totalJobs > 0 ? ($closedJobs / $totalJobs) * 100 : 0;
         $verificationRate = $totalResidents > 0 ? (($totalResidents - $pendingVerifications) / $totalResidents) * 100 : 0;
 
-        // 6. DEEP ANALYTICS (FOR CHARTS)
+        // 7. DEEP ANALYTICS (FOR CHARTS)
         $roleDistribution = User::select('role', DB::raw('count(*) as total'))->groupBy('role')->get();
         $jobTypeDistribution = JobPost::select('job_type', DB::raw('count(*) as total'))->groupBy('job_type')->get();
         $societyDistribution = DB::table('societies')->select('name', DB::raw('count(*) as total'))->groupBy('name')->take(6)->get();
@@ -80,7 +108,11 @@ class HomeController extends Controller
             'totalPasses', 'totalRevenue', 'employees', 'recentJobs', 'recentNotices',
             'recentPayments', 'recentResidents', 'pendingVerifications', 'activeGuardsOnShift',
             'revenuePercent', 'occupancyRate', 'resolutionRate', 'verificationRate',
-            'roleDistribution', 'jobTypeDistribution', 'societyDistribution', 'societyGrowth'
+            'roleDistribution', 'jobTypeDistribution', 'societyDistribution', 'societyGrowth',
+            'totalAmenities', 'totalAmenityBookings', 'pendingAmenityBookings', 'recentAmenityBookings',
+            'totalPolls', 'activePolls', 'totalPollVotes', 'recentPolls',
+            'totalReports', 'pendingReports', 'recentReports',
+            'totalTickets', 'pendingTickets', 'recentTickets'
         ));
     }
 }

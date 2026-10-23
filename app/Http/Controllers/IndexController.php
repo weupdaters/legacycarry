@@ -12,6 +12,12 @@ use App\Models\UserPaymentMethod;
 use App\Models\Vehicle;
 use App\Models\Society;
 use App\Models\Flat;
+use App\Models\Amenity;
+use App\Models\AmenityBooking;
+use App\Models\Poll;
+use App\Models\PollVote;
+use App\Models\Ticket;
+use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -66,7 +72,53 @@ class IndexController extends Controller
         $society = Society::find($societyId);
 
         /**
-         * 4. Load dashboard
+         * 4. AMENITIES METRICS & RECENT BOOKINGS
+         */
+        $totalAmenities = Amenity::where('society_id', $societyId)->count();
+        $activeAmenities = Amenity::where('society_id', $societyId)->where('status', 'active')->count();
+        $totalAmenityBookings = AmenityBooking::where('society_id', $societyId)->count();
+        $pendingAmenityBookings = AmenityBooking::where('society_id', $societyId)->where('status', 'pending')->count();
+        $recentAmenityBookings = AmenityBooking::where('society_id', $societyId)
+            ->with(['amenity', 'user'])
+            ->latest('id')
+            ->take(5)
+            ->get();
+
+        /**
+         * 5. POLLS METRICS & ACTIVE POLLS
+         */
+        $now = now();
+        $totalPolls = Poll::where('society_id', $societyId)->count();
+        $activePollsCount = Poll::where('society_id', $societyId)
+            ->where('status', 'active')
+            ->where('start_date', '<=', $now)
+            ->where('end_date', '>=', $now)
+            ->count();
+        $totalPollVotes = PollVote::whereHas('poll', function ($q) use ($societyId) {
+            $q->where('society_id', $societyId);
+        })->count();
+
+        $activePolls = Poll::where('society_id', $societyId)
+            ->with(['options'])
+            ->withCount('votes')
+            ->latest('id')
+            ->take(4)
+            ->get();
+
+        /**
+         * 6. TICKETS / COMPLAINTS / REPORTS
+         */
+        $totalTickets = Ticket::where('society_id', $societyId)->count();
+        $pendingTickets = Ticket::where('society_id', $societyId)->whereIn('status', ['open', 'in_progress'])->count();
+        $resolvedTickets = Ticket::where('society_id', $societyId)->whereIn('status', ['resolved', 'closed'])->count();
+        $recentTickets = Ticket::where('society_id', $societyId)
+            ->with(['user'])
+            ->latest('id')
+            ->take(5)
+            ->get();
+
+        /**
+         * 7. Load dashboard
          */
         return view('member.dashboard', compact(
             'totalEmployees',
@@ -75,7 +127,20 @@ class IndexController extends Controller
             'inactiveJobs',
             'closedJobs',
             'onHoldJobs',
-            'society'
+            'society',
+            'totalAmenities',
+            'activeAmenities',
+            'totalAmenityBookings',
+            'pendingAmenityBookings',
+            'recentAmenityBookings',
+            'totalPolls',
+            'activePollsCount',
+            'totalPollVotes',
+            'activePolls',
+            'totalTickets',
+            'pendingTickets',
+            'resolvedTickets',
+            'recentTickets'
         ));
     }
 
