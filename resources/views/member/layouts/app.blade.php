@@ -66,9 +66,8 @@
               &copy;
               <script>
                 document.write(new Date().getFullYear())
-              </script> - Made with
-              <span class="mdi mdi-heart text-danger"></span> by
-              <a href="#!" class="text-reset fw-semibold">..</a>
+              </script>
+              <span class="fw-semibold text-dark">Legacy Carry</span>. All rights reserved.
             </div>
           </div>
         </div>

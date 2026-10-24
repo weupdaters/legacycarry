@@ -99,7 +99,7 @@ function injectFooter() {
         </div>
       </div>
       <div class="foot-bottom">
-        <p>&copy; 2024 Legacy Carry. All rights reserved. New Delhi, India.</p>
+        <p>&copy; ${new Date().getFullYear()} Legacy Carry. All rights reserved. New Delhi, India.</p>
         <div class="foot-links">
           <a href="privacy.html">Privacy</a>
           <a href="refund.html">Refund</a>
@@ -115,7 +115,7 @@ function injectMiniFooter() {
   document.body.insertAdjacentHTML('beforeend', `
     <div class="mini-footer">
       <div class="mini-footer-inner">
-        <p>&copy; 2024 Legacy Carry. All rights reserved.</p>
+        <p>&copy; ${new Date().getFullYear()} Legacy Carry. All rights reserved.</p>
         <div class="mini-footer-links">
           <a href="index.html">Home</a>
           <a href="privacy.html">Privacy</a>
