@@ -302,6 +302,8 @@ Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
         // Bookings
         Route::get('/bookings', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings'])->name('admin.amenities.bookings');
         Route::get('/bookings/list', [\App\Http\Controllers\Admin\AmenityController::class, 'bookings']);
+        Route::post('/quick-book', [\App\Http\Controllers\Admin\AmenityController::class, 'quickBook'])->name('admin.amenities.quick-book');
+        Route::get('/{id}/slots-ajax', [\App\Http\Controllers\Admin\AmenityController::class, 'slotsAjax'])->name('admin.amenities.slots-ajax');
         Route::post('/bookings/{id}/approve', [\App\Http\Controllers\Admin\AmenityController::class, 'approveBooking'])->name('admin.amenities.bookings.approve');
         Route::post('/bookings/{id}/reject', [\App\Http\Controllers\Admin\AmenityController::class, 'rejectBooking'])->name('admin.amenities.bookings.reject');
         Route::post('/bookings/{id}/cancel', [\App\Http\Controllers\Admin\AmenityController::class, 'cancelBooking'])->name('admin.amenities.bookings.cancel');

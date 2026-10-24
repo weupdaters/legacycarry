@@ -59,7 +59,40 @@ class AmenityController extends Controller
             'popular_amenities' => (clone $amenityQuery)->withCount('bookings')->orderByDesc('bookings_count')->take(5)->get(),
         ];
 
-        return view('admin.amenities.index', compact('amenities', 'societies', 'analytics'));
+        // Fetch pending & recent bookings for easy viewing directly on Amenity Management page
+        $pendingBookings = (clone $bookingQuery)
+            ->where('status', 'pending')
+            ->with(['amenity.society', 'user.details.flat', 'society'])
+            ->latest('id')
+            ->take(50)
+            ->get();
+
+        $recentBookings = (clone $bookingQuery)
+            ->with(['amenity.society', 'user.details.flat', 'society'])
+            ->latest('id')
+            ->take(30)
+            ->get();
+
+        // Residents and active amenities for the Quick Book modal
+        $residents = \App\Models\User::whereIn('role', ['customer', 'resident'])
+            ->with(['details.flat', 'details.society'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'phone', 'user_society_id']);
+
+        $activeAmenitiesList = Amenity::where('status', 'active')
+            ->with('society')
+            ->orderBy('name')
+            ->get(['id', 'name', 'society_id', 'slot_duration_minutes', 'opening_time', 'closing_time', 'fee']);
+
+        return view('admin.amenities.index', compact(
+            'amenities',
+            'societies',
+            'analytics',
+            'pendingBookings',
+            'recentBookings',
+            'residents',
+            'activeAmenitiesList'
+        ));
     }
 
     /**
@@ -282,5 +315,68 @@ class AmenityController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Create a new booking quickly from Admin.
+     */
+    public function quickBook(Request $request)
+    {
+        $request->validate([
+            'amenity_id' => 'required|exists:amenities,id',
+            'user_id' => 'required|exists:users,id',
+            'booking_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'booking_status' => 'nullable|in:confirmed,pending',
+            'admin_notes' => 'nullable|string|max:500',
+        ]);
+
+        $amenity = Amenity::findOrFail($request->amenity_id);
+        $user = \App\Models\User::findOrFail($request->user_id);
+
+        // Ensure user belongs to amenity's society so booking validation passes
+        $userSocId = AmenityBookingService::getUserSocietyId($user);
+        if (!$userSocId || (int) $userSocId !== (int) $amenity->society_id) {
+            $user->user_society_id = $amenity->society_id;
+            $user->save();
+        }
+
+        try {
+            $booking = $this->bookingService->createBooking(
+                $user,
+                $amenity->id,
+                $request->booking_date,
+                $request->start_time,
+                $request->end_time,
+                $request->admin_notes
+            );
+
+            // If admin opted for instant confirmation
+            if ($request->input('booking_status', 'confirmed') === 'confirmed' && $booking->status === 'pending') {
+                $booking->update([
+                    'status' => 'confirmed',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                ]);
+            }
+
+            return redirect()->route('admin.amenities.index', ['tab' => 'bookings'])
+                ->with('success', "Booking #{$booking->id} for '{$amenity->name}' created successfully!");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Booking failed: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Fetch available slots for an amenity on a date via AJAX.
+     */
+    public function slotsAjax(Request $request, $id)
+    {
+        $amenity = Amenity::findOrFail($id);
+        $date = $request->input('date', Carbon::today()->toDateString());
+        $slotsData = $this->bookingService->getAvailableSlots($amenity, $date);
+
+        return response()->json($slotsData);
     }
 }
