@@ -29,6 +29,19 @@
   <!-- Page-specific CSS -->
   @stack('styles')
 
+  <style>
+    /* Global pagination SVG & layout protections */
+    nav[role="navigation"] svg,
+    .pagination svg,
+    nav svg {
+      width: 1.25rem !important;
+      height: 1.25rem !important;
+      max-width: 1.25rem !important;
+      max-height: 1.25rem !important;
+      display: inline-block !important;
+    }
+  </style>
+
   <!-- Head JS -->
   <script src="{{ asset('assets/js/head.js') }}"></script>
 </head>
