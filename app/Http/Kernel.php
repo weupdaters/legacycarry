@@ -45,5 +45,6 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\RoleMiddleware::class, // add your API role middleware here
         'isSuperAdmin' => \App\Http\Middleware\IsSuperAdmin::class,
         'isUser' => \App\Http\Middleware\UserMiddleware::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class, // add your API permission middleware here
     ];
 }
