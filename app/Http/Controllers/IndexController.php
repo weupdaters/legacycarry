@@ -244,6 +244,63 @@ class IndexController extends Controller
     }
 
 
+    /**
+     * Dedicated Real-time Tracking Page for Resident/Society Portal
+     */
+    public function tracking()
+    {
+        $userId = auth()->id();
+        $user = auth()->user();
+        $societyId = getSocietyId();
+
+        if (!$societyId) {
+            $assignment = ResidentAssignment::where('user_id', $userId)->first();
+            $societyId = $assignment?->society_id ?? $user?->user_society_id ?? optional($user?->details)->society_id;
+        }
+
+        $activeOnlineUserIds = Cache::get('active_online_user_ids', []);
+        $residentsQuery = User::where('role', 'customer')
+            ->where(function ($q) use ($societyId) {
+                $q->where('user_society_id', $societyId)
+                  ->orWhereHas('details', function ($dq) use ($societyId) {
+                      $dq->where('society_id', $societyId);
+                  })
+                  ->orWhereHas('residentAssignment', function ($rq) use ($societyId) {
+                      $rq->where('society_id', $societyId);
+                  });
+            });
+
+        $liveResidents = (clone $residentsQuery)
+            ->where(function ($q) use ($activeOnlineUserIds) {
+                if (!empty($activeOnlineUserIds)) {
+                    $q->whereIn('users.id', $activeOnlineUserIds);
+                }
+                $q->orWhere('users.last_seen_at', '>=', now()->subMinutes(5));
+            })
+            ->with(['details.flat'])
+            ->latest('users.last_seen_at')
+            ->take(25)
+            ->get();
+
+        $liveResidentsCount = $liveResidents->count();
+
+        $recentApiActivities = ApiActivityLog::whereHas('user', function ($uq) use ($societyId) {
+            $uq->where('user_society_id', $societyId)
+               ->orWhereHas('details', function ($dq) use ($societyId) {
+                   $dq->where('society_id', $societyId);
+               });
+        })->with('user')->latest('id')->take(30)->get();
+
+        $society = Society::find($societyId);
+
+        return view('member.tracking', compact(
+            'liveResidents',
+            'liveResidentsCount',
+            'recentApiActivities',
+            'society'
+        ));
+    }
+
     public function Residents(Request $request)
     {
         if (!has_permission('resident_index')) {

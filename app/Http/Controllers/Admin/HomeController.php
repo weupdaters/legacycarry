@@ -90,17 +90,14 @@ class HomeController extends Controller
         $resolutionRate = $totalJobs > 0 ? ($closedJobs / $totalJobs) * 100 : 0;
         $verificationRate = $totalResidents > 0 ? (($totalResidents - $pendingVerifications) / $totalResidents) * 100 : 0;
 
-        // 7. REAL-TIME LIVE USERS & API ACTIVITY TRACKER
+        // 7. REAL-TIME LIVE USERS COUNT (FOR DASHBOARD COUNTERS ONLY)
         $activeOnlineUserIds = Cache::get('active_online_user_ids', []);
-        $liveUsers = User::where(function ($q) use ($activeOnlineUserIds) {
+        $liveUsersCount = User::where(function ($q) use ($activeOnlineUserIds) {
             if (!empty($activeOnlineUserIds)) {
                 $q->whereIn('id', $activeOnlineUserIds);
             }
             $q->orWhere('last_seen_at', '>=', now()->subMinutes(5));
-        })->with('details.flat', 'details.society')->latest('last_seen_at')->take(8)->get();
-
-        $liveUsersCount = $liveUsers->count();
-        $recentApiActivities = ApiActivityLog::with('user')->latest('id')->take(10)->get();
+        })->count();
 
         // 8. DEEP ANALYTICS (FOR CHARTS)
         $roleDistribution = User::select('role', DB::raw('count(*) as total'))->groupBy('role')->get();
@@ -127,16 +124,44 @@ class HomeController extends Controller
             'totalPolls', 'activePolls', 'totalPollVotes', 'recentPolls',
             'totalReports', 'pendingReports', 'recentReports',
             'totalTickets', 'pendingTickets', 'recentTickets',
-            'liveUsers', 'liveUsersCount', 'recentApiActivities'
+            'liveUsersCount'
         ));
     }
 
     /**
-     * Direct shortcut to live tracking section
+     * Dedicated Real-Time User & Device Tracking Monitor Page
      */
     public function tracking()
     {
-        return redirect(route('admin.dashboard') . '#live-tracking-section');
+        $activeOnlineUserIds = Cache::get('active_online_user_ids', []);
+        $liveUsers = User::where(function ($q) use ($activeOnlineUserIds) {
+            if (!empty($activeOnlineUserIds)) {
+                $q->whereIn('id', $activeOnlineUserIds);
+            }
+            $q->orWhere('last_seen_at', '>=', now()->subMinutes(5));
+        })->with('details.flat', 'details.society')->latest('last_seen_at')->take(30)->get();
+
+        $liveUsersCount = $liveUsers->count();
+        $recentApiActivities = ApiActivityLog::with('user')->latest('id')->take(35)->get();
+
+        $totalApiHitsToday = ApiActivityLog::whereDate('created_at', today())->count();
+        $mobileAppHitsToday = ApiActivityLog::whereDate('created_at', today())
+            ->where(function ($q) {
+                $q->where('device_type', 'like', '%Mobile%')
+                  ->orWhere('endpoint', 'like', 'api/%');
+            })->count();
+        $webHitsToday = max(0, $totalApiHitsToday - $mobileAppHitsToday);
+        $avgLatency = round(ApiActivityLog::latest('id')->take(50)->avg('response_time_ms') ?? 0);
+
+        return view('admin.tracking', compact(
+            'liveUsers',
+            'liveUsersCount',
+            'recentApiActivities',
+            'totalApiHitsToday',
+            'mobileAppHitsToday',
+            'webHitsToday',
+            'avgLatency'
+        ));
     }
 
     /**

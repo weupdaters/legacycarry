@@ -67,6 +67,8 @@ Route::middleware(['auth','isUser'])->prefix('residents')->name('member.')->grou
     // Resident Dashboard
     Route::get('/dashboard', [IndexController::class, 'index'])
      ->name('dashboard');
+    Route::get('/tracking', [IndexController::class, 'tracking'])
+     ->name('tracking');
     Route::get('/live-activity-feed', [IndexController::class, 'liveFeed'])
      ->name('live-feed');
 

@@ -394,108 +394,6 @@
     </div>
     @endif
 
-    {{-- REAL-TIME LIVE RESIDENTS & APP ACTIVITY --}}
-    <div class="row g-4 mb-4" id="live-tracking-section">
-      <div class="col-lg-5">
-        <div class="glass-table-card h-100 mb-0">
-          <div class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white">
-            <div>
-              <h5 class="fw-bold m-0 text-slate-800 d-flex align-items-center gap-2">
-                <span class="pulse-dot bg-success"></span> Live Residents Online
-              </h5>
-              <p class="text-muted font-12 mb-0 mt-1">Residents active in the mobile app / portal now</p>
-            </div>
-            <span class="badge badge-subtle-success rounded-pill px-3 py-1 font-12 fw-bold" id="residentLiveBadge">
-              {{ $liveResidentsCount ?? 0 }} Online Now
-            </span>
-          </div>
-          <div class="p-0">
-            <div class="list-group list-group-flush" id="residentLiveList" style="max-height: 360px; overflow-y: auto;">
-              @forelse($liveResidents ?? [] as $lr)
-              <div class="list-group-item px-4 py-3 border-0 border-bottom d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center min-width-0">
-                  <div class="position-relative me-3 flex-shrink-0">
-                    <div class="rounded-circle bg-soft-primary text-primary d-flex align-items-center justify-content-center fw-bold font-14" style="width:40px;height:40px;">
-                      {{ substr($lr->name ?? 'R', 0, 1) }}
-                    </div>
-                    <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width:10px;height:10px;"></span>
-                  </div>
-                  <div class="min-width-0">
-                    <h6 class="mb-0 fw-bold text-dark font-13 text-truncate">{{ $lr->name }}</h6>
-                    <span class="text-muted font-11">
-                      @if(!empty($lr->details->flat->flat_no)) Flat {{ $lr->details->flat->flat_no }} • @endif
-                      {{ $lr->phone ? Str::mask($lr->phone, '*', 3, 4) : 'Resident' }}
-                    </span>
-                  </div>
-                </div>
-                <div class="text-end ms-2 flex-shrink-0">
-                  <span class="badge badge-subtle-success font-10 fw-bold px-2 py-1 d-block mb-1">● Active</span>
-                  <span class="text-muted font-10">{{ $lr->last_seen_at ? $lr->last_seen_at->diffForHumans() : 'Just now' }}</span>
-                </div>
-              </div>
-              @empty
-              <div class="p-4 text-center text-muted font-13" id="noLiveResidentsPlaceholder">
-                <i class="mdi mdi-account-clock text-muted" style="font-size: 36px;"></i>
-                <p class="mb-0 mt-2">No residents currently active in the last 5 minutes.</p>
-              </div>
-              @endforelse
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-7">
-        <div class="glass-table-card h-100 mb-0">
-          <div class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white">
-            <div>
-              <h5 class="fw-bold m-0 text-slate-800 d-flex align-items-center gap-2">
-                <i class="mdi mdi-broadcast text-primary"></i> Society Live App Activity Stream
-              </h5>
-              <p class="text-muted font-12 mb-0 mt-1">Real-time API requests from residents using the mobile application</p>
-            </div>
-            <span class="badge bg-soft-info text-info rounded-pill px-3 py-1 font-11 fw-bold">Live Synced</span>
-          </div>
-          <div class="table-responsive" style="max-height: 360px; overflow-y: auto;">
-            <table class="table table-hover table-centered table-nowrap mb-0">
-              <thead>
-                <tr>
-                  <th class="ps-4">Request / Action</th>
-                  <th>Resident</th>
-                  <th>Platform</th>
-                  <th class="text-end pe-4">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody id="residentActivityTbody">
-                @forelse($recentApiActivities ?? [] as $act)
-                <tr>
-                  <td class="ps-4">
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="badge bg-soft-primary text-primary fw-bold font-10 px-2 py-1">{{ $act->method }}</span>
-                      <span class="fw-semibold text-dark font-12">{{ \Illuminate\Support\Str::limit($act->endpoint, 25) }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="fw-bold text-dark font-12 d-block">{{ $act->user->name ?? ($act->user_name ?: ('Resident #' . $act->user_id)) }}</span>
-                  </td>
-                  <td>
-                    <span class="badge bg-soft-success text-success font-11 px-2 py-1">
-                      <i class="mdi mdi-cellphone me-1"></i> {{ $act->device_type ?? 'Mobile App' }}
-                    </span>
-                  </td>
-                  <td class="text-end pe-4">
-                    <span class="text-muted font-11">{{ $act->created_at ? $act->created_at->diffForHumans() : 'Just now' }}</span>
-                  </td>
-                </tr>
-                @empty
-                <tr><td colspan="4" class="text-center text-muted py-4 font-13">No resident app activity recorded yet. Waiting for live events...</td></tr>
-                @endforelse
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
     {{-- INTERACTIVE WIDGETS SECTION: POLLS & AMENITIES --}}
     <div class="row g-4 mb-4">
       
@@ -1021,90 +919,20 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const liveFeedUrl = "{{ route('member.live-feed') }}";
-    function refreshMemberLiveFeed() {
+    function refreshMemberLiveCount() {
         fetch(liveFeedUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(res => res.json())
             .then(data => {
-                // Update live badge
-                const liveBadge = document.getElementById('residentLiveBadge');
-                if (liveBadge) liveBadge.innerText = data.count + ' Online Now';
-
                 // Update member sidebar badge
                 document.querySelectorAll('.member-sidebar-live-count').forEach(el => {
                     el.innerText = data.count + ' Live';
                 });
-
-                // Update resident list
-                const residentList = document.getElementById('residentLiveList');
-                if (residentList && data.users) {
-                    if (data.users.length === 0) {
-                        residentList.innerHTML = `<div class="p-4 text-center text-muted font-13"><i class="mdi mdi-account-clock text-muted" style="font-size: 36px;"></i><p class="mb-0 mt-2">No residents currently active in the last 5 minutes.</p></div>`;
-                    } else {
-                        let html = '';
-                        data.users.forEach(u => {
-                            html += `
-                            <div class="list-group-item px-4 py-3 border-0 border-bottom d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center min-width-0">
-                                    <div class="position-relative me-3 flex-shrink-0">
-                                        <div class="rounded-circle bg-soft-primary text-primary d-flex align-items-center justify-content-center fw-bold font-14" style="width:40px;height:40px;">
-                                            ${(u.name || 'R').charAt(0)}
-                                        </div>
-                                        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width:10px;height:10px;"></span>
-                                    </div>
-                                    <div class="min-width-0">
-                                        <h6 class="mb-0 fw-bold text-dark font-13 text-truncate">${u.name}</h6>
-                                        <span class="text-muted font-11">${u.flat ? 'Flat ' + u.flat + ' • ' : ''}Resident</span>
-                                    </div>
-                                </div>
-                                <div class="text-end ms-2 flex-shrink-0">
-                                    <span class="badge badge-subtle-success font-10 fw-bold px-2 py-1 d-block mb-1">● Active</span>
-                                    <span class="text-muted font-10">${u.last_seen}</span>
-                                </div>
-                            </div>`;
-                        });
-                        residentList.innerHTML = html;
-                    }
-                }
-
-                // Update activity stream
-                const actTbody = document.getElementById('residentActivityTbody');
-                if (actTbody && data.activities) {
-                    if (data.activities.length === 0) {
-                        actTbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4 font-13">No resident app activity recorded yet. Waiting for live events...</td></tr>`;
-                    } else {
-                        let rows = '';
-                        data.activities.forEach(a => {
-                            const epShort = a.endpoint.length > 25 ? a.endpoint.substring(0, 25) + '...' : a.endpoint;
-                            rows += `
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-soft-primary text-primary fw-bold font-10 px-2 py-1">${a.method}</span>
-                                        <span class="fw-semibold text-dark font-12">${epShort}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="fw-bold text-dark font-12 d-block">${a.user_name}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-soft-success text-success font-11 px-2 py-1">
-                                        <i class="mdi mdi-cellphone me-1"></i> ${a.device_type || 'Mobile App'}
-                                    </span>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <span class="text-muted font-11">${a.time_ago}</span>
-                                </td>
-                            </tr>`;
-                        });
-                        actTbody.innerHTML = rows;
-                    }
-                }
             })
             .catch(err => console.debug('Live sync error:', err));
     }
 
     // Refresh every 8 seconds
-    setInterval(refreshMemberLiveFeed, 8000);
+    setInterval(refreshMemberLiveCount, 8000);
 });
 </script>
 @endpush

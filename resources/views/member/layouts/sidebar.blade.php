@@ -118,7 +118,7 @@
             }
           @endphp
           <li>
-            <a href="{{ route('member.dashboard') }}#live-tracking-section" class="tp-link d-flex align-items-center justify-content-between">
+            <a href="{{ route('member.tracking') }}" class="tp-link d-flex align-items-center justify-content-between {{ Request::routeIs('member.tracking') ? 'active' : '' }}">
               <div class="d-flex align-items-center gap-2">
                 <i data-feather="activity" class="text-success"></i>
                 <span> Live Tracking </span>
