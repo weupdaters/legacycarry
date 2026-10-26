@@ -38,6 +38,8 @@ Route::get('/admin-logout', function () {
 Route::middleware(['isSuperAdmin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [HomeController::class, 'index'])
     ->name('admin.dashboard');
+    Route::get('/live-activity-feed', [HomeController::class, 'liveFeed'])
+    ->name('admin.live-feed');
 
     // User management routes
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

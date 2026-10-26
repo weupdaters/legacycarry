@@ -103,6 +103,137 @@
         @endforeach
     </div>
 
+    {{-- REAL-TIME LIVE USERS & API TRAFFIC MONITOR --}}
+    <div class="row g-3 mb-4">
+        {{-- LIVE USERS ONLINE (NOW) --}}
+        <div class="col-xl-5">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="pulse-dot-admin bg-success"></span>
+                        <h5 class="card-title fw-bold mb-0 fs-14 text-dark">Live Users Online</h5>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-0 fs-11 fw-bold" id="liveUsersBadge">{{ $liveUsersCount }} Active Now</span>
+                    </div>
+                    <span class="badge bg-light text-muted border fs-10" id="liveUserSyncStatus"><i data-feather="activity" class="icon-xxs me-1 text-success"></i>Auto-sync</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="p-2 border-bottom bg-light-subtle d-flex justify-content-between align-items-center fs-11 text-muted px-3">
+                        <span><i data-feather="smartphone" class="icon-xxs me-1 text-primary"></i>Mobile App & Web Telemetry</span>
+                        <span>Active within 5 mins</span>
+                    </div>
+                    <div class="list-group list-group-flush" id="liveUsersList" style="max-height: 380px; overflow-y: auto;">
+                        @forelse($liveUsers as $lu)
+                        <div class="list-group-item px-3 py-2 border-0 border-bottom d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center min-width-0">
+                                <div class="position-relative me-2 flex-shrink-0">
+                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-12" style="width:34px;height:34px;">
+                                        {{ substr($lu->name ?? 'U', 0, 1) }}
+                                    </div>
+                                    <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width:9px;height:9px;"></span>
+                                </div>
+                                <div class="min-width-0">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <p class="mb-0 fw-bold text-dark fs-12 text-truncate">{{ $lu->name }}</p>
+                                        <span class="badge badge-subtle-primary fs-9 px-1">{{ ucfirst($lu->role ?? 'User') }}</span>
+                                    </div>
+                                    <p class="mb-0 text-muted fs-11 text-truncate">
+                                        {{ $lu->details->society->name ?? ($lu->Society->name ?? 'Standalone') }}
+                                        @if(!empty($lu->details->flat->flat_no)) • Flat {{ $lu->details->flat->flat_no }} @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-end ms-2 flex-shrink-0">
+                                <span class="badge bg-success-subtle text-success fs-10 fw-semibold d-block">● Online</span>
+                                <span class="text-muted fs-10">{{ $lu->last_seen_at ? $lu->last_seen_at->diffForHumans() : 'Just now' }}</span>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="p-4 text-center text-muted fs-12" id="noLiveUsersPlaceholder">
+                            <i data-feather="users" class="icon-md mb-2 text-muted"></i>
+                            <p class="mb-0">No active mobile or web users in the last 5 minutes.</p>
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- REAL-TIME API TRAFFIC STREAM --}}
+        <div class="col-xl-7">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-2 px-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-primary-subtle text-primary rounded p-1"><i data-feather="zap" class="icon-xs"></i></div>
+                        <h5 class="card-title fw-bold mb-0 fs-14 text-dark">Live API Traffic Stream</h5>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-0 fs-11 fw-bold">0% App Changes</span>
+                    </div>
+                    <span class="text-muted fs-11"><i data-feather="clock" class="icon-xxs me-1"></i>Real-Time Log</span>
+                </div>
+                <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                    <table class="table table-hover table-centered table-nowrap mb-0" id="apiActivityTable">
+                        <thead class="bg-light fs-11 fw-bold text-muted text-uppercase sticky-top">
+                            <tr>
+                                <th class="ps-3">Method & Route</th>
+                                <th>User / Caller</th>
+                                <th>Device</th>
+                                <th>Status</th>
+                                <th class="text-end pe-3">Latency & Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apiActivityTbody">
+                            @forelse($recentApiActivities as $act)
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @php
+                                            $methodColors = [
+                                                'GET' => 'success',
+                                                'POST' => 'primary',
+                                                'PUT' => 'warning',
+                                                'PATCH' => 'info',
+                                                'DELETE' => 'danger'
+                                            ];
+                                            $mColor = $methodColors[$act->method] ?? 'secondary';
+                                        @endphp
+                                        <span class="badge bg-{{ $mColor }}-subtle text-{{ $mColor }} fw-bold fs-10 px-2 py-1">{{ $act->method }}</span>
+                                        <code class="text-dark fs-11">{{ \Illuminate\Support\Str::limit($act->endpoint, 28) }}</code>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark fs-12 d-block">{{ $act->user->name ?? 'Mobile User #' . ($act->user_id ?? 'Guest') }}</span>
+                                    <span class="text-muted fs-10">{{ $act->ip_address ?? '—' }}</span>
+                                </td>
+                                <td>
+                                    @if(str_contains($act->device_type, 'Mobile'))
+                                        <span class="badge bg-info-subtle text-info fs-10 px-2 py-1"><i data-feather="smartphone" class="icon-xxs me-1"></i>Mobile App</span>
+                                    @else
+                                        <span class="badge bg-secondary-subtle text-secondary fs-10 px-2 py-1"><i data-feather="monitor" class="icon-xxs me-1"></i>Web</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($act->status_code >= 200 && $act->status_code < 300)
+                                        <span class="badge bg-success-subtle text-success fs-10 fw-bold">{{ $act->status_code }} OK</span>
+                                    @elseif($act->status_code >= 400 && $act->status_code < 500)
+                                        <span class="badge bg-warning-subtle text-warning fs-10 fw-bold">{{ $act->status_code }}</span>
+                                    @else
+                                        <span class="badge bg-danger-subtle text-danger fs-10 fw-bold">{{ $act->status_code }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-end pe-3">
+                                    <span class="text-dark fw-bold fs-11 d-block">{{ $act->response_time_ms ? round($act->response_time_ms) . ' ms' : '< 1 ms' }}</span>
+                                    <span class="text-muted fs-10">{{ $act->created_at ? $act->created_at->diffForHumans() : 'Just now' }}</span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr id="noApiActivityRow"><td colspan="5" class="text-center text-muted py-4 fs-12">No API requests captured yet. Waiting for live hits...</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- PERFORMANCE GAUGE CYCLES --}}
     <div class="row g-3 mb-4">
         @php $cycles = [
@@ -530,6 +661,100 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Revenue radial
     R("adm-rev-radial",{ series:[{{ round($revenuePercent ?? 0) }}], chart:{height:220,type:'radialBar'}, plotOptions:{radialBar:{hollow:{size:'70%'}, dataLabels:{name:{show:true,fontSize:'11px',color:'#64748b',offsetY:-8},value:{show:true,fontSize:'24px',fontWeight:800,color:'#1e293b',offsetY:4,formatter:v=>v+'%'}}}}, colors:[c[0]], labels:['Target'] });
+
+    // REAL-TIME AUTO SYNC (Live Users & API Traffic)
+    const liveFeedUrl = "{{ route('admin.live-feed') }}";
+    function refreshLiveFeed() {
+        fetch(liveFeedUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.json())
+            .then(data => {
+                // Update live count badge
+                const countBadge = document.getElementById('liveUsersBadge');
+                if (countBadge) countBadge.innerText = data.count + ' Active Now';
+
+                // Update users list
+                const usersList = document.getElementById('liveUsersList');
+                if (usersList && data.users) {
+                    if (data.users.length === 0) {
+                        usersList.innerHTML = `<div class="p-4 text-center text-muted fs-12"><p class="mb-0">No active mobile or web users in the last 5 minutes.</p></div>`;
+                    } else {
+                        let html = '';
+                        data.users.forEach(u => {
+                            html += `
+                            <div class="list-group-item px-3 py-2 border-0 border-bottom d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center min-width-0">
+                                    <div class="position-relative me-2 flex-shrink-0">
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-12" style="width:34px;height:34px;">
+                                            ${(u.name || 'U').charAt(0)}
+                                        </div>
+                                        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle" style="width:9px;height:9px;"></span>
+                                    </div>
+                                    <div class="min-width-0">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <p class="mb-0 fw-bold text-dark fs-12 text-truncate">${u.name}</p>
+                                            <span class="badge badge-subtle-primary fs-9 px-1">${u.role}</span>
+                                        </div>
+                                        <p class="mb-0 text-muted fs-11 text-truncate">${u.society} ${u.flat ? '• Flat ' + u.flat : ''}</p>
+                                    </div>
+                                </div>
+                                <div class="text-end ms-2 flex-shrink-0">
+                                    <span class="badge bg-success-subtle text-success fs-10 fw-semibold d-block">● Online</span>
+                                    <span class="text-muted fs-10">${u.last_seen}</span>
+                                </div>
+                            </div>`;
+                        });
+                        usersList.innerHTML = html;
+                    }
+                }
+
+                // Update activity stream table
+                const actTbody = document.getElementById('apiActivityTbody');
+                if (actTbody && data.activities) {
+                    if (data.activities.length === 0) {
+                        actTbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4 fs-12">No API requests captured yet. Waiting for live hits...</td></tr>`;
+                    } else {
+                        let rows = '';
+                        data.activities.forEach(a => {
+                            const methodColors = { 'GET':'success', 'POST':'primary', 'PUT':'warning', 'PATCH':'info', 'DELETE':'danger' };
+                            const mColor = methodColors[a.method] || 'secondary';
+                            const devBadge = (a.device_type && a.device_type.includes('Mobile'))
+                                ? `<span class="badge bg-info-subtle text-info fs-10 px-2 py-1"><i data-feather="smartphone" class="icon-xxs me-1"></i>Mobile App</span>`
+                                : `<span class="badge bg-secondary-subtle text-secondary fs-10 px-2 py-1"><i data-feather="monitor" class="icon-xxs me-1"></i>Web</span>`;
+                            const statusBadge = a.status_code >= 200 && a.status_code < 300
+                                ? `<span class="badge bg-success-subtle text-success fs-10 fw-bold">${a.status_code} OK</span>`
+                                : `<span class="badge bg-warning-subtle text-warning fs-10 fw-bold">${a.status_code}</span>`;
+
+                            const epShort = a.endpoint.length > 28 ? a.endpoint.substring(0, 28) + '...' : a.endpoint;
+
+                            rows += `
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-${mColor}-subtle text-${mColor} fw-bold fs-10 px-2 py-1">${a.method}</span>
+                                        <code class="text-dark fs-11">${epShort}</code>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark fs-12 d-block">${a.user_name}</span>
+                                </td>
+                                <td>${devBadge}</td>
+                                <td>${statusBadge}</td>
+                                <td class="text-end pe-3">
+                                    <span class="text-dark fw-bold fs-11 d-block">${a.response_time_ms ? Math.round(a.response_time_ms) + ' ms' : '< 1 ms'}</span>
+                                    <span class="text-muted fs-10">${a.time_ago}</span>
+                                </td>
+                            </tr>`;
+                        });
+                        actTbody.innerHTML = rows;
+                    }
+                }
+                if (typeof feather !== 'undefined') feather.replace();
+            })
+            .catch(err => console.debug('Live feed sync error:', err));
+    }
+
+    // Refresh every 8 seconds
+    setInterval(refreshLiveFeed, 8000);
 });
 </script>
 @endpush

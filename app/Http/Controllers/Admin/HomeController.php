@@ -21,7 +21,9 @@ use App\Models\Poll;
 use App\Models\PollVote;
 use App\Models\Ticket;
 use App\Models\Report;
+use App\Models\ApiActivityLog;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
@@ -88,7 +90,19 @@ class HomeController extends Controller
         $resolutionRate = $totalJobs > 0 ? ($closedJobs / $totalJobs) * 100 : 0;
         $verificationRate = $totalResidents > 0 ? (($totalResidents - $pendingVerifications) / $totalResidents) * 100 : 0;
 
-        // 7. DEEP ANALYTICS (FOR CHARTS)
+        // 7. REAL-TIME LIVE USERS & API ACTIVITY TRACKER
+        $activeOnlineUserIds = Cache::get('active_online_user_ids', []);
+        $liveUsers = User::where(function ($q) use ($activeOnlineUserIds) {
+            if (!empty($activeOnlineUserIds)) {
+                $q->whereIn('id', $activeOnlineUserIds);
+            }
+            $q->orWhere('last_seen_at', '>=', now()->subMinutes(5));
+        })->with('details.flat', 'details.society')->latest('last_seen_at')->take(8)->get();
+
+        $liveUsersCount = $liveUsers->count();
+        $recentApiActivities = ApiActivityLog::with('user')->latest('id')->take(10)->get();
+
+        // 8. DEEP ANALYTICS (FOR CHARTS)
         $roleDistribution = User::select('role', DB::raw('count(*) as total'))->groupBy('role')->get();
         $jobTypeDistribution = JobPost::select('job_type', DB::raw('count(*) as total'))->groupBy('job_type')->get();
         $societyDistribution = DB::table('societies')->select('name', DB::raw('count(*) as total'))->groupBy('name')->take(6)->get();
@@ -112,7 +126,51 @@ class HomeController extends Controller
             'totalAmenities', 'totalAmenityBookings', 'pendingAmenityBookings', 'recentAmenityBookings',
             'totalPolls', 'activePolls', 'totalPollVotes', 'recentPolls',
             'totalReports', 'pendingReports', 'recentReports',
-            'totalTickets', 'pendingTickets', 'recentTickets'
+            'totalTickets', 'pendingTickets', 'recentTickets',
+            'liveUsers', 'liveUsersCount', 'recentApiActivities'
         ));
+    }
+
+    /**
+     * Real-time Live Activity Feed for Dashboard Auto-Refresh (GA4 style)
+     */
+    public function liveFeed()
+    {
+        $activeOnlineUserIds = Cache::get('active_online_user_ids', []);
+        $liveUsers = User::where(function ($q) use ($activeOnlineUserIds) {
+            if (!empty($activeOnlineUserIds)) {
+                $q->whereIn('id', $activeOnlineUserIds);
+            }
+            $q->orWhere('last_seen_at', '>=', now()->subMinutes(5));
+        })->with('details.flat', 'details.society')->latest('last_seen_at')->take(10)->get();
+
+        $recentApiActivities = ApiActivityLog::with('user')->latest('id')->take(15)->get();
+
+        return response()->json([
+            'count' => $liveUsers->count(),
+            'users' => $liveUsers->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'role' => ucfirst($u->role ?? 'User'),
+                    'society' => $u->details->society->name ?? ($u->Society->name ?? 'Standalone'),
+                    'flat' => $u->details->flat->flat_no ?? '',
+                    'last_seen' => $u->last_seen_at ? $u->last_seen_at->diffForHumans() : 'Just now',
+                    'last_endpoint' => $u->last_active_endpoint ?? 'API Active',
+                ];
+            }),
+            'activities' => $recentApiActivities->map(function ($act) {
+                return [
+                    'id' => $act->id,
+                    'user_name' => $act->user->name ?? 'Mobile User #' . ($act->user_id ?? 'Guest'),
+                    'endpoint' => $act->endpoint,
+                    'method' => $act->method,
+                    'device_type' => $act->device_type,
+                    'status_code' => $act->status_code,
+                    'response_time_ms' => $act->response_time_ms,
+                    'time_ago' => $act->created_at ? $act->created_at->diffForHumans() : 'Just now',
+                ];
+            }),
+        ]);
     }
 }

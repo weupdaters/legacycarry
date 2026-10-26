@@ -36,6 +36,8 @@ class User extends Authenticatable
         'region',
         'fcm_token',
         'language',
+        'last_seen_at',
+        'last_active_endpoint',
         'deleted_at',
     ];
 
@@ -46,9 +48,15 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime:Y-m-d H:i:s',
+        'last_seen_at' => 'datetime:Y-m-d H:i:s',
         'is_active' => 'boolean',
         'is_deleted' => 'boolean',
     ];
+
+    public function isOnline(): bool
+    {
+        return \Illuminate\Support\Facades\Cache::has('user_online_' . $this->id);
+    }
 
     protected function serializeDate(\DateTimeInterface $date)
     {
