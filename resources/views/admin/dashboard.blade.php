@@ -73,6 +73,7 @@
     {{-- STAT WIDGETS ROW --}}
     <div class="row g-3 mb-4">
         @php $statCards = [
+            ['label'=>'Live Users Online','val'=>$liveUsersCount ?? 0,'icon'=>'activity','color'=>'success','sub'=>'Active in App / Web Now','route'=>'#live-tracking-section','is_live'=>true],
             ['label'=>'Total Revenue','val'=>'₹'.number_format($totalRevenue),'icon'=>'credit-card','color'=>'success','sub'=>'Financial Flow','route'=>'admin.payments.index'],
             ['label'=>'Amenities & Facilities','val'=>number_format($totalAmenities ?? 0),'icon'=>'layers','color'=>'info','sub'=>($pendingAmenityBookings ?? 0).' Pending Bookings','route'=>'admin.amenities.index'],
             ['label'=>'Community Polls','val'=>number_format($totalPolls ?? 0),'icon'=>'check-square','color'=>'primary','sub'=>($activePolls ?? 0).' Active • '.($totalPollVotes ?? 0).' Votes','route'=>'admin.polls.index'],
@@ -88,13 +89,20 @@
         ]; @endphp
         @foreach($statCards as $sc)
         <div class="col-xl-3 col-md-4 col-6">
-            <div class="card border-0 shadow-sm h-100 stat-hover-card">
+            <div class="card border-0 shadow-sm h-100 stat-hover-card {{ !empty($sc['is_live']) ? 'border-success' : '' }}">
                 <div class="card-body p-3">
                     <div class="d-flex align-items-start justify-content-between mb-2">
-                        <div class="bg-{{ $sc['color'] }}-subtle rounded p-2"><i data-feather="{{ $sc['icon'] }}" class="text-{{ $sc['color'] }} icon-sm"></i></div>
-                        @if(Route::has($sc['route']))<a href="{{ route($sc['route']) }}" class="btn btn-xs btn-primary fw-bold px-3 text-white" style="border-radius:6px; font-size:11px;">View</a>@endif
+                        <div class="bg-{{ $sc['color'] }}-subtle rounded p-2 position-relative">
+                            <i data-feather="{{ $sc['icon'] }}" class="text-{{ $sc['color'] }} icon-sm"></i>
+                            @if(!empty($sc['is_live']))
+                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success border border-white rounded-circle pulse-dot-admin" style="width:8px;height:8px;"></span>
+                            @endif
+                        </div>
+                        @if(!empty($sc['route']))
+                            <a href="{{ str_starts_with($sc['route'], '#') ? $sc['route'] : (Route::has($sc['route']) ? route($sc['route']) : '#') }}" class="btn btn-xs btn-primary fw-bold px-3 text-white" style="border-radius:6px; font-size:11px;">View</a>
+                        @endif
                     </div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ $sc['val'] }}</h3>
+                    <h3 class="fw-bold mb-0 text-dark" @if(!empty($sc['is_live'])) id="liveUserStatVal" @endif>{{ $sc['val'] }}</h3>
                     <p class="text-{{ $sc['color'] }} fw-bold fs-11 mb-0">{{ $sc['label'] }}</p>
                     <p class="text-muted fs-11 mb-0">{{ $sc['sub'] }}</p>
                 </div>
@@ -104,7 +112,7 @@
     </div>
 
     {{-- REAL-TIME LIVE USERS & API TRAFFIC MONITOR --}}
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="live-tracking-section">
         {{-- LIVE USERS ONLINE (NOW) --}}
         <div class="col-xl-5">
             <div class="card border-0 shadow-sm h-100">
@@ -671,6 +679,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Update live count badge
                 const countBadge = document.getElementById('liveUsersBadge');
                 if (countBadge) countBadge.innerText = data.count + ' Active Now';
+
+                // Update live stat card
+                const statVal = document.getElementById('liveUserStatVal');
+                if (statVal) statVal.innerText = data.count;
+
+                // Update sidebar live counter
+                document.querySelectorAll('.sidebar-live-count').forEach(el => {
+                    el.innerHTML = '<span class="pulse-dot-admin bg-white me-1" style="width:5px;height:5px;"></span>' + data.count + ' Live';
+                });
 
                 // Update users list
                 const usersList = document.getElementById('liveUsersList');

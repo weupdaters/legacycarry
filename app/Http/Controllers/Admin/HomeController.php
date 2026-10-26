@@ -132,6 +132,14 @@ class HomeController extends Controller
     }
 
     /**
+     * Direct shortcut to live tracking section
+     */
+    public function tracking()
+    {
+        return redirect(route('admin.dashboard') . '#live-tracking-section');
+    }
+
+    /**
      * Real-time Live Activity Feed for Dashboard Auto-Refresh (GA4 style)
      */
     public function liveFeed()

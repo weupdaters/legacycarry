@@ -140,9 +140,26 @@
         {{-- ─── DASHBOARD ─── --}}
         <li class="menu-title">Dashboard</li>
         <li>
-          <a href="{{ route('admin.dashboard') }}" class="tp-link">
+          <a href="{{ route('admin.dashboard') }}" class="tp-link {{ Request::routeIs('admin.dashboard') && !Request::is('*tracking*') ? 'active' : '' }}">
             <i data-feather="monitor"></i>
             <span>Overview</span>
+          </a>
+        </li>
+        @php
+          $sidebarLiveCount = count(\Illuminate\Support\Facades\Cache::get('active_online_user_ids', []));
+          if ($sidebarLiveCount === 0) {
+              $sidebarLiveCount = \App\Models\User::where('last_seen_at', '>=', now()->subMinutes(5))->count();
+          }
+        @endphp
+        <li>
+          <a href="{{ route('admin.tracking') }}" class="tp-link d-flex align-items-center justify-content-between {{ Request::is('*tracking*') ? 'active' : '' }}">
+            <div class="d-flex align-items-center gap-2">
+              <i data-feather="activity" class="text-success"></i>
+              <span>Live Tracking</span>
+            </div>
+            <span class="badge bg-success text-white rounded-pill px-2 py-0 fs-10 fw-bold sidebar-live-count">
+              <span class="pulse-dot-admin bg-white me-1" style="width:5px;height:5px;"></span>{{ $sidebarLiveCount }} Live
+            </span>
           </a>
         </li>
 

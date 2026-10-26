@@ -111,6 +111,23 @@
               <span> Overview </span>
             </a>
           </li>
+          @php
+            $memberSidebarLiveCount = count(\Illuminate\Support\Facades\Cache::get('active_online_user_ids', []));
+            if ($memberSidebarLiveCount === 0) {
+                $memberSidebarLiveCount = \App\Models\User::where('last_seen_at', '>=', now()->subMinutes(5))->count();
+            }
+          @endphp
+          <li>
+            <a href="{{ route('member.dashboard') }}#live-tracking-section" class="tp-link d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i data-feather="activity" class="text-success"></i>
+                <span> Live Tracking </span>
+              </div>
+              <span class="badge bg-success text-white rounded-pill px-2 py-0 fs-10 fw-bold member-sidebar-live-count">
+                {{ $memberSidebarLiveCount }} Live
+              </span>
+            </a>
+          </li>
         @endif
 
 

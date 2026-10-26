@@ -395,7 +395,7 @@
     @endif
 
     {{-- REAL-TIME LIVE RESIDENTS & APP ACTIVITY --}}
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4" id="live-tracking-section">
       <div class="col-lg-5">
         <div class="glass-table-card h-100 mb-0">
           <div class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white">
@@ -1028,6 +1028,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Update live badge
                 const liveBadge = document.getElementById('residentLiveBadge');
                 if (liveBadge) liveBadge.innerText = data.count + ' Online Now';
+
+                // Update member sidebar badge
+                document.querySelectorAll('.member-sidebar-live-count').forEach(el => {
+                    el.innerText = data.count + ' Live';
+                });
 
                 // Update resident list
                 const residentList = document.getElementById('residentLiveList');
