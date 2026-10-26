@@ -27,10 +27,24 @@ class TrackUserActivity
             // 1. Identify active user
             $user = auth('sanctum')->user() ?? auth()->user();
 
+            // Fallback 1: Resolve directly from Bearer token via Sanctum's PersonalAccessToken
+            if (!$user && $request->bearerToken()) {
+                try {
+                    $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($request->bearerToken());
+                    if ($tokenModel && $tokenModel->tokenable) {
+                        $user = $tokenModel->tokenable;
+                    }
+                } catch (\Throwable $te) {}
+            }
+
+            // Fallback 2: Check route parameters, body inputs, or custom headers
             if (!$user) {
                 $possibleUserId = $request->route('user_id') 
                     ?? $request->route('id') 
-                    ?? $request->input('user_id');
+                    ?? $request->input('user_id')
+                    ?? $request->input('resident_id')
+                    ?? $request->header('X-User-Id')
+                    ?? $request->header('user-id');
 
                 if ($possibleUserId && is_numeric($possibleUserId)) {
                     $user = Cache::remember('user_lookup_' . $possibleUserId, 300, function () use ($possibleUserId) {
@@ -63,8 +77,8 @@ class TrackUserActivity
 
             // 3. Log API hit (only for /api/ routes or relevant web actions)
             if ($request->is('api/*') || $request->is('residents/*') || $request->is('admin/*')) {
-                // Ignore very noisy or polling endpoints
-                $ignoredPaths = ['slots-ajax', 'broadcasting/auth', 'live-feed-ajax'];
+                // Ignore very noisy or polling endpoints (such as our own dashboard live tickers)
+                $ignoredPaths = ['slots-ajax', 'broadcasting/auth', 'live-activity-feed', 'live-feed'];
                 $isIgnored = false;
                 foreach ($ignoredPaths as $ignored) {
                     if (str_contains($request->path(), $ignored)) {
@@ -76,17 +90,19 @@ class TrackUserActivity
                 if (!$isIgnored) {
                     $ua = strtolower($request->userAgent() ?? '');
                     $deviceType = 'Web Browser';
-                    if (str_contains($ua, 'dart') || str_contains($ua, 'flutter') || str_contains($ua, 'okhttp') || str_contains($ua, 'cfnetwork')) {
+                    if (str_contains($ua, 'dart') || str_contains($ua, 'flutter') || str_contains($ua, 'okhttp') || str_contains($ua, 'cfnetwork') || str_contains($ua, 'postman')) {
                         $deviceType = 'Mobile App';
                     } elseif ($request->header('X-Device-Type')) {
                         $deviceType = $request->header('X-Device-Type');
                     } elseif (str_contains($ua, 'mobile') || str_contains($ua, 'android') || str_contains($ua, 'iphone')) {
                         $deviceType = 'Mobile Web';
+                    } elseif ($request->is('api/*')) {
+                        $deviceType = 'Mobile App / API';
                     }
 
                     ApiActivityLog::create([
                         'user_id' => $user?->id,
-                        'user_name' => $user?->name ?? 'Guest / App Visitor',
+                        'user_name' => $user?->name ?? ($request->is('api/*') ? 'Mobile User / Guest' : 'Web Visitor'),
                         'endpoint' => substr($request->path(), 0, 255),
                         'method' => substr($request->method(), 0, 10),
                         'ip_address' => $request->ip(),

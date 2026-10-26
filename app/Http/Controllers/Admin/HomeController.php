@@ -162,7 +162,7 @@ class HomeController extends Controller
             'activities' => $recentApiActivities->map(function ($act) {
                 return [
                     'id' => $act->id,
-                    'user_name' => $act->user->name ?? 'Mobile User #' . ($act->user_id ?? 'Guest'),
+                    'user_name' => $act->user->name ?? ($act->user_name ?: ('Mobile User #' . ($act->user_id ?? 'Guest'))),
                     'endpoint' => $act->endpoint,
                     'method' => $act->method,
                     'device_type' => $act->device_type,

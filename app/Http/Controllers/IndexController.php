@@ -233,7 +233,7 @@ class IndexController extends Controller
             'activities' => $recentApiActivities->map(function ($act) {
                 return [
                     'id' => $act->id,
-                    'user_name' => $act->user->name ?? 'App Resident #' . $act->user_id,
+                    'user_name' => $act->user->name ?? ($act->user_name ?: ('App Resident #' . $act->user_id)),
                     'endpoint' => $act->endpoint,
                     'method' => $act->method,
                     'device_type' => $act->device_type,

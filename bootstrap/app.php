@@ -24,7 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Global tracker for mobile app APIs and web operations
+        $middleware->append(\App\Http\Middleware\TrackUserActivity::class);
+
         $middleware->alias([
            'isSuperAdmin' => \App\Http\Middleware\IsSuperAdmin::class,
            'isUser' => \App\Http\Middleware\UserMiddleware::class,

@@ -200,7 +200,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="fw-semibold text-dark fs-12 d-block">{{ $act->user->name ?? 'Mobile User #' . ($act->user_id ?? 'Guest') }}</span>
+                                    <span class="fw-semibold text-dark fs-12 d-block">{{ $act->user->name ?? ($act->user_name ?: ('Mobile User #' . ($act->user_id ?? 'Guest'))) }}</span>
                                     <span class="text-muted fs-10">{{ $act->ip_address ?? '—' }}</span>
                                 </td>
                                 <td>

@@ -475,7 +475,7 @@
                     </div>
                   </td>
                   <td>
-                    <span class="fw-bold text-dark font-12 d-block">{{ $act->user->name ?? 'Resident #' . $act->user_id }}</span>
+                    <span class="fw-bold text-dark font-12 d-block">{{ $act->user->name ?? ($act->user_name ?: ('Resident #' . $act->user_id)) }}</span>
                   </td>
                   <td>
                     <span class="badge bg-soft-success text-success font-11 px-2 py-1">
