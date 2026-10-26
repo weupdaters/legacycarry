@@ -9,6 +9,8 @@ class Country extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = ['name', 'country_code'];
 
     public function states()
